@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import FileDropzone from '../../../components/FileDropzone';
 import Button from '../../../components/Button';
 import DownloadButton from '../../../components/DownloadButton';
@@ -6,7 +6,7 @@ import ErrorMessage from '../../../components/ErrorMessage';
 import ProgressBar from '../../../components/ProgressBar';
 import { formatDuration } from '../../../lib/audioUtils';
 import { formatBytes } from '../../../lib/imageUtils';
-import { probeVideo, runVideoConversion, checkFileSize, detectVideoCapabilities, videoCodecFor } from '../../../lib/videoEngine';
+import { VideoCancelledError, probeVideo, runVideoConversion, checkFileSize, detectVideoCapabilities, videoCodecFor } from '../../../lib/videoEngine';
 import type { VideoInfo, OutputContainer, VideoCapabilities } from '../../../lib/videoEngine';
 
 export default function VideoConvertTool() {
@@ -23,6 +23,8 @@ export default function VideoConvertTool() {
     detectVideoCapabilities().then(setCaps);
   }, []);
 
+  const abortRef = useRef<AbortController | null>(null);
+
   async function handleFile(files: File[]) {
     const f = files[0];
     setResult(null);
@@ -37,26 +39,30 @@ export default function VideoConvertTool() {
       const probed = await probeVideo(f);
       setFile(f);
       setInfo(probed);
-      setTarget(probed.container === 'mp4' ? 'webm' : 'mp4');
+      setTarget(probed.sourceFormat === 'mp4' ? 'webm' : 'mp4');
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Could not open this video.');
     }
   }
 
   async function convert() {
+    const controller = new AbortController();
     if (!file) return;
     setBusy(true);
     setError(null);
     setProgress(0);
+    abortRef.current = controller;
     try {
       const blob = await runVideoConversion(file, {
         container: target,
         forceVideoCodec: videoCodecFor(target),
         onProgress: setProgress,
+        signal: controller.signal,
       });
       const base = file.name.replace(/\.[^.]+$/, '');
       setResult({ url: URL.createObjectURL(blob), name: `${base}.${target}` });
     } catch (e) {
+      if (e instanceof VideoCancelledError) return;
       setError(e instanceof Error ? e.message : 'Could not convert this video.');
     } finally {
       setBusy(false);
@@ -68,12 +74,12 @@ export default function VideoConvertTool() {
   return (
     <div className="space-y-4">
       {!file ? (
-        <FileDropzone accept="video/mp4,video/webm" onFiles={handleFile} hint="MP4 or WebM, up to 250MB" />
+        <FileDropzone accept="video/mp4,video/webm,video/quicktime,video/x-matroska,.mkv,.mov" onFiles={handleFile} hint="MP4, MOV, WebM or MKV, up to 250MB" />
       ) : (
         <div className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-line bg-paper-dim p-3 text-sm">
           <span className="truncate">
             {file.name} · {formatBytes(file.size)}
-            {info && ` · ${info.container?.toUpperCase()} · ${formatDuration(info.durationSec)}`}
+            {info && ` · ${info.sourceFormat.toUpperCase()} · ${formatDuration(info.durationSec)}`}
           </span>
           <button onClick={() => { setFile(null); setInfo(null); setResult(null); }} className="text-xs font-medium text-workshop hover:underline">Remove</button>
         </div>
@@ -86,7 +92,7 @@ export default function VideoConvertTool() {
               <button
                 key={c}
                 onClick={() => setTarget(c)}
-                disabled={c === info.container}
+                disabled={c === info.sourceFormat}
                 className={`flex-1 rounded px-3 py-1.5 uppercase disabled:opacity-30 ${target === c ? 'bg-ink text-paper' : 'text-ink/60'}`}
               >
                 {c}
@@ -97,6 +103,7 @@ export default function VideoConvertTool() {
             <ErrorMessage>This browser can't encode {target === 'mp4' ? 'H.264' : 'VP9'} video, so converting to {target.toUpperCase()} isn't available here. Try a recent version of Chrome, Edge, or Firefox.</ErrorMessage>
           )}
           <Button onClick={convert} disabled={busy || !targetSupported}>{busy ? 'Converting…' : `Convert to ${target.toUpperCase()}`}</Button>
+          {busy && <Button variant="secondary" onClick={() => abortRef.current?.abort()}>Cancel</Button>}
           {busy && <ProgressBar value={progress * 100} label="Converting" />}
         </>
       )}

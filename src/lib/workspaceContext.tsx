@@ -4,6 +4,8 @@ import type { ReactNode } from 'react';
 export interface PendingResult {
   url: string;
   filename: string;
+  /** Route of the tool that produced it — never offered back to that same tool. */
+  source?: string;
 }
 
 interface WorkspaceContextValue {

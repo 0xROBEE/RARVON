@@ -122,7 +122,7 @@ export async function makeImage(page: Page, opts: { width?: number; height?: num
 
 /** A few seconds of WebM (VP8/VP9 + Opus) recorded from an animated canvas and an oscillator. */
 export async function makeWebm(page: Page, seconds = 3) {
-  const b64 = await page.evaluate(async (seconds) => {
+  const b64 = await page.evaluate(async ({ seconds }) => {
     const c = document.createElement('canvas');
     c.width = 640;
     c.height = 360;
@@ -134,8 +134,9 @@ export async function makeWebm(page: Page, seconds = 3) {
     osc.start();
     const stream = c.captureStream(30);
     dst.stream.getAudioTracks().forEach((t) => stream.addTrack(t));
-    const mime = ['video/webm;codecs=vp9,opus', 'video/webm;codecs=vp8,opus', 'video/webm'].find((m) => MediaRecorder.isTypeSupported(m))!;
-    const rec = new MediaRecorder(stream, { mimeType: mime });
+    const candidates = ['video/webm;codecs=vp9,opus', 'video/webm;codecs=vp8,opus', 'video/webm'];
+    const mime = candidates.find((m) => MediaRecorder.isTypeSupported(m))!;
+    const rec = new MediaRecorder(stream, { mimeType: mime, videoBitsPerSecond: 2_500_000 });
     const chunks: Blob[] = [];
     rec.ondataavailable = (e) => chunks.push(e.data);
     let f = 0;
@@ -157,8 +158,21 @@ export async function makeWebm(page: Page, seconds = 3) {
     let s = '';
     for (let i = 0; i < bytes.length; i++) s += String.fromCharCode(bytes[i]);
     return btoa(s);
-  }, seconds);
+  }, { seconds });
   return { name: 'clip.webm', mimeType: 'video/webm', buffer: Buffer.from(b64, 'base64') };
+}
+
+/**
+ * An MP4 (H.264 + AAC) made by running a recorded WebM through the app's own
+ * Video Converter — headless Chromium's MediaRecorder can't record MP4.
+ */
+export async function makeMp4(page: Page, seconds = 3): Promise<UploadFile> {
+  const webm = await makeWebm(page, seconds);
+  await page.goto('/tools/video/convert');
+  await page.locator('input[type=file]').first().setInputFiles(webm);
+  await page.getByRole('button', { name: 'Convert to MP4' }).click();
+  const [dl] = await Promise.all([page.waitForEvent('download'), page.getByRole('button', { name: /Download/ }).click()]);
+  return { name: 'clip.mp4', mimeType: 'video/mp4', buffer: await readFile(await dl.path()) };
 }
 
 // ---------- analysis of outputs ----------

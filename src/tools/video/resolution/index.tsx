@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import FileDropzone from '../../../components/FileDropzone';
 import Button from '../../../components/Button';
 import DownloadButton from '../../../components/DownloadButton';
@@ -6,7 +6,7 @@ import ErrorMessage from '../../../components/ErrorMessage';
 import ProgressBar from '../../../components/ProgressBar';
 import { formatDuration } from '../../../lib/audioUtils';
 import { formatBytes } from '../../../lib/imageUtils';
-import { probeVideo, runVideoConversion, checkFileSize } from '../../../lib/videoEngine';
+import { VideoCancelledError, probeVideo, runVideoConversion, checkFileSize } from '../../../lib/videoEngine';
 import type { VideoInfo } from '../../../lib/videoEngine';
 
 const PRESETS = [
@@ -25,6 +25,8 @@ export default function VideoResolutionTool() {
   const [busy, setBusy] = useState(false);
   const [progress, setProgress] = useState(0);
   const [result, setResult] = useState<{ url: string; name: string } | null>(null);
+
+  const abortRef = useRef<AbortController | null>(null);
 
   async function handleFile(files: File[]) {
     const f = files[0];
@@ -55,19 +57,23 @@ export default function VideoResolutionTool() {
   }
 
   async function apply() {
+    const controller = new AbortController();
     if (!file || !info || !info.container) return;
     setBusy(true);
     setError(null);
     setProgress(0);
+    abortRef.current = controller;
     try {
       const blob = await runVideoConversion(file, {
         container: info.container,
         resize: { width, height },
         onProgress: setProgress,
+        signal: controller.signal,
       });
       const base = file.name.replace(/\.[^.]+$/, '');
       setResult({ url: URL.createObjectURL(blob), name: `${base}-${width}x${height}.${info.container}` });
     } catch (e) {
+      if (e instanceof VideoCancelledError) return;
       setError(e instanceof Error ? e.message : 'Could not resize this video.');
     } finally {
       setBusy(false);
@@ -77,7 +83,7 @@ export default function VideoResolutionTool() {
   return (
     <div className="space-y-4">
       {!file ? (
-        <FileDropzone accept="video/mp4,video/webm" onFiles={handleFile} hint="MP4 or WebM, up to 250MB" />
+        <FileDropzone accept="video/mp4,video/webm,video/quicktime,video/x-matroska,.mkv,.mov" onFiles={handleFile} hint="MP4, MOV, WebM or MKV, up to 250MB" />
       ) : (
         <div className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-line bg-paper-dim p-3 text-sm">
           <span className="truncate">
@@ -108,6 +114,7 @@ export default function VideoResolutionTool() {
             </label>
           </div>
           <Button onClick={apply} disabled={busy || width < 2 || height < 2}>{busy ? 'Processing…' : 'Change resolution'}</Button>
+          {busy && <Button variant="secondary" onClick={() => abortRef.current?.abort()}>Cancel</Button>}
           {busy && <ProgressBar value={progress * 100} label="Re-encoding" />}
         </>
       )}

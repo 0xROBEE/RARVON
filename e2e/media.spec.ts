@@ -1,6 +1,6 @@
 import JSZip from 'jszip';
 import exifr from 'exifr';
-import { test, expect, upload, download, openTool, makeImage, makeWebm, makeWav, makePdf, imageSize, mediaInfo } from './helpers';
+import { test, expect, upload, download, openTool, makeImage, makeWebm, makeMp4, makeWav, makePdf, imageSize, mediaInfo } from './helpers';
 import type { UploadFile } from './helpers';
 
 /** Inserts a minimal EXIF APP1 segment (Make + Model) right after the JPEG SOI marker. */
@@ -127,18 +127,22 @@ test.describe('ZIP', () => {
 });
 
 test.describe('video tools (WebCodecs via Mediabunny)', () => {
-  test('trim shortens the clip', async ({ page }) => {
-    await openTool(page, '/tools/video/trim');
-    await upload(page, await makeWebm(page, 4));
-    await page.getByLabel(/^End/).fill('2');
-    await page.getByRole('button', { name: 'Trim video' }).click();
-    const out = await download(page);
-    const info = await mediaInfo(page, out.buffer, 'video/webm');
-    expect(info.duration).toBeGreaterThan(1.5);
-    expect(info.duration).toBeLessThan(2.6);
+  test('trim shortens the clip (WebM and MP4)', async ({ page }) => {
+    for (const container of ['webm', 'mp4'] as const) {
+      const clip = container === 'mp4' ? await makeMp4(page, 4) : await makeWebm(page, 4);
+      await openTool(page, '/tools/video/trim');
+      await upload(page, clip);
+      await page.getByLabel(/^End/).fill('2');
+      await page.getByRole('button', { name: 'Trim video' }).click();
+      const out = await download(page);
+      expect(out.name.endsWith(`.${container}`)).toBe(true);
+      const info = await mediaInfo(page, out.buffer, `video/${container}`);
+      expect(info.duration, container).toBeGreaterThan(1.5);
+      expect(info.duration, container).toBeLessThan(2.6);
+    }
   });
 
-  test('change resolution to 360p width/height', async ({ page }) => {
+  test('change resolution to 320x180', async ({ page }) => {
     await openTool(page, '/tools/video/resolution');
     await upload(page, await makeWebm(page, 2));
     const [w, h] = [page.locator('main input[type=number]').nth(0), page.locator('main input[type=number]').nth(1)];
@@ -150,25 +154,51 @@ test.describe('video tools (WebCodecs via Mediabunny)', () => {
     expect([info.width, info.height]).toEqual([320, 180]);
   });
 
-  test('convert WebM to MP4', async ({ page }) => {
+  test('convert WebM to MP4 with AAC audio', async ({ page }) => {
     await openTool(page, '/tools/video/convert');
     await upload(page, await makeWebm(page, 2));
     await page.getByRole('button', { name: 'Convert to MP4' }).click();
     const out = await download(page);
     expect(out.name).toMatch(/\.mp4$/);
     expect(out.buffer.subarray(4, 8).toString('latin1')).toBe('ftyp');
+    expect(out.buffer.includes(Buffer.from('mp4a'))).toBe(true); // AAC audio, plays in Safari/QuickTime
+    expect(out.buffer.includes(Buffer.from('Opus'))).toBe(false);
     const info = await mediaInfo(page, out.buffer, 'video/mp4');
     expect(info.duration).toBeGreaterThan(1.5);
     expect([info.width, info.height]).toEqual([640, 360]);
   });
 
-  test('compress produces a playable smaller video', async ({ page }) => {
-    test.fail(true, 'Known issue (Task 5): quality presets ignore source bitrate, so low-bitrate input can grow');
+  test('compress makes the video smaller, also with a lower resolution', async ({ page }) => {
     await openTool(page, '/tools/video/compress');
     const src = await makeWebm(page, 3);
     await upload(page, src);
+    await expect(page.getByText(/Estimated result/)).toBeVisible();
     await page.getByRole('button', { name: 'Compress video' }).click();
     const out = await download(page);
+    expect(out.buffer.length).toBeLessThan(src.buffer.length * 0.8);
+    expect((await mediaInfo(page, out.buffer, 'video/webm')).duration).toBeGreaterThan(2.5);
+
+    await page.getByLabel(/Strong/).check();
+    await page.getByLabel('Maximum resolution').selectOption('240');
+    await page.getByRole('button', { name: 'Compress video' }).click();
+    await expect(page.getByText(/compressed\.webm .*−/)).toBeVisible({ timeout: 60_000 });
+    const small = await download(page);
+    expect(small.buffer.length).toBeLessThan(out.buffer.length);
+    const info = await mediaInfo(page, small.buffer, 'video/webm');
+    expect(Math.min(info.width, info.height)).toBe(240);
+  });
+
+  test('compress an MP4 and cancel a running job', async ({ page }) => {
+    const src = await makeMp4(page, 6);
+    await openTool(page, '/tools/video/compress');
+    await upload(page, src);
+    await page.getByRole('button', { name: 'Compress video' }).click();
+    await page.getByRole('button', { name: 'Cancel' }).click();
+    await expect(page.getByRole('button', { name: 'Compress video' })).toBeEnabled();
+    await expect(page.getByRole('alert')).toHaveCount(0);
+    await page.getByRole('button', { name: 'Compress video' }).click();
+    const out = await download(page);
+    expect(out.name).toMatch(/\.mp4$/);
     expect(out.buffer.length).toBeLessThan(src.buffer.length);
   });
 });
@@ -185,32 +215,47 @@ test.describe('audio tools', () => {
     expect(info.duration).toBeCloseTo(1.5, 1);
   });
 
-  test('convert to compressed WebM/Opus', async ({ page }) => {
+  test('convert to AAC, Opus and WAV much faster than real time', async ({ page }) => {
     await openTool(page, '/tools/audio/convert');
-    const src = makeWav(2);
+    const src = makeWav(20);
     await upload(page, src);
-    await page.locator('main').getByRole('button', { name: /WebM|Opus/ }).first().click();
-    await page.getByRole('button', { name: 'Convert', exact: true }).click();
-    const out = await download(page);
-    expect(out.buffer.length).toBeLessThan(src.buffer.length);
-    expect((await mediaInfo(page, out.buffer, 'audio/webm')).duration).toBeGreaterThan(1.5);
+    const targets = [['AAC', 'm4a', 'audio/mp4'], ['Opus', 'ogg', 'audio/ogg'], ['WAV', 'wav', 'audio/wav']] as const;
+    for (const [label, ext, mime] of targets) {
+      await page.getByLabel(new RegExp(`^${label}`)).check();
+      const started = Date.now();
+      await page.getByRole('button', { name: 'Convert', exact: true }).click();
+      const out = await download(page);
+      expect(Date.now() - started, label).toBeLessThan(8000); // 20 s of audio; the old encoder took 20 s
+      expect(out.name).toBe(`tone.${ext}`);
+      expect((await mediaInfo(page, out.buffer, mime)).duration, label).toBeCloseTo(20, 0);
+      if (ext !== 'wav') expect(out.buffer.length).toBeLessThan(src.buffer.length / 4);
+    }
   });
 
-  test('compress shrinks a WAV', async ({ page }) => {
+  test('compress shrinks a WAV to the chosen bitrate', async ({ page }) => {
     await openTool(page, '/tools/audio/compress');
-    const src = makeWav(2);
+    const src = makeWav(10);
     await upload(page, src);
+    await page.getByRole('radio', { name: /^Small —/ }).check();
     await page.getByRole('button', { name: 'Compress', exact: true }).click();
     const out = await download(page);
-    expect(out.buffer.length).toBeLessThan(src.buffer.length / 4);
+    // 64 kb/s × 10 s ≈ 80 KB (+ container overhead)
+    expect(out.buffer.length).toBeLessThan(110_000);
+    expect((await mediaInfo(page, out.buffer, 'audio/ogg')).duration).toBeCloseTo(10, 0);
   });
 
-  test('extract the soundtrack from a video', async ({ page }) => {
-    await openTool(page, '/tools/audio/extract');
-    await upload(page, await makeWebm(page, 2));
-    await page.getByRole('button', { name: 'Extract audio' }).click();
-    const out = await download(page);
-    expect((await mediaInfo(page, out.buffer, 'audio/webm')).duration).toBeGreaterThan(1);
+  test('extract copies the soundtrack out of a video without re-encoding', async ({ page }) => {
+    const cases = [['webm', 'ogg'], ['mp4', 'm4a']] as const;
+    for (const [container, ext] of cases) {
+      const clip = container === 'mp4' ? await makeMp4(page, 2) : await makeWebm(page, 2);
+      await openTool(page, '/tools/audio/extract');
+      await upload(page, clip);
+      await page.getByRole('button', { name: 'Extract audio' }).click();
+      await expect(page.getByText('Copied without re-encoding')).toBeVisible();
+      const out = await download(page);
+      expect(out.name.endsWith(`.${ext}`)).toBe(true);
+      expect((await mediaInfo(page, out.buffer, ext === 'ogg' ? 'audio/ogg' : 'audio/mp4')).duration).toBeGreaterThan(1.5);
+    }
   });
 });
 
@@ -220,6 +265,8 @@ test.describe('tool chaining', () => {
     await upload(page, [await makePdf({ pages: 2, label: 'A' }), await makePdf({ pages: 1, label: 'B' })]);
     await page.getByRole('button', { name: 'Merge PDFs' }).click();
     await expect(page.getByRole('button', { name: /Download/ })).toBeVisible();
+    // A tool never offers its own result back to itself.
+    await expect(page.getByText(/Continue with/)).toHaveCount(0);
     // Client-side navigation keeps the in-memory result.
     await page.getByRole('link', { name: 'Split PDF' }).first().click();
     await expect(page.getByText('Continue with merged.pdf')).toBeVisible();

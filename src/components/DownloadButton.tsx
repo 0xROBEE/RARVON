@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import Button from './Button';
 import { useWorkspace } from '../lib/workspaceContext';
 
@@ -10,6 +11,7 @@ interface DownloadButtonProps {
 
 export default function DownloadButton({ url, filename, label = 'Download result' }: DownloadButtonProps) {
   const { setPending, retainUrl, releaseUrl } = useWorkspace();
+  const { pathname } = useLocation();
 
   // Hold the result URL while this button is shown; once it unmounts (new
   // result, file removed, page left) and chaining no longer points at it,
@@ -25,8 +27,8 @@ export default function DownloadButton({ url, filename, label = 'Download result
   // DownloadButton is already the shared result affordance almost every
   // tool uses. setPending is stable and ignores repeats, so this can't loop.
   useEffect(() => {
-    setPending({ url, filename });
-  }, [url, filename, setPending]);
+    setPending({ url, filename, source: pathname });
+  }, [url, filename, pathname, setPending]);
 
   return (
     <Button

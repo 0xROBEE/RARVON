@@ -1,122 +1,133 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import FileDropzone from '../../../components/FileDropzone';
 import Button from '../../../components/Button';
 import DownloadButton from '../../../components/DownloadButton';
 import ErrorMessage from '../../../components/ErrorMessage';
 import ProgressBar from '../../../components/ProgressBar';
 import FormatBadge from '../../../components/FormatBadge';
-import {
-  decodeAudioFile,
-  audioBufferToWavBlob,
-  encodeBufferCompressed,
-  extensionForMime,
-  formatDuration,
-  pickCompressedMimeType,
-} from '../../../lib/audioUtils';
+import { audioBufferToWavBlob, decodeAudioFile, formatDuration } from '../../../lib/audioUtils';
+import { formatBytes } from '../../../lib/imageUtils';
+import { AUDIO_TARGETS, CancelledError, convertAudio, encodableAudioTargets, probeAudio } from '../../../lib/audioEngine';
+import type { AudioInfo, AudioTarget } from '../../../lib/audioEngine';
 
-const INPUT_LABELS: Record<string, string> = {
-  'audio/wav': 'WAV', 'audio/x-wav': 'WAV', 'audio/mpeg': 'MP3', 'audio/mp3': 'MP3',
-  'audio/ogg': 'OGG', 'audio/webm': 'WebM', 'audio/mp4': 'M4A/AAC', 'audio/aac': 'AAC',
-  'audio/flac': 'FLAC', 'audio/x-flac': 'FLAC',
+const CODEC_LABELS: Record<string, string> = {
+  aac: 'AAC', opus: 'Opus', mp3: 'MP3', vorbis: 'Vorbis', flac: 'FLAC', alac: 'ALAC',
+  'pcm-s16': 'WAV', 'pcm-s24': 'WAV', 'pcm-s32': 'WAV', 'pcm-f32': 'WAV', 'pcm-u8': 'WAV',
 };
-function detectAudioLabel(file: File): string {
-  if (INPUT_LABELS[file.type]) return INPUT_LABELS[file.type];
-  const ext = file.name.split('.').pop()?.toUpperCase();
-  return ext || file.type || 'Unknown';
-}
 
 export default function AudioConvertTool() {
   const [file, setFile] = useState<File | null>(null);
-  const [buffer, setBuffer] = useState<AudioBuffer | null>(null);
-  const [format, setFormat] = useState<'wav' | 'compressed'>('wav');
+  const [info, setInfo] = useState<AudioInfo | null>(null);
+  /** Files the engine can't demux but the browser can decode: WAV output only. */
+  const [fallback, setFallback] = useState<AudioBuffer | null>(null);
+  const [targets, setTargets] = useState<Set<AudioTarget>>(new Set(['wav']));
+  const [target, setTarget] = useState<AudioTarget>('wav');
   const [busy, setBusy] = useState(false);
   const [progress, setProgress] = useState(0);
   const [error, setError] = useState<string | null>(null);
-  const [result, setResult] = useState<{ url: string; name: string } | null>(null);
+  const [result, setResult] = useState<{ url: string; name: string; size: number } | null>(null);
+  const abortRef = useRef<AbortController | null>(null);
 
-  const compressedSupported = Boolean(pickCompressedMimeType());
+  useEffect(() => {
+    void encodableAudioTargets().then((t) => {
+      setTargets(t);
+      setTarget(t.has('aac') ? 'aac' : t.has('opus') ? 'opus' : 'wav');
+    });
+  }, []);
+
+  function reset() {
+    abortRef.current?.abort();
+    setFile(null);
+    setInfo(null);
+    setFallback(null);
+    setResult(null);
+    setError(null);
+  }
 
   async function handleFile(files: File[]) {
     const f = files[0];
-    setFile(f);
-    setResult(null);
-    setError(null);
-    setBuffer(null);
+    reset();
     try {
-      setBuffer(await decodeAudioFile(f));
-    } catch {
-      setError('Could not decode this audio file. Try a WAV, MP3 or OGG file.');
+      setInfo(await probeAudio(f));
+      setFile(f);
+    } catch (e) {
+      try {
+        setFallback(await decodeAudioFile(f));
+        setFile(f);
+      } catch {
+        setError(e instanceof Error && e.message.includes('no audio') ? e.message : 'Could not read this audio file. Try MP3, WAV, OGG, FLAC or M4A.');
+      }
     }
   }
 
   async function convert() {
-    if (!file || !buffer) return;
+    if (!file) return;
+    const controller = new AbortController();
+    abortRef.current = controller;
     setBusy(true);
     setError(null);
+    setResult(null);
     setProgress(0);
+    const base = file.name.replace(/\.[^.]+$/, '');
     try {
-      const base = file.name.replace(/\.[^.]+$/, '');
-      if (format === 'wav') {
-        const blob = audioBufferToWavBlob(buffer);
-        setResult({ url: URL.createObjectURL(blob), name: `${base}.wav` });
+      if (fallback) {
+        const blob = audioBufferToWavBlob(fallback);
+        setResult({ url: URL.createObjectURL(blob), name: `${base}.wav`, size: blob.size });
       } else {
-        const mimeType = pickCompressedMimeType();
-        if (!mimeType) throw new Error('This browser doesn\u2019t support compressed audio export.');
-        const blob = await encodeBufferCompressed(buffer, { onProgress: setProgress });
-        setResult({ url: URL.createObjectURL(blob), name: `${base}.${extensionForMime(mimeType)}` });
+        const out = await convertAudio(file, { target, bitrate: 160_000, onProgress: setProgress, signal: controller.signal });
+        setResult({ url: URL.createObjectURL(out.blob), name: `${base}.${out.extension}`, size: out.blob.size });
       }
     } catch (e) {
+      if (e instanceof CancelledError) return;
       setError(e instanceof Error ? e.message : 'Could not convert this audio file.');
     } finally {
       setBusy(false);
+      abortRef.current = null;
     }
   }
+
+  const duration = info?.durationSec ?? fallback?.duration ?? 0;
+  const sourceLabel = info?.codec ? CODEC_LABELS[info.codec] ?? info.codec.toUpperCase() : file?.name.split('.').pop()?.toUpperCase() ?? '';
+  const options = fallback ? AUDIO_TARGETS.filter((t) => t.value === 'wav') : AUDIO_TARGETS.filter((t) => targets.has(t.value));
 
   return (
     <div className="space-y-4">
       {!file ? (
-        <FileDropzone accept="audio/*" onFiles={handleFile} hint="WAV, MP3, OGG or M4A" />
+        <FileDropzone accept="audio/*,.mp3,.m4a,.flac,.ogg,.opus,.wav,.aac" onFiles={handleFile} hint="MP3, WAV, OGG, FLAC, M4A or Opus" />
       ) : (
         <div className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-line bg-paper-dim p-3 text-sm">
           <div className="flex flex-wrap items-center gap-2">
-            <span className="truncate">{file.name}{buffer && ` · ${formatDuration(buffer.duration)}`}</span>
-            <FormatBadge label={detectAudioLabel(file)} />
+            <span className="truncate">{file.name} · {formatBytes(file.size)} · {formatDuration(duration)}</span>
+            {sourceLabel && <FormatBadge label={sourceLabel} />}
           </div>
-          <button onClick={() => { setFile(null); setBuffer(null); setResult(null); }} className="text-xs font-medium text-workshop hover:underline">Remove</button>
+          <button onClick={reset} className="text-xs font-medium text-workshop hover:underline">Remove</button>
         </div>
       )}
 
-      {buffer && (
+      {file && (
         <>
-          <div className="flex gap-1 rounded-md border border-line bg-paper-dim p-1 text-xs font-medium">
-            <button onClick={() => setFormat('wav')} className={`flex-1 rounded px-3 py-1.5 ${format === 'wav' ? 'bg-ink text-paper' : 'text-ink/60'}`}>
-              WAV (lossless, instant)
-            </button>
-            <button
-              onClick={() => setFormat('compressed')}
-              disabled={!compressedSupported}
-              className={`flex-1 rounded px-3 py-1.5 disabled:opacity-40 ${format === 'compressed' ? 'bg-ink text-paper' : 'text-ink/60'}`}
-            >
-              WebM / Opus (smaller)
-            </button>
+          <fieldset className="space-y-1.5" disabled={busy}>
+            <legend className="mb-1 text-xs font-medium text-ink/60">Convert to</legend>
+            {options.map((o) => (
+              <label key={o.value} className="flex items-center gap-2 text-sm">
+                <input type="radio" name="audio-target" checked={(fallback ? 'wav' : target) === o.value} onChange={() => setTarget(o.value)} />
+                {o.label}
+              </label>
+            ))}
+          </fieldset>
+          {fallback && <p className="text-xs text-ink/50">This file can be decoded but not re-packaged by the converter, so only WAV output is available for it.</p>}
+          <p className="text-xs text-ink/50">MP3 output isn’t offered: browsers have no built-in MP3 encoder. AAC (.m4a) plays everywhere MP3 does.</p>
+          <div className="flex flex-wrap items-center gap-2">
+            <Button onClick={convert} disabled={busy}>{busy ? 'Converting…' : 'Convert'}</Button>
+            {busy && <Button variant="secondary" onClick={() => abortRef.current?.abort()}>Cancel</Button>}
           </div>
-          {format === 'compressed' && (
-            <p className="text-xs text-ink/50">
-              This plays the audio through the browser's built-in encoder in real time, so it takes about
-              {' '}{formatDuration(buffer.duration)} to finish.
-            </p>
-          )}
-          {!compressedSupported && (
-            <p className="text-xs text-warn">This browser doesn't support compressed audio recording, so only WAV is available.</p>
-          )}
-          <Button onClick={convert} disabled={busy}>{busy ? 'Converting…' : 'Convert'}</Button>
-          {busy && format === 'compressed' && <ProgressBar value={progress * 100} label="Encoding" />}
+          {busy && <ProgressBar value={progress * 100} label={`Converting… ${Math.round(progress * 100)}%`} />}
         </>
       )}
       {error && <ErrorMessage>{error}</ErrorMessage>}
       {result && (
-        <div className="flex items-center justify-between rounded-md border border-line bg-paper-dim p-3">
-          <span className="text-sm">{result.name}</span>
+        <div className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-line bg-paper-dim p-3">
+          <span className="text-sm">{result.name} · {formatBytes(result.size)}</span>
           <DownloadButton url={result.url} filename={result.name} />
         </div>
       )}

@@ -1,6 +1,7 @@
 import { useCallback, useState } from 'react';
 import type { DragEvent } from 'react';
 import clsx from 'clsx';
+import { useLocation } from 'react-router-dom';
 import { useWorkspace, isLikelyCompatible, pendingResultToFile } from '../lib/workspaceContext';
 
 interface FileDropzoneProps {
@@ -15,6 +16,7 @@ export default function FileDropzone({ accept, multiple = false, label, hint, on
   const [isOver, setIsOver] = useState(false);
   const { pending, clearPending } = useWorkspace();
   const [loadingPending, setLoadingPending] = useState(false);
+  const { pathname } = useLocation();
 
   const handleDrop = useCallback(
     (e: DragEvent<HTMLLabelElement>) => {
@@ -26,7 +28,10 @@ export default function FileDropzone({ accept, multiple = false, label, hint, on
     [onFiles, multiple],
   );
 
-  const showChainBanner = pending && isLikelyCompatible(pending.filename, accept);
+  // Offer the last result to *other* tools only: a tool's own output fed back
+  // into itself is never what the user wants (and during a page transition
+  // the outgoing tool's banner could catch the click meant for the next one).
+  const showChainBanner = pending && pending.source !== pathname && isLikelyCompatible(pending.filename, accept);
 
   async function useChainedFile() {
     if (!pending) return;

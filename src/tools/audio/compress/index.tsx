@@ -1,109 +1,142 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import FileDropzone from '../../../components/FileDropzone';
 import Button from '../../../components/Button';
 import DownloadButton from '../../../components/DownloadButton';
 import ErrorMessage from '../../../components/ErrorMessage';
 import ProgressBar from '../../../components/ProgressBar';
+import { formatDuration } from '../../../lib/audioUtils';
 import { formatBytes } from '../../../lib/imageUtils';
-import {
-  decodeAudioFile,
-  encodeBufferCompressed,
-  extensionForMime,
-  formatDuration,
-  pickCompressedMimeType,
-} from '../../../lib/audioUtils';
+import { CancelledError, convertAudio, encodableAudioTargets, probeAudio } from '../../../lib/audioEngine';
+import type { AudioInfo, AudioTarget } from '../../../lib/audioEngine';
 
 const PRESETS = [
-  { bitrate: 64_000, label: 'Small (64 kbps) — voice, podcasts' },
-  { bitrate: 128_000, label: 'Balanced (128 kbps) — general music' },
-  { bitrate: 192_000, label: 'High (192 kbps) — closer to source quality' },
+  { bitrate: 128_000, label: 'High', hint: '128 kb/s — music, near-transparent' },
+  { bitrate: 96_000, label: 'Balanced', hint: '96 kb/s — music and podcasts' },
+  { bitrate: 64_000, label: 'Small', hint: '64 kb/s — speech, voice notes' },
+  { bitrate: 32_000, label: 'Smallest', hint: '32 kb/s — speech only' },
 ];
 
 export default function AudioCompressTool() {
   const [file, setFile] = useState<File | null>(null);
-  const [buffer, setBuffer] = useState<AudioBuffer | null>(null);
-  const [bitrate, setBitrate] = useState(128_000);
+  const [info, setInfo] = useState<AudioInfo | null>(null);
+  const [bitrate, setBitrate] = useState(96_000);
+  const [codecs, setCodecs] = useState<AudioTarget[]>([]);
+  const [codec, setCodec] = useState<AudioTarget>('opus');
   const [busy, setBusy] = useState(false);
   const [progress, setProgress] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<{ url: string; name: string; size: number } | null>(null);
+  const abortRef = useRef<AbortController | null>(null);
 
-  const compressedSupported = Boolean(pickCompressedMimeType());
+  useEffect(() => {
+    void encodableAudioTargets().then((t) => {
+      const lossy = (['opus', 'aac'] as const).filter((c) => t.has(c));
+      setCodecs(lossy);
+      if (lossy.length) setCodec(lossy[0]);
+    });
+  }, []);
+
+  function reset() {
+    abortRef.current?.abort();
+    setFile(null);
+    setInfo(null);
+    setResult(null);
+    setError(null);
+  }
 
   async function handleFile(files: File[]) {
     const f = files[0];
-    setFile(f);
-    setResult(null);
-    setError(null);
-    setBuffer(null);
+    reset();
     try {
-      setBuffer(await decodeAudioFile(f));
-    } catch {
-      setError('Could not decode this audio file. Try a WAV, MP3 or OGG file.');
+      const probed = await probeAudio(f);
+      setInfo(probed);
+      setFile(f);
+    } catch (e) {
+      setError(e instanceof Error && e.message.includes('no audio') ? e.message : 'Could not read this audio file. Try MP3, WAV, OGG, FLAC or M4A.');
     }
   }
 
   async function compress() {
-    if (!file || !buffer) return;
-    if (!compressedSupported) {
-      setError('This browser doesn\u2019t support compressed audio recording.');
-      return;
-    }
+    if (!file) return;
+    const controller = new AbortController();
+    abortRef.current = controller;
     setBusy(true);
     setError(null);
+    setResult(null);
     setProgress(0);
     try {
-      const mimeType = pickCompressedMimeType()!;
-      const blob = await encodeBufferCompressed(buffer, { bitrate, onProgress: setProgress });
+      const out = await convertAudio(file, { target: codec, bitrate, onProgress: setProgress, signal: controller.signal });
       const base = file.name.replace(/\.[^.]+$/, '');
-      setResult({ url: URL.createObjectURL(blob), name: `${base}-compressed.${extensionForMime(mimeType)}`, size: blob.size });
+      setResult({ url: URL.createObjectURL(out.blob), name: `${base}-compressed.${out.extension}`, size: out.blob.size });
     } catch (e) {
+      if (e instanceof CancelledError) return;
       setError(e instanceof Error ? e.message : 'Could not compress this audio file.');
     } finally {
       setBusy(false);
+      abortRef.current = null;
     }
+  }
+
+  const estimate = info ? (bitrate * info.durationSec) / 8 : 0;
+
+  if (!codecs.length && file) {
+    return <ErrorMessage>This browser can’t encode compressed audio (Opus or AAC). Try a recent version of Chrome, Edge, Firefox or Safari.</ErrorMessage>;
   }
 
   return (
     <div className="space-y-4">
       {!file ? (
-        <FileDropzone accept="audio/*" onFiles={handleFile} hint="WAV, MP3, OGG or M4A" />
+        <FileDropzone accept="audio/*,.mp3,.m4a,.flac,.ogg,.opus,.wav,.aac" onFiles={handleFile} hint="MP3, WAV, OGG, FLAC, M4A or Opus" />
       ) : (
-        <div className="flex items-center justify-between rounded-md border border-line bg-paper-dim p-3 text-sm">
-          <span className="truncate">{file.name} · {formatBytes(file.size)}{buffer && ` · ${formatDuration(buffer.duration)}`}</span>
-          <button onClick={() => { setFile(null); setBuffer(null); setResult(null); }} className="text-xs font-medium text-workshop hover:underline">Remove</button>
+        <div className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-line bg-paper-dim p-3 text-sm">
+          <span className="truncate">{file.name} · {formatBytes(file.size)}{info && ` · ${formatDuration(info.durationSec)} · ~${Math.round(info.bitrate / 1000)} kb/s`}</span>
+          <button onClick={reset} className="text-xs font-medium text-workshop hover:underline">Remove</button>
         </div>
       )}
 
-      {buffer && (
+      {info && (
         <>
-          <div className="space-y-1.5">
+          <fieldset className="space-y-1.5" disabled={busy}>
+            <legend className="mb-1 text-xs font-medium text-ink/60">Quality</legend>
             {PRESETS.map((p) => (
-              <label key={p.bitrate} className="flex items-center gap-2 text-xs text-ink/60">
+              <label key={p.bitrate} className="flex items-center gap-2 text-sm">
                 <input type="radio" name="bitrate" checked={bitrate === p.bitrate} onChange={() => setBitrate(p.bitrate)} />
-                {p.label}
+                {p.label} <span className="text-xs text-ink/50">— {p.hint}</span>
               </label>
             ))}
-          </div>
-          {!compressedSupported && (
-            <p className="text-xs text-warn">This browser doesn't support the compressed-audio recording this tool relies on.</p>
+          </fieldset>
+          {codecs.length > 1 && (
+            <label className="flex items-center gap-2 text-xs text-ink/60">
+              Format
+              <select value={codec} disabled={busy} onChange={(e) => setCodec(e.target.value as AudioTarget)} className="rounded-md border border-line bg-paper px-2 py-1 text-xs text-ink">
+                <option value="opus">Opus (.ogg) — best quality for its size</option>
+                <option value="aac">AAC (.m4a) — plays everywhere</option>
+              </select>
+            </label>
           )}
-          <p className="text-xs text-ink/50">Runs in real time — about {formatDuration(buffer.duration)} to finish.</p>
-          <Button onClick={compress} disabled={busy || !compressedSupported}>{busy ? 'Compressing…' : 'Compress'}</Button>
-          {busy && <ProgressBar value={progress * 100} label="Encoding" />}
+          <p className="text-xs text-ink/50">Estimated result: about {formatBytes(estimate)} (now {formatBytes(file!.size)}).</p>
+          <div className="flex flex-wrap items-center gap-2">
+            <Button onClick={compress} disabled={busy}>{busy ? 'Compressing…' : 'Compress'}</Button>
+            {busy && <Button variant="secondary" onClick={() => abortRef.current?.abort()}>Cancel</Button>}
+          </div>
+          {busy && <ProgressBar value={progress * 100} label={`Encoding… ${Math.round(progress * 100)}%`} />}
         </>
       )}
       {error && <ErrorMessage>{error}</ErrorMessage>}
       {result && file && (
-        <div className="flex items-center justify-between rounded-md border border-line bg-paper-dim p-3">
-          <span className="text-sm">
-            {result.name} · {formatBytes(result.size)}
-            <span className="ml-1 text-ink/40">
-              ({result.size < file.size ? `-${Math.round((1 - result.size / file.size) * 100)}%` : 'no smaller'})
+        result.size < file.size ? (
+          <div className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-line bg-paper-dim p-3">
+            <span className="text-sm">
+              {result.name} · {formatBytes(result.size)} <span className="text-signal">(−{Math.round((1 - result.size / file.size) * 100)}%)</span>
             </span>
-          </span>
-          <DownloadButton url={result.url} filename={result.name} />
-        </div>
+            <DownloadButton url={result.url} filename={result.name} />
+          </div>
+        ) : (
+          <ErrorMessage>
+            This file is already smaller than that quality setting ({formatBytes(result.size)} vs. {formatBytes(file.size)}), so keep your
+            original or pick a lower quality.
+          </ErrorMessage>
+        )
       )}
     </div>
   );

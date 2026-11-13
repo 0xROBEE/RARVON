@@ -1,6 +1,6 @@
 import {
   Input, Output, Conversion, BlobSource, BufferTarget,
-  MP4, WEBM, Mp4OutputFormat, WebMOutputFormat,
+  MP4, QTFF, WEBM, MATROSKA, Mp4OutputFormat, WebMOutputFormat,
   canEncodeVideo, canEncode,
   QUALITY_HIGH, QUALITY_MEDIUM, QUALITY_LOW,
 } from 'mediabunny';
@@ -48,21 +48,32 @@ export interface VideoInfo {
   width: number;
   height: number;
   hasAudio: boolean;
+  /** Container to write results in: MP4/MOV sources → mp4; WebM, and MKV holding WebM codecs → webm. */
   container: OutputContainer | null;
+  videoCodec: string | null;
+  /** The file's actual container. */
+  sourceFormat: 'mp4' | 'mov' | 'webm' | 'mkv';
+  /** Average total bitrate of the file in bits/s. */
+  bitrate: number;
+}
+
+export class VideoCancelledError extends Error {
+  constructor() {
+    super('Cancelled.');
+  }
 }
 
 function makeInput(file: File): Input {
-  return new Input({ source: new BlobSource(file), formats: [MP4, WEBM] });
+  return new Input({ source: new BlobSource(file), formats: [MP4, QTFF, WEBM, MATROSKA] });
 }
 
 export async function probeVideo(file: File): Promise<VideoInfo> {
   const input = makeInput(file);
   const canRead = await input.canRead();
   if (!canRead) {
-    throw new Error("This browser couldn't read this file as MP4 or WebM. Other video containers aren't supported yet — see the tool's FAQ for why.");
+    throw new Error("This browser couldn't read this video. MP4, MOV, WebM and MKV files are supported — see the tool's FAQ for why other formats aren't.");
   }
   const format = await input.getFormat();
-  const container: OutputContainer | null = format === MP4 ? 'mp4' : format === WEBM ? 'webm' : null;
   const [videoTracks, audioTracks, duration] = await Promise.all([
     input.getVideoTracks(),
     input.getAudioTracks(),
@@ -70,8 +81,16 @@ export async function probeVideo(file: File): Promise<VideoInfo> {
   ]);
   const track = videoTracks[0];
   if (!track) throw new Error("This file doesn't have a video track.");
-  const [width, height] = await Promise.all([track.getCodedWidth(), track.getCodedHeight()]);
-  return { durationSec: duration, width, height, hasAudio: audioTracks.length > 0, container };
+  const [width, height] = await Promise.all([track.getDisplayWidth(), track.getDisplayHeight()]);
+  const videoCodec = track.codec;
+  const webmCodec = videoCodec === 'vp8' || videoCodec === 'vp9' || videoCodec === 'av1';
+  const container: OutputContainer | null =
+    format === MP4 || format === QTFF ? 'mp4' : format === WEBM ? 'webm' : format === MATROSKA ? (webmCodec ? 'webm' : 'mp4') : null;
+  return {
+    durationSec: duration, width, height, hasAudio: audioTracks.length > 0, container, videoCodec,
+    sourceFormat: format === QTFF ? 'mov' : format === WEBM ? 'webm' : format === MATROSKA ? 'mkv' : 'mp4',
+    bitrate: duration > 0 ? (file.size * 8) / duration : 0,
+  };
 }
 
 function outputFormatFor(container: OutputContainer) {
@@ -91,7 +110,11 @@ export interface RunConversionOptions {
   trim?: { start?: number; end?: number };
   resize?: { width: number; height: number };
   quality?: 'high' | 'medium' | 'low';
+  /** Explicit target bitrates in bits/s (take precedence over `quality`). */
+  videoBitrate?: number;
+  audioBitrate?: number;
   onProgress?: (fraction: number) => void;
+  signal?: AbortSignal;
 }
 
 const QUALITY_MAP = { high: QUALITY_HIGH, medium: QUALITY_MEDIUM, low: QUALITY_LOW };
@@ -100,14 +123,17 @@ export async function runVideoConversion(file: File, options: RunConversionOptio
   const input = makeInput(file);
   const canRead = await input.canRead();
   if (!canRead) {
-    throw new Error("This browser couldn't read this file as MP4 or WebM.");
+    throw new Error("This browser couldn't read this video file.");
   }
 
   const target = new BufferTarget();
   const output = new Output({ format: outputFormatFor(options.container), target });
 
-  const needsVideoOptions = Boolean(options.forceVideoCodec || options.resize || options.quality);
-  const needsAudioOptions = Boolean(options.quality);
+  const needsVideoOptions = Boolean(options.forceVideoCodec || options.resize || options.quality || options.videoBitrate);
+  // MP4 players (Safari/QuickTime, many TVs) expect AAC audio; when a
+  // conversion re-encodes for MP4 anyway, make sure audio ends up as AAC.
+  const wantAac = options.container === 'mp4' && Boolean(options.forceVideoCodec) && (await canEncodeAac());
+  const needsAudioOptions = Boolean(options.quality || options.audioBitrate || wantAac);
 
   const conversion = await Conversion.init({
     input,
@@ -117,12 +143,15 @@ export async function runVideoConversion(file: File, options: RunConversionOptio
       width: options.resize?.width,
       height: options.resize?.height,
       fit: options.resize ? 'contain' : undefined,
-      quality: options.quality ? QUALITY_MAP[options.quality] : undefined,
+      bitrate: options.videoBitrate ?? (options.quality ? QUALITY_MAP[options.quality] : undefined),
+      forceTranscode: options.videoBitrate ? true : undefined,
     } : undefined,
     audio: needsAudioOptions ? {
-      quality: options.quality ? QUALITY_MAP[options.quality] : undefined,
+      codec: wantAac ? 'aac' : undefined,
+      bitrate: options.audioBitrate ?? (options.quality ? QUALITY_MAP[options.quality] : undefined),
     } : undefined,
     trim: options.trim,
+    showWarnings: false,
   });
 
   if (!conversion.isValid) {
@@ -130,8 +159,35 @@ export async function runVideoConversion(file: File, options: RunConversionOptio
   }
 
   conversion.onProgress = (fraction) => options.onProgress?.(fraction);
-  await conversion.execute();
+  const onAbort = () => void conversion.cancel();
+  options.signal?.addEventListener('abort', onAbort);
+  try {
+    await conversion.execute();
+  } catch (e) {
+    if (options.signal?.aborted) throw new VideoCancelledError();
+    throw e;
+  } finally {
+    options.signal?.removeEventListener('abort', onAbort);
+  }
+  if (options.signal?.aborted) throw new VideoCancelledError();
 
   if (!target.buffer) throw new Error('Conversion finished but produced no output.');
   return new Blob([target.buffer], { type: options.container === 'mp4' ? 'video/mp4' : 'video/webm' });
+}
+
+/**
+ * Target bitrates for compression, derived from the source instead of fixed
+ * presets: a fixed "low quality" bitrate can be *higher* than an already
+ * efficient source, which made compressed files grow. Audio is budgeted at
+ * up to 128 kb/s and the rest is assumed to be video.
+ */
+export function compressionBitrates(info: VideoInfo, level: 'high' | 'medium' | 'low', outPixels?: number) {
+  const audio = info.hasAudio ? Math.min(128_000, info.bitrate * 0.15) : 0;
+  const sourceVideo = Math.max(50_000, info.bitrate - audio);
+  const factor = { high: 0.7, medium: 0.45, low: 0.25 }[level];
+  // When the resolution is also reduced, scale the budget with the pixel count.
+  const pixelScale = outPixels ? Math.min(1, outPixels / (info.width * info.height)) : 1;
+  const video = Math.max(80_000, Math.round(sourceVideo * factor * Math.max(pixelScale, 0.35)));
+  const audioOut = info.hasAudio ? { high: 128_000, medium: 96_000, low: 64_000 }[level] : undefined;
+  return { video, audio: audioOut && audio > 0 ? Math.min(audioOut, Math.max(48_000, audio)) : audioOut };
 }
