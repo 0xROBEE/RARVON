@@ -13,7 +13,7 @@ import type { AudioCodec } from 'mediabunny';
  * MP4), it is copied without re-encoding — instant and lossless.
  */
 
-export type AudioTarget = 'opus' | 'aac' | 'wav';
+export type AudioTarget = 'opus' | 'aac' | 'mp3' | 'wav';
 
 export interface AudioTargetInfo {
   value: AudioTarget;
@@ -27,6 +27,7 @@ export interface AudioTargetInfo {
 export const AUDIO_TARGETS: AudioTargetInfo[] = [
   { value: 'opus', label: 'Opus (.ogg) — small, modern', extension: 'ogg', mime: 'audio/ogg', codec: 'opus' },
   { value: 'aac', label: 'AAC (.m4a) — plays everywhere', extension: 'm4a', mime: 'audio/mp4', codec: 'aac' },
+  { value: 'mp3', label: 'MP3 — the most compatible', extension: 'mp3', mime: 'audio/mpeg', codec: 'mp3' },
   { value: 'wav', label: 'WAV — lossless, large', extension: 'wav', mime: 'audio/wav', codec: 'pcm-s16', lossless: true },
 ];
 
@@ -35,8 +36,11 @@ let encodable: Promise<Set<AudioTarget>> | null = null;
 export function encodableAudioTargets(): Promise<Set<AudioTarget>> {
   encodable ??= (async () => {
     const set = new Set<AudioTarget>(['wav']);
+    // MP3: browsers have no MP3 encoder, so a WebAssembly build of LAME is
+    // loaded on demand (see ensureMp3Encoder) — available wherever WASM is.
+    if (typeof WebAssembly === 'object') set.add('mp3');
     for (const t of AUDIO_TARGETS) {
-      if (t.value === 'wav') continue;
+      if (t.value === 'wav' || t.value === 'mp3') continue;
       if (await canEncodeAudio(t.codec).catch(() => false)) set.add(t.value);
     }
     return set;
@@ -103,7 +107,27 @@ function containerForCopy(codec: string | null) {
 function formatFor(target: AudioTarget) {
   if (target === 'opus') return new OggOutputFormat();
   if (target === 'aac') return new Mp4OutputFormat();
+  if (target === 'mp3') return new Mp3OutputFormat();
   return new WavOutputFormat();
+}
+
+let mp3Ready: Promise<void> | null = null;
+/**
+ * Loads and registers the MP3 encoder (LAME compiled to WebAssembly, LGPL,
+ * wrapped by @mediabunny/mp3-encoder, MPL-2.0). It lives in its own
+ * lazily-loaded chunk, fetched only the first time someone exports MP3, and is
+ * used unmodified — see THIRD_PARTY_LICENSES.md.
+ */
+function ensureMp3Encoder(): Promise<void> {
+  mp3Ready ??= (async () => {
+    if (await canEncodeAudio('mp3').catch(() => false)) return; // a browser with native MP3 encoding
+    const { registerMp3Encoder } = await import('@mediabunny/mp3-encoder');
+    registerMp3Encoder();
+  })();
+  mp3Ready.catch(() => {
+    mp3Ready = null;
+  });
+  return mp3Ready;
 }
 
 /**
@@ -138,6 +162,8 @@ export async function convertAudio(file: File, options: AudioJobOptions): Promis
     format = formatFor(t.value);
     ({ extension, mime, codec } = t);
   }
+  if (codec === 'mp3') await ensureMp3Encoder();
+
   const target = new BufferTarget();
   const output = new Output({ format, target });
   const conversion = await Conversion.init({

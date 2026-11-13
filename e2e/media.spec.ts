@@ -215,11 +215,11 @@ test.describe('audio tools', () => {
     expect(info.duration).toBeCloseTo(1.5, 1);
   });
 
-  test('convert to AAC, Opus and WAV much faster than real time', async ({ page }) => {
+  test('convert to MP3, AAC, Opus and WAV much faster than real time', async ({ page }) => {
     await openTool(page, '/tools/audio/convert');
     const src = makeWav(20);
     await upload(page, src);
-    const targets = [['AAC', 'm4a', 'audio/mp4'], ['Opus', 'ogg', 'audio/ogg'], ['WAV', 'wav', 'audio/wav']] as const;
+    const targets = [['MP3', 'mp3', 'audio/mpeg'], ['AAC', 'm4a', 'audio/mp4'], ['Opus', 'ogg', 'audio/ogg'], ['WAV', 'wav', 'audio/wav']] as const;
     for (const [label, ext, mime] of targets) {
       await page.getByLabel(new RegExp(`^${label}`)).check();
       const started = Date.now();
@@ -229,6 +229,7 @@ test.describe('audio tools', () => {
       expect(out.name).toBe(`tone.${ext}`);
       expect((await mediaInfo(page, out.buffer, mime)).duration, label).toBeCloseTo(20, 0);
       if (ext !== 'wav') expect(out.buffer.length).toBeLessThan(src.buffer.length / 4);
+      if (ext === 'mp3') expect(out.buffer[0] === 0xff || out.buffer.subarray(0, 3).toString('latin1') === 'ID3').toBe(true);
     }
   });
 

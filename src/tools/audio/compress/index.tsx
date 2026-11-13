@@ -30,7 +30,7 @@ export default function AudioCompressTool() {
 
   useEffect(() => {
     void encodableAudioTargets().then((t) => {
-      const lossy = (['opus', 'aac'] as const).filter((c) => t.has(c));
+      const lossy = (['opus', 'aac', 'mp3'] as const).filter((c) => t.has(c));
       setCodecs(lossy);
       if (lossy.length) setCodec(lossy[0]);
     });
@@ -109,8 +109,9 @@ export default function AudioCompressTool() {
             <label className="flex items-center gap-2 text-xs text-ink/60">
               Format
               <select value={codec} disabled={busy} onChange={(e) => setCodec(e.target.value as AudioTarget)} className="rounded-md border border-line bg-paper px-2 py-1 text-xs text-ink">
-                <option value="opus">Opus (.ogg) — best quality for its size</option>
-                <option value="aac">AAC (.m4a) — plays everywhere</option>
+                {codecs.includes('opus') && <option value="opus">Opus (.ogg) — best quality for its size</option>}
+                {codecs.includes('aac') && <option value="aac">AAC (.m4a) — plays everywhere</option>}
+                {codecs.includes('mp3') && <option value="mp3">MP3 — the most compatible</option>}
               </select>
             </label>
           )}

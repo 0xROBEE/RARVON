@@ -21,6 +21,7 @@ tools that run entirely in your browser.
 - **pdf-lib** (MIT) — create/edit PDFs · **pdfjs-dist** (Apache-2.0) — render PDF pages
 - **@pdf-lib/fontkit** (MIT) + **bidi-js** (MIT) + **Noto Sans / Noto Sans Arabic** (OFL-1.1, via fontsource) — font
   shaping, bidirectional layout and fonts for PDF Editor text in any direction
+- **@mediabunny/mp3-encoder** (MPL-2.0 wrapper around LAME, LGPL) — MP3 export, its own lazily-loaded chunk
 - **mediabunny** (MPL-2.0) — MP4/WebM demux/mux on top of the browser's WebCodecs, for the video tools
 - **tesseract.js** + **tesseract.js-core** (Apache-2.0) — OCR engine (WebAssembly) for Image to Text, with
   language models from **@tesseract.js-data/*** (Apache-2.0, Tesseract `tessdata_best` integer models)
@@ -35,7 +36,7 @@ No backend. Every tool runs in the browser.
 | PDF | Editor (text incl. Arabic/RTL, draw, highlight, underline, shapes/arrows, images, sticky-note comments, signature, redact; reorder/rotate/duplicate/delete/insert blank pages), Merge, Split, Compress, Rotate, Extract pages, Delete pages, Reorder, PDF→Images, Images→PDF, Metadata, Page numbers, Watermark, Sign |
 | Image | **Image to Text (OCR)**, Convert, Compress, Resize (interactive), Crop, Rotate/flip, Metadata viewer, Remove EXIF |
 | Video (experimental) | Trim, Change resolution, Convert (MOV/MKV/MP4/WebM → MP4 or WebM), Compress (source-relative bitrate, optional resolution cap) — WebCodecs via Mediabunny, cancellable, 250 MB limit |
-| Audio | Trim (WAV), Convert (AAC .m4a / Opus .ogg / WAV), Compress (Opus or AAC, 32–128 kb/s), Extract audio from video (direct copy or re-encode) — Mediabunny + WebCodecs, much faster than real time |
+| Audio | Trim (WAV), Convert (MP3 / AAC .m4a / Opus .ogg / WAV), Compress (Opus, AAC or MP3, 32–128 kb/s), Extract audio from video (direct copy or re-encode) — Mediabunny + WebCodecs, much faster than real time |
 | Developer | JSON format/minify, Base64, URL encode, UUID, Hash, Timestamp, Color, JWT decoder, Regex tester |
 | Text | Word counter, Case converter, Text cleaner, Remove duplicate lines, Line sorter |
 | Utilities | File Compressor (create ZIP), QR code, Password, Random number, URL shortener (UI only — needs a server) |
@@ -60,7 +61,6 @@ digit-heavy sample); handwriting is not supported; Sorani Kurdish has no package
 
 ### Known limitations
 
-- No MP3 output: browsers have no MP3 encoder (would need the LGPL LAME encoder); AAC is offered instead.
 - PDF Editor: Arabic-script text is exported as shaped vector outlines (exact, but not selectable); CJK/Devanagari
   text as an image of the text. Existing PDF text can't be edited, only annotated on top.
 - Compress PDF rasterizes pages (text stops being selectable) and helps mainly with scanned/image-heavy PDFs.

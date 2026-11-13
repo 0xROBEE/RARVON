@@ -31,7 +31,7 @@ export default function AudioConvertTool() {
   useEffect(() => {
     void encodableAudioTargets().then((t) => {
       setTargets(t);
-      setTarget(t.has('aac') ? 'aac' : t.has('opus') ? 'opus' : 'wav');
+      setTarget(t.has('mp3') ? 'mp3' : t.has('aac') ? 'aac' : t.has('opus') ? 'opus' : 'wav');
     });
   }, []);
 
@@ -116,7 +116,9 @@ export default function AudioConvertTool() {
             ))}
           </fieldset>
           {fallback && <p className="text-xs text-ink/50">This file can be decoded but not re-packaged by the converter, so only WAV output is available for it.</p>}
-          <p className="text-xs text-ink/50">MP3 output isn’t offered: browsers have no built-in MP3 encoder. AAC (.m4a) plays everywhere MP3 does.</p>
+          {target === 'mp3' && !fallback && (
+            <p className="text-xs text-ink/50">The first MP3 export downloads the MP3 encoder once (about 120 KB compressed); it runs on your device like everything else.</p>
+          )}
           <div className="flex flex-wrap items-center gap-2">
             <Button onClick={convert} disabled={busy}>{busy ? 'Converting…' : 'Convert'}</Button>
             {busy && <Button variant="secondary" onClick={() => abortRef.current?.abort()}>Cancel</Button>}
