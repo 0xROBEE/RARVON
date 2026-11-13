@@ -1,0 +1,85 @@
+@import "tailwindcss";
+
+@theme {
+  --font-display: "Space Grotesk", "Inter", sans-serif;
+  --font-body: "Inter", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+
+  /* Semantic tokens — light values (default / [data-theme="light"]).
+     Every component reads these by name (bg-paper, text-ink, border-line, ...),
+     never a literal color, so a theme is just a different set of values for
+     the same names. See the [data-theme="dark"] block below for the dark set. */
+  --color-ink: #14171c; /* primary text; also used as the "strong" bg for high-contrast chips/buttons */
+  --color-paper: #faf9f6; /* page background; also used as text color on --color-ink surfaces */
+  --color-paper-dim: #f0efe9; /* secondary surface (cards, inputs, subtle panels) */
+  --color-elevated: #ffffff; /* elevated surface (modals, popovers) — should stand apart from paper */
+  --color-grid: #e3e1d8; /* decorative grid lines */
+  --color-workshop: #5b56e8; /* accent */
+  --color-workshop-dim: #efeeff; /* accent-tinted surface */
+  --color-signal: #2f8f6e; /* success */
+  --color-signal-dim: #e6f3ee; /* success-tinted surface */
+  --color-warn: #b5601f; /* warning / error */
+  --color-warn-dim: #fbeee1; /* warning-tinted surface */
+  --color-line: #d9d7cc; /* borders */
+}
+
+/* Dark theme — same token names, different values. Because every Tailwind
+   utility Tailwind v4 generates for these colors compiles to var(--color-x),
+   overriding the custom properties here re-themes the whole app without
+   touching a single component file. */
+:root[data-theme='dark'] {
+  --color-ink: #ece9e1;
+  --color-paper: #131519;
+  --color-paper-dim: #1d2026;
+  --color-elevated: #23262d;
+  --color-grid: #23262d;
+  --color-workshop: #8f89ff;
+  --color-workshop-dim: #221f3d;
+  --color-signal: #55cc9f;
+  --color-signal-dim: #123227;
+  --color-warn: #e79a63;
+  --color-warn-dim: #372316;
+  --color-line: #2b2f37;
+  color-scheme: dark;
+}
+
+:root[data-theme='light'] {
+  color-scheme: light;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background-color: var(--color-paper);
+  color: var(--color-ink);
+  font-family: var(--font-body);
+  transition: background-color 150ms ease, color 150ms ease;
+}
+
+.bg-grid-paper {
+  background-image:
+    linear-gradient(var(--color-grid) 1px, transparent 1px),
+    linear-gradient(90deg, var(--color-grid) 1px, transparent 1px);
+  background-size: 28px 28px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+::selection {
+  background-color: var(--color-workshop);
+  color: var(--color-paper);
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-workshop);
+  outline-offset: 2px;
+}
