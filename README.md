@@ -86,8 +86,12 @@ To add a tool:
 2. Add its metadata to `src/lib/toolRegistry.ts`
 3. Register the lazy import in `src/lib/toolComponents.tsx`
 
-Show results with `DownloadButton` — it makes the result available for chaining and releases the blob URL
-when it's no longer used.
+Build the tool from the shared parts in `src/components/tool` so it matches every other tool:
+`ResultCard` (result + Download; makes the result available to "Continue with" and releases its blob URL),
+`OptionCards` (choices), `CopyButton` (copy with "Copied" feedback), `ActionBar` (main action; sticky on phones)
+and `SizeDelta`. Add the tool to `TOOLS_FOR_KIND` in `src/lib/fileKinds.ts` for each file type it accepts, so the
+home page's drop area and "Continue with" can offer it. Use `text-ink-2` / `text-ink-3` for secondary text —
+they pass contrast in both themes.
 
 ## Why the URL shortener isn't real
 

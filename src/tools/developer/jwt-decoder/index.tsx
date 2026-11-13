@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import ErrorMessage from '../../../components/ErrorMessage';
+import { CopyButton } from '../../../components/tool';
 
 function base64UrlDecode(segment: string): string {
   const padded = segment.replace(/-/g, '+').replace(/_/g, '/').padEnd(segment.length + ((4 - (segment.length % 4)) % 4), '=');
@@ -57,7 +58,7 @@ export default function JwtDecoder() {
   return (
     <div className="space-y-4">
       <div>
-        <label htmlFor="jwt-input" className="mb-1.5 block text-xs font-medium text-ink/60">Paste a JWT</label>
+        <label htmlFor="jwt-input" className="mb-1.5 block text-xs font-medium text-ink-2">Paste a JWT</label>
         <textarea
           id="jwt-input"
           value={token}
@@ -77,26 +78,26 @@ export default function JwtDecoder() {
             <div className="rounded-md border border-line bg-paper-dim p-3 text-xs">
               {timeClaims.map((c) => (
                 <p key={c.key}>
-                  <span className="font-mono text-ink/50">{c.key}</span> → {c.value}
+                  <span className="font-mono text-ink-3">{c.key}</span> → {c.value}
                 </p>
               ))}
             </div>
           )}
           <div>
             <div className="mb-1.5 flex items-center justify-between">
-              <span className="text-xs font-medium text-ink/60">Header</span>
-              <button onClick={() => navigator.clipboard.writeText(decoded.header)} className="text-xs font-medium text-workshop hover:underline">Copy</button>
+              <span className="text-xs font-medium text-ink-2">Header</span>
+              <CopyButton text={decoded.header} label="Copy" />
             </div>
             <pre className="overflow-auto rounded-md border border-line bg-paper-dim px-3 py-2 font-mono text-xs leading-relaxed">{decoded.header}</pre>
           </div>
           <div>
             <div className="mb-1.5 flex items-center justify-between">
-              <span className="text-xs font-medium text-ink/60">Payload</span>
-              <button onClick={() => navigator.clipboard.writeText(decoded.payload)} className="text-xs font-medium text-workshop hover:underline">Copy</button>
+              <span className="text-xs font-medium text-ink-2">Payload</span>
+              <CopyButton text={decoded.payload} label="Copy" />
             </div>
             <pre className="overflow-auto rounded-md border border-line bg-paper-dim px-3 py-2 font-mono text-xs leading-relaxed">{decoded.payload}</pre>
           </div>
-          <p className="text-xs text-ink/40">
+          <p className="text-xs text-ink-3">
             {decoded.signaturePresent ? 'A signature segment is present but not verified here.' : 'No signature segment was found.'}
           </p>
         </div>

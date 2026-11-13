@@ -3,9 +3,9 @@ import type { PointerEvent as ReactPointerEvent } from 'react';
 import { PDFDocument } from 'pdf-lib';
 import FileDropzone from '../../../components/FileDropzone';
 import Button from '../../../components/Button';
-import DownloadButton from '../../../components/DownloadButton';
 import ErrorMessage from '../../../components/ErrorMessage';
 import { renderAllThumbnails } from '../../../lib/pdfjs';
+import { ResultCard, ActionBar } from '../../../components/tool';
 
 interface PageItem { originalIndex: number; thumb: string }
 
@@ -118,11 +118,11 @@ export default function ReorderPdf() {
         </div>
       )}
 
-      {loading && <p className="text-xs text-ink/40">Rendering pages…</p>}
+      {loading && <p className="text-xs text-ink-3">Rendering pages…</p>}
 
       {pages.length > 0 && (
         <>
-          <p className="text-xs text-ink/50">Drag thumbnails to reorder pages.</p>
+          <p className="text-xs text-ink-3">Drag thumbnails to reorder pages.</p>
           <div className="grid grid-cols-3 gap-3 sm:grid-cols-4">
             {pages.map((p, i) => (
               <div
@@ -134,19 +134,16 @@ export default function ReorderPdf() {
                 className={`select-none rounded-md border p-1.5 ${draggingIndex === i ? 'touch-none cursor-grabbing opacity-50' : 'cursor-grab border-line'} ${dragOverIndex === i && draggingIndex !== i ? 'border-workshop' : 'border-line bg-paper'}`}
               >
                 <img src={p.thumb} alt={`Page ${p.originalIndex + 1}`} className="pointer-events-none w-full rounded" draggable={false} />
-                <p className="mt-1 text-center text-[10px] text-ink/50">Page {i + 1} (was {p.originalIndex + 1})</p>
+                <p className="mt-1 text-center text-[10px] text-ink-3">Page {i + 1} (was {p.originalIndex + 1})</p>
               </div>
             ))}
           </div>
-          <Button onClick={exportPdf} disabled={busy}>{busy ? 'Saving…' : 'Save reordered PDF'}</Button>
+          <ActionBar><Button onClick={exportPdf} disabled={busy}>{busy ? 'Saving…' : 'Save reordered PDF'}</Button></ActionBar>
         </>
       )}
       {error && <ErrorMessage>{error}</ErrorMessage>}
       {result && (
-        <div className="flex items-center justify-between rounded-md border border-line bg-paper-dim p-3">
-          <span className="text-sm">{result.name}</span>
-          <DownloadButton url={result.url} filename={result.name} />
-        </div>
+        <ResultCard url={result.url} filename={result.name}>{result.name}</ResultCard>
       )}
     </div>
   );

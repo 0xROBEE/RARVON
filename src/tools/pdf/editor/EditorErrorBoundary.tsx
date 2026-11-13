@@ -25,7 +25,7 @@ export default class EditorErrorBoundary extends Component<Props, State> {
       return (
         <div className="flex min-h-[50vh] flex-col items-center justify-center gap-3 rounded-lg border border-line bg-paper-dim p-8 text-center">
           <p className="font-display text-sm font-semibold text-ink">Something went wrong in the editor</p>
-          <p className="max-w-sm text-xs text-ink/60">
+          <p className="max-w-sm text-xs text-ink-2">
             An unexpected error interrupted the editor. Your file was never uploaded anywhere, so nothing was
             lost outside this tab — reloading and starting over is the safest next step.
           </p>

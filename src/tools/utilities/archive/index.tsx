@@ -2,10 +2,10 @@ import { useState } from 'react';
 import JSZip from 'jszip';
 import FileDropzone from '../../../components/FileDropzone';
 import Button from '../../../components/Button';
-import DownloadButton from '../../../components/DownloadButton';
 import ErrorMessage from '../../../components/ErrorMessage';
 import ProgressBar from '../../../components/ProgressBar';
 import { formatBytes } from '../../../lib/imageUtils';
+import { ResultCard, ActionBar } from '../../../components/tool';
 
 interface Entry {
   id: string;
@@ -108,7 +108,7 @@ export default function ArchiveTool() {
                   className="min-w-0 flex-1 rounded border border-line bg-paper px-2 py-1 text-sm"
                   aria-label={`Name for ${e.file.name}`}
                 />
-                <span className="shrink-0 text-xs text-ink/40">{formatBytes(e.file.size)}</span>
+                <span className="shrink-0 text-xs text-ink-3">{formatBytes(e.file.size)}</span>
                 <button onClick={() => removeEntry(e.id)} className="shrink-0 rounded px-1.5 py-1 text-xs text-warn hover:bg-paper" aria-label={`Remove ${e.file.name}`}>
                   ✕
                 </button>
@@ -116,16 +116,16 @@ export default function ArchiveTool() {
             ))}
           </ul>
 
-          <p className="text-xs text-ink/50">
+          <p className="text-xs text-ink-3">
             {entries.length} file{entries.length !== 1 ? 's' : ''} · {formatBytes(totalInputSize)} total before archiving
           </p>
 
           <div className="flex flex-wrap items-end gap-3">
-            <label className="text-xs text-ink/60">
+            <label className="text-xs text-ink-2">
               Archive name
               <input value={archiveName} onChange={(e) => setArchiveName(e.target.value)} className="mt-1 block w-48 rounded-md border border-line bg-paper px-2 py-1.5 text-sm" />
             </label>
-            <label className="text-xs text-ink/60">
+            <label className="text-xs text-ink-2">
               Compression
               <select value={level} onChange={(e) => setLevel(e.target.value as Level)} className="mt-1 block rounded-md border border-line bg-paper px-2 py-1.5 text-sm">
                 {LEVELS.map((l) => (
@@ -135,29 +135,24 @@ export default function ArchiveTool() {
             </label>
           </div>
 
-          <p className="text-xs text-ink/40">
+          <p className="text-xs text-ink-3">
             Already-compressed files (JPG, MP4, another ZIP) won't shrink much no matter the level — ZIP can't
             compress what's already compressed.
           </p>
 
-          <Button onClick={createZip} disabled={busy}>{busy ? 'Building archive…' : 'Create ZIP'}</Button>
+          <ActionBar><Button onClick={createZip} disabled={busy}>{busy ? 'Building archive…' : 'Create ZIP'}</Button></ActionBar>
           {busy && <ProgressBar value={progress} label="Compressing files" />}
         </>
       )}
 
       {error && <ErrorMessage>{error}</ErrorMessage>}
       {result && (
-        <div className="flex items-center justify-between rounded-md border border-line bg-paper-dim p-3">
-          <span className="text-sm">
-            {result.name} · {formatBytes(result.size)}
+        <ResultCard url={result.url} filename={result.name}>{result.name} · {formatBytes(result.size)}
             {totalInputSize > 0 && (
-              <span className="ml-1 text-ink/40">
+              <span className="ml-1 text-ink-3">
                 ({result.size < totalInputSize ? `-${Math.round((1 - result.size / totalInputSize) * 100)}%` : 'no smaller than the originals combined'})
               </span>
-            )}
-          </span>
-          <DownloadButton url={result.url} filename={result.name} />
-        </div>
+            )}</ResultCard>
       )}
     </div>
   );

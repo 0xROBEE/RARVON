@@ -2,8 +2,8 @@ import { useState } from 'react';
 import { PDFDocument, StandardFonts, rgb } from 'pdf-lib';
 import FileDropzone from '../../../components/FileDropzone';
 import Button from '../../../components/Button';
-import DownloadButton from '../../../components/DownloadButton';
 import ErrorMessage from '../../../components/ErrorMessage';
+import { ResultCard, ActionBar } from '../../../components/tool';
 
 type Position = 'bottom-center' | 'bottom-right' | 'bottom-left' | 'top-center' | 'top-right' | 'top-left';
 
@@ -85,42 +85,39 @@ export default function PageNumbersTool() {
       {file && (
         <>
           <div className="flex flex-wrap items-end gap-3">
-            <label className="text-xs text-ink/60">
+            <label className="text-xs text-ink-2">
               Start at
               <input type="number" value={start} onChange={(e) => setStart(Number(e.target.value))} className="mt-1 block w-20 rounded-md border border-line bg-paper px-2 py-1.5 text-sm" />
             </label>
-            <label className="text-xs text-ink/60">
+            <label className="text-xs text-ink-2">
               Format
               <input value={format} onChange={(e) => setFormat(e.target.value)} className="mt-1 block w-32 rounded-md border border-line bg-paper px-2 py-1.5 text-sm font-mono" />
             </label>
-            <label className="text-xs text-ink/60">
+            <label className="text-xs text-ink-2">
               Font size
               <input type="number" min={6} max={36} value={fontSize} onChange={(e) => setFontSize(Number(e.target.value))} className="mt-1 block w-20 rounded-md border border-line bg-paper px-2 py-1.5 text-sm" />
             </label>
           </div>
-          <p className="text-xs text-ink/40">Use <code className="rounded bg-paper-dim px-1 py-0.5 font-mono">{'{n}'}</code> for the number and <code className="rounded bg-paper-dim px-1 py-0.5 font-mono">{'{total}'}</code> for the page count, e.g. "Page {'{n}'} of {'{total}'}".</p>
+          <p className="text-xs text-ink-3">Use <code className="rounded bg-paper-dim px-1 py-0.5 font-mono">{'{n}'}</code> for the number and <code className="rounded bg-paper-dim px-1 py-0.5 font-mono">{'{total}'}</code> for the page count, e.g. "Page {'{n}'} of {'{total}'}".</p>
 
           <div className="flex flex-wrap gap-2">
             {POSITIONS.map((p) => (
               <button
                 key={p.value}
                 onClick={() => setPosition(p.value)}
-                className={`rounded-md border px-3 py-1.5 text-xs font-medium ${position === p.value ? 'border-ink bg-ink text-paper' : 'border-line text-ink/60'}`}
+                className={`rounded-md border px-3 py-1.5 text-xs font-medium ${position === p.value ? 'border-ink bg-ink text-paper' : 'border-line text-ink-2'}`}
               >
                 {p.label}
               </button>
             ))}
           </div>
 
-          <Button onClick={apply} disabled={busy}>{busy ? 'Applying…' : 'Add page numbers'}</Button>
+          <ActionBar><Button onClick={apply} disabled={busy}>{busy ? 'Applying…' : 'Add page numbers'}</Button></ActionBar>
         </>
       )}
       {error && <ErrorMessage>{error}</ErrorMessage>}
       {result && (
-        <div className="flex items-center justify-between rounded-md border border-line bg-paper-dim p-3">
-          <span className="text-sm">{result.name}</span>
-          <DownloadButton url={result.url} filename={result.name} />
-        </div>
+        <ResultCard url={result.url} filename={result.name}>{result.name}</ResultCard>
       )}
     </div>
   );

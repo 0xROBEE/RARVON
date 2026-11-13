@@ -284,7 +284,7 @@ export default function ImageToText() {
 
   const languagePicker = (
     <div className="flex flex-wrap items-end gap-3">
-      <label className="text-xs text-ink/60">
+      <label className="text-xs text-ink-2">
         Language of the text
         <select
           value={settings.primary}
@@ -300,7 +300,7 @@ export default function ImageToText() {
         </select>
       </label>
       {settings.primary !== 'eng' && (
-        <label className="flex items-center gap-2 pb-2 text-xs text-ink/70">
+        <label className="flex items-center gap-2 pb-2 text-xs text-ink-2">
           <input type="checkbox" checked={settings.withEnglish} disabled={busy} onChange={(e) => update({ withEnglish: e.target.checked })} />
           Also contains English
         </label>
@@ -318,7 +318,7 @@ export default function ImageToText() {
           label="Drop an image here, click to browse, or paste with Ctrl+V"
           hint="Screenshots, scans or photos of documents — PNG, JPEG, WebP"
         />
-        <div className="flex flex-wrap items-center gap-2 text-xs text-ink/50">
+        <div className="flex flex-wrap items-center gap-2 text-xs text-ink-3">
           <Button variant="secondary" onClick={() => void pasteFromButton()}>Paste image from clipboard</Button>
           <span>Text is recognized on your device. The image is never uploaded.</span>
         </div>
@@ -344,7 +344,7 @@ export default function ImageToText() {
       <div className="grid gap-3 lg:grid-cols-2">
         {/* Original image */}
         <section aria-label="Original image" className="flex min-w-0 flex-col rounded-lg border border-line">
-          <div className="flex flex-wrap items-center justify-between gap-2 border-b border-line px-3 py-2 text-xs text-ink/60">
+          <div className="flex flex-wrap items-center justify-between gap-2 border-b border-line px-3 py-2 text-xs text-ink-2">
             <span className="truncate">{file.name} · {bitmap.width}×{bitmap.height} · {formatBytes(file.size)}</span>
             <div className="flex items-center gap-1">
               <button
@@ -377,7 +377,7 @@ export default function ImageToText() {
               />
             )}
           </div>
-          <details className="border-t border-line px-3 py-2 text-xs text-ink/60">
+          <details className="border-t border-line px-3 py-2 text-xs text-ink-2">
             <summary className="cursor-pointer select-none">Recognition options</summary>
             <div className="mt-2 flex flex-wrap items-center gap-4">
               <label className="flex items-center gap-2">
@@ -415,7 +415,7 @@ export default function ImageToText() {
               />
             </div>
             {query.trim() && (
-              <span className="flex items-center gap-1 text-xs text-ink/50" aria-live="polite">
+              <span className="flex items-center gap-1 text-xs text-ink-3" aria-live="polite">
                 {matches.length ? `${Math.max(0, matchIndex) + 1}/${matches.length}` : 'No matches'}
                 <button onClick={() => goToMatch(-1)} disabled={!matches.length} aria-label="Previous match" className="rounded px-1 hover:bg-paper-dim disabled:opacity-30">↑</button>
                 <button onClick={() => goToMatch(1)} disabled={!matches.length} aria-label="Next match" className="rounded px-1 hover:bg-paper-dim disabled:opacity-30">↓</button>
@@ -442,7 +442,7 @@ export default function ImageToText() {
                 <div className="w-full max-w-xs">
                   <ProgressBar value={progress.stage === 'recognizing' ? progress.fraction * 100 : 0} label={stageLabel} />
                 </div>
-                <p className="text-center text-xs text-ink/50">The first run downloads this language’s recognition data once; after that it’s cached on your device.</p>
+                <p className="text-center text-xs text-ink-3">The first run downloads this language’s recognition data once; after that it’s cached on your device.</p>
               </div>
             )}
           </div>
@@ -455,7 +455,7 @@ export default function ImageToText() {
               <Button variant="secondary" className="px-3 py-1.5 text-xs" disabled={!text} onClick={() => downloadText(toMarkdown(text, file.name), `${baseName}.md`, 'text/markdown')}>Download .md</Button>
               <Button variant="ghost" className="px-3 py-1.5 text-xs" disabled={!text} onClick={() => setText('')}>Clear</Button>
             </div>
-            <span className="text-xs text-ink/50" aria-live="polite">
+            <span className="text-xs text-ink-3" aria-live="polite">
               {notice ?? (stats ? `${words} words · ${Math.round(stats.ms / 100) / 10}s` : '')}
             </span>
           </div>
@@ -463,10 +463,10 @@ export default function ImageToText() {
       </div>
 
       {settingsChanged && !busy && (
-        <p className="text-xs text-ink/60">Settings changed — click <strong>Re-run OCR</strong> to apply them.</p>
+        <p className="text-xs text-ink-2">Settings changed — click <strong>Re-run OCR</strong> to apply them.</p>
       )}
       {stats && stats.confidence < 65 && text && (
-        <p className="rounded-md border border-line bg-paper-dim px-3 py-2 text-xs text-ink/70">
+        <p className="rounded-md border border-line bg-paper-dim px-3 py-2 text-xs text-ink-2">
           Recognition confidence is low ({Math.round(stats.confidence)}%). Check the result carefully. Sharper, well-lit, straight images give
           better results; make sure the right language is selected, and rotate the image if the text is sideways.
         </p>

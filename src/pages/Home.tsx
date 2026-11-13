@@ -1,179 +1,241 @@
-import { Link } from 'react-router-dom';
-import { categories, tools, popularToolKeys, actionMeta } from '../lib/toolRegistry';
-import ToolCard from '../components/ToolCard';
+import { useEffect, useState } from 'react';
+import type { DragEvent } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import clsx from 'clsx';
+import { categories, tools, toolsForCategory, getTool } from '../lib/toolRegistry';
+import type { ToolMeta } from '../lib/toolRegistry';
 import { useToolSearch } from '../lib/searchContext';
-import { ActionIcon } from '../lib/actionIcons';
 import { usePageMeta } from '../lib/usePageMeta';
+import { useWorkspace } from '../lib/workspaceContext';
+import { CategoryIcon } from '../lib/categoryIcons';
+import { KIND_LABEL, kindOfFile, toolsForKind } from '../lib/fileKinds';
+import type { FileKind } from '../lib/fileKinds';
+import { getRecentTools } from '../lib/recentTools';
+import { formatBytes } from '../lib/imageUtils';
 import SupportButton from '../components/SupportButton';
 
-const homepageActions = ['convert', 'compress', 'edit', 'resize', 'extract'] as const;
+const toolCount = tools.filter((t) => t.status !== 'coming-soon').length;
+const MAX_SUGGESTIONS = 6;
+
+function imageFromPaste(e: ClipboardEvent): File | null {
+  for (const item of Array.from(e.clipboardData?.items ?? [])) {
+    if (item.kind === 'file' && item.type.startsWith('image/')) {
+      const f = item.getAsFile();
+      if (f) return new File([f], `pasted-image.${item.type.split('/')[1] || 'png'}`, { type: item.type });
+    }
+  }
+  return null;
+}
+
+/** The drop area: Bench looks at the file and suggests the tools that take it. */
+function DropStart() {
+  const navigate = useNavigate();
+  const { setPending } = useWorkspace();
+  const [file, setFile] = useState<File | null>(null);
+  const [over, setOver] = useState(false);
+
+  useEffect(() => {
+    function onPaste(e: ClipboardEvent) {
+      const target = e.target as HTMLElement | null;
+      if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable)) return;
+      const img = imageFromPaste(e);
+      if (img) {
+        e.preventDefault();
+        setFile(img);
+      }
+    }
+    window.addEventListener('paste', onPaste);
+    return () => window.removeEventListener('paste', onPaste);
+  }, []);
+
+  const kind: FileKind | null = file ? kindOfFile(file.name, file.type) : null;
+  const suggestions = kind ? toolsForKind(kind) : [];
+
+  function open(tool: ToolMeta) {
+    if (!file) return;
+    setPending({ url: URL.createObjectURL(file), filename: file.name, source: '/' });
+    navigate(`/tools/${tool.category}/${tool.slug}`, { state: { useResult: true } });
+  }
+
+  function onDrop(e: DragEvent<HTMLLabelElement>) {
+    e.preventDefault();
+    setOver(false);
+    const f = e.dataTransfer.files[0];
+    if (f) setFile(f);
+  }
+
+  return (
+    <div className="mt-7 grid gap-3">
+      <label
+        onDragOver={(e) => {
+          e.preventDefault();
+          setOver(true);
+        }}
+        onDragLeave={() => setOver(false)}
+        onDrop={onDrop}
+        className={clsx(
+          'grid cursor-pointer gap-4 rounded-2xl border-2 border-dashed bg-elevated p-5 shadow-[4px_4px_0_0_var(--color-ink)] transition-colors sm:grid-cols-[auto_1fr_auto] sm:items-center',
+          over ? 'border-workshop bg-workshop-dim' : 'border-ink',
+        )}
+      >
+        <span className="hidden h-12 w-12 place-items-center rounded-xl bg-workshop-dim text-workshop sm:grid" aria-hidden="true">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M12 16V4m0 0L7 9m5-5l5 5" />
+            <path d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2" />
+          </svg>
+        </span>
+        <span>
+          <span className="block font-display text-lg font-semibold">Drop any file here</span>
+          <span className="mt-0.5 block text-sm text-ink-2">or paste an image with Ctrl+V. Your file stays on this device.</span>
+        </span>
+        <span className="inline-flex items-center justify-center rounded-md bg-ink px-4 py-2.5 text-sm font-medium text-paper">Choose file</span>
+        <input
+          type="file"
+          className="sr-only"
+          aria-label="Choose a file to work on"
+          onChange={(e) => {
+            const f = e.target.files?.[0];
+            if (f) setFile(f);
+            e.target.value = '';
+          }}
+        />
+      </label>
+
+      {file && kind && (
+        <div className="rounded-xl border border-line bg-elevated p-4" aria-live="polite">
+          <div className="flex flex-wrap items-center gap-3">
+            <CategoryIcon category={kind === 'zip' || kind === 'other' ? 'utilities' : kind === 'text' ? 'text' : kind} size={34} />
+            <div className="min-w-0 flex-1">
+              <p className="truncate font-medium">{file.name}</p>
+              <p className="text-xs text-ink-3">{formatBytes(file.size)} · what would you like to do with this {KIND_LABEL[kind]}?</p>
+            </div>
+            <button onClick={() => setFile(null)} className="text-xs font-medium text-ink-3 hover:text-ink">Clear</button>
+          </div>
+          <div className="mt-3 flex flex-wrap gap-2">
+            {suggestions.slice(0, MAX_SUGGESTIONS).map((t, i) => (
+              <button
+                key={t.category + t.slug}
+                onClick={() => open(t)}
+                className={clsx(
+                  'flex items-center gap-2 rounded-full border bg-paper py-1 pe-3 ps-1 text-sm font-medium hover:border-ink',
+                  i === 0 ? 'border-ink shadow-[2px_2px_0_0_var(--color-ink)]' : 'border-line',
+                )}
+              >
+                <CategoryIcon category={t.category} size={24} />
+                {t.name}
+              </button>
+            ))}
+            {suggestions.length > MAX_SUGGESTIONS && (
+              <details className="relative">
+                <summary className="flex cursor-pointer list-none items-center rounded-full border border-line px-3 py-1.5 text-sm font-medium text-ink-2 hover:border-ink">
+                  + {suggestions.length - MAX_SUGGESTIONS} more
+                </summary>
+                <div className="absolute start-0 z-10 mt-1 grid w-60 gap-0.5 rounded-xl border border-line bg-elevated p-2 shadow-lg">
+                  {suggestions.slice(MAX_SUGGESTIONS).map((t) => (
+                    <button key={t.category + t.slug} onClick={() => open(t)} className="flex items-center gap-2 rounded-md px-2 py-1.5 text-start text-sm hover:bg-paper-dim">
+                      <CategoryIcon category={t.category} size={22} />
+                      {t.name}
+                    </button>
+                  ))}
+                </div>
+              </details>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
 
 export default function Home() {
   usePageMeta(
     'Bench — Free tools. No ads. No account.',
-    'Free, ad-free, account-free tools for PDFs, images, video, audio, text and data — processed locally in your browser. Nothing you work on here is uploaded.',
+    'Free, ad-free, account-free tools for PDFs, images, video, audio, text and data — processed on your device.',
   );
   const { openSearch } = useToolSearch();
-  const popular = popularToolKeys
-    .map((k) => {
-      const [category, slug] = k.split('/');
-      return tools.find((t) => t.category === category && t.slug === slug);
-    })
-    .filter(Boolean);
+  const [recent] = useState(() =>
+    getRecentTools()
+      .map((k) => getTool(k.split('/')[0], k.split('/')[1]))
+      .filter((t): t is ToolMeta => Boolean(t) && t!.status !== 'coming-soon'),
+  );
 
   return (
     <>
       <section className="bg-grid-paper border-b border-line">
-        <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6 sm:py-24">
-          <div className="grid items-center gap-10 lg:grid-cols-[1.1fr_0.9fr]">
-            <div>
-              <p className="font-mono text-xs uppercase tracking-widest text-workshop">A workbench, not a warehouse</p>
-              <h1 className="mt-3 font-display text-4xl font-semibold leading-[1.05] tracking-tight sm:text-5xl">
-                Free tools.
-                <br />
-                No ads. No account.
-              </h1>
-              <p className="mt-4 max-w-md text-base text-ink/60">
-                Simple, powerful tools that run directly in your browser. Your files stay on your device from
-                start to finish.
-              </p>
-
-              <button
-                onClick={openSearch}
-                className="mt-6 flex w-full max-w-sm items-center gap-2 rounded-md border border-line bg-paper px-4 py-3 text-left text-sm text-ink/40 shadow-sm hover:border-ink"
-              >
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="shrink-0">
-                  <circle cx="11" cy="11" r="7" />
-                  <path d="M21 21l-4.3-4.3" strokeLinecap="round" />
-                </svg>
-                Search tools — try "compress image" or "merge pdf"
-                <kbd className="ml-auto hidden shrink-0 rounded border border-line px-1.5 py-0.5 text-[10px] sm:inline">⌘K</kbd>
-              </button>
-
-              <div className="mt-5 flex flex-wrap gap-3">
-                <Link
-                  to="/tools/pdf"
-                  className="rounded-md bg-ink px-5 py-2.5 text-sm font-medium text-paper hover:bg-workshop"
-                >
-                  Browse all tools
-                </Link>
-                <Link
-                  to="/privacy"
-                  className="rounded-md border border-line px-5 py-2.5 text-sm font-medium hover:border-ink"
-                >
-                  How local processing works
-                </Link>
-              </div>
-            </div>
-
-            <BenchDiagram />
-          </div>
+        <div className="mx-auto max-w-4xl px-4 py-12 sm:px-6 sm:py-16">
+          <h1 className="font-display text-4xl font-semibold leading-[1.05] tracking-tight sm:text-5xl">Drop a file. Pick what to do.</h1>
+          <p className="mt-4 max-w-xl text-base text-ink-2">
+            PDFs, images, video, audio and text. Free, no ads, no account, and everything runs on your device.
+          </p>
+          <DropStart />
+          <button
+            onClick={openSearch}
+            className="mt-4 flex items-center gap-2 text-sm font-medium text-ink-2 hover:text-ink"
+          >
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+              <circle cx="11" cy="11" r="7" />
+              <path d="M21 21l-4.3-4.3" strokeLinecap="round" />
+            </svg>
+            Or search {toolCount} tools
+            <kbd className="rounded border border-line px-1.5 font-mono text-[10px]">⌘K</kbd>
+          </button>
         </div>
       </section>
 
-      <section className="mx-auto max-w-6xl px-4 py-14 sm:px-6">
-        <h2 className="mb-6 font-display text-lg font-semibold">What do you want to do?</h2>
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
-          {homepageActions.map((value) => {
-            const meta = actionMeta.find((a) => a.value === value)!;
-            return (
-              <Link
-                key={value}
-                to={`/${value}`}
-                className="flex flex-col items-center gap-2 rounded-lg border border-line bg-paper px-3 py-5 text-center transition-all hover:-translate-y-0.5 hover:border-ink hover:shadow-[2px_2px_0_0_var(--color-ink)]"
-              >
-                <span className="flex h-9 w-9 items-center justify-center rounded-md bg-workshop-dim text-workshop">
-                  <ActionIcon action={value} />
-                </span>
-                <span className="text-sm font-medium">{meta.label}</span>
+      {recent.length > 0 && (
+        <section className="mx-auto max-w-6xl px-4 pt-10 sm:px-6" aria-labelledby="recent-heading">
+          <h2 id="recent-heading" className="font-display text-base font-semibold">Recently used</h2>
+          <div className="mt-3 flex flex-wrap gap-2">
+            {recent.map((t) => (
+              <Link key={t.category + t.slug} to={`/tools/${t.category}/${t.slug}`} className="flex items-center gap-2 rounded-full border border-line py-1 pe-3 ps-1 text-sm font-medium hover:border-ink">
+                <CategoryIcon category={t.category} size={24} />
+                {t.name}
               </Link>
+            ))}
+          </div>
+        </section>
+      )}
+
+      <section className="mx-auto max-w-6xl px-4 py-10 sm:px-6" aria-labelledby="all-heading">
+        <div className="flex items-baseline justify-between gap-4">
+          <h2 id="all-heading" className="font-display text-lg font-semibold">All tools</h2>
+          <Link to="/tools" className="text-sm font-medium text-workshop hover:underline">Browse all tools →</Link>
+        </div>
+        <div className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {categories.map((c) => {
+            const list = toolsForCategory(c.slug).filter((t) => t.status !== 'coming-soon');
+            return (
+              <div key={c.slug} className="rounded-xl border border-line bg-elevated p-4">
+                <Link to={`/tools/${c.slug}`} className="flex items-center gap-2 font-display text-sm font-semibold hover:text-workshop">
+                  <CategoryIcon category={c.slug} size={30} />
+                  {c.name}
+                  <span className="ms-auto font-mono text-xs font-normal text-ink-3">{list.length}</span>
+                </Link>
+                <ul className="mt-3 grid gap-0.5">
+                  {list.map((t) => (
+                    <li key={t.slug}>
+                      <Link to={`/tools/${t.category}/${t.slug}`} className="flex items-center justify-between gap-2 rounded-md px-2 py-1.5 text-sm text-ink-2 hover:bg-paper-dim hover:text-ink">
+                        <span className="truncate">{t.name}</span>
+                        {t.status === 'experimental' && <span className="shrink-0 font-mono text-[10px] uppercase tracking-wide text-warn">Beta</span>}
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </div>
             );
           })}
         </div>
       </section>
 
-      <section className="mx-auto max-w-6xl px-4 py-14 sm:px-6">
-        <div className="mb-6 flex items-baseline justify-between">
-          <h2 className="font-display text-lg font-semibold">Popular tools</h2>
-        </div>
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {popular.map((t) => t && <ToolCard key={`${t.category}-${t.slug}`} tool={t} />)}
-        </div>
-      </section>
-
-      <section className="mx-auto max-w-6xl px-4 pb-14 sm:px-6">
-        <h2 className="mb-6 font-display text-lg font-semibold">Categories</h2>
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {categories.map((c) => (
-            <Link
-              key={c.slug}
-              to={`/tools/${c.slug}`}
-              className="rounded-lg border border-line bg-paper p-5 transition-all hover:-translate-y-0.5 hover:border-ink hover:shadow-[2px_2px_0_0_var(--color-ink)]"
-            >
-              <h3 className="font-display text-base font-semibold">{c.name}</h3>
-              <p className="mt-1 text-sm text-ink/60">{c.description}</p>
-              <p className="mt-3 text-xs font-medium text-workshop">
-                {tools.filter((t) => t.category === c.slug).length} tools
-              </p>
-            </Link>
-          ))}
-        </div>
-      </section>
-
       <section className="border-t border-line bg-paper-dim">
-        <div className="mx-auto grid max-w-6xl gap-8 px-4 py-14 sm:px-6 sm:grid-cols-2">
-          <div>
-            <h2 className="font-display text-base font-semibold">Processed locally, not uploaded</h2>
-            <p className="mt-2 max-w-sm text-sm text-ink/60">
-              Every available tool on this site reads and writes your files inside your own browser tab. Nothing
-              is sent to a server for those tools — closing the tab is the same as deleting the data.
-            </p>
-            <Link to="/privacy" className="mt-3 inline-block text-sm font-medium text-workshop hover:underline">
-              How local processing works →
-            </Link>
+        <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-4 px-4 py-10 sm:px-6">
+          <div className="max-w-md">
+            <h2 className="font-display text-base font-semibold">Enjoying Bench?</h2>
+            <p className="mt-1 text-sm text-ink-2">It stays free, ad-free and account-free for everyone either way. Support is completely optional.</p>
           </div>
-          <div>
-            <h2 className="font-display text-base font-semibold">Enjoying the project?</h2>
-            <p className="mt-2 max-w-sm text-sm text-ink/60">
-              Bench stays free, ad-free and account-free for everyone either way. If it's saved you time, support
-              is completely optional.
-            </p>
-            <div className="mt-3">
-              <SupportButton />
-            </div>
-          </div>
+          <SupportButton />
         </div>
       </section>
     </>
-  );
-}
-
-function BenchDiagram() {
-  return (
-    <div className="relative rounded-xl border border-line bg-paper p-6 shadow-[4px_4px_0_0_var(--color-ink)]" aria-hidden="true">
-      <div className="flex items-center justify-between gap-3 font-mono text-xs">
-        <div className="flex flex-1 flex-col items-center gap-2 rounded-md border border-line bg-paper-dim py-4">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6">
-            <path d="M6 2h9l5 5v15H6z" strokeLinejoin="round" />
-            <path d="M15 2v5h5" strokeLinejoin="round" />
-          </svg>
-          your file
-        </div>
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" className="shrink-0">
-          <path d="M4 12h16m0 0l-5-5m5 5l-5 5" strokeLinecap="round" strokeLinejoin="round" />
-        </svg>
-        <div className="flex flex-1 flex-col items-center gap-2 rounded-md border border-workshop bg-workshop-dim py-4 text-workshop">
-          <span className="h-2 w-2 animate-pulse rounded-full bg-workshop" />
-          this tab
-        </div>
-      </div>
-      <div className="mt-4 flex items-center justify-center gap-2 rounded-md border border-dashed border-line py-2.5 text-xs text-ink/40">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6">
-          <path d="M6 18a4 4 0 010-8 5 5 0 0110-1 4 4 0 011 7.8" strokeLinecap="round" strokeLinejoin="round" />
-          <path d="M3 3l18 18" strokeLinecap="round" />
-        </svg>
-        never our server
-      </div>
-    </div>
   );
 }

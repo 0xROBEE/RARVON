@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import FileDropzone from '../../../components/FileDropzone';
 import Button from '../../../components/Button';
-import DownloadButton from '../../../components/DownloadButton';
 import ErrorMessage from '../../../components/ErrorMessage';
 import { decodeAudioFile, audioBufferToWavBlob, trimAudioBuffer, formatDuration } from '../../../lib/audioUtils';
+import { ResultCard, ActionBar } from '../../../components/tool';
 
 export default function TrimAudioTool() {
   const [file, setFile] = useState<File | null>(null);
@@ -67,7 +67,7 @@ export default function TrimAudioTool() {
         <>
           <audio src={previewUrl ?? undefined} controls className="w-full" />
           <div className="grid grid-cols-2 gap-4">
-            <label className="text-xs text-ink/60">
+            <label className="text-xs text-ink-2">
               Start ({formatDuration(start)})
               <input
                 type="range" min={0} max={buffer.duration} step={0.1}
@@ -76,7 +76,7 @@ export default function TrimAudioTool() {
                 className="mt-2 block w-full"
               />
             </label>
-            <label className="text-xs text-ink/60">
+            <label className="text-xs text-ink-2">
               End ({formatDuration(end)})
               <input
                 type="range" min={0} max={buffer.duration} step={0.1}
@@ -86,16 +86,13 @@ export default function TrimAudioTool() {
               />
             </label>
           </div>
-          <p className="text-xs text-ink/50">Clip length: {formatDuration(end - start)}</p>
-          <Button onClick={trim} disabled={busy}>{busy ? 'Trimming…' : 'Trim & export as WAV'}</Button>
+          <p className="text-xs text-ink-3">Clip length: {formatDuration(end - start)}</p>
+          <ActionBar><Button onClick={trim} disabled={busy}>{busy ? 'Trimming…' : 'Trim & export as WAV'}</Button></ActionBar>
         </>
       )}
       {error && <ErrorMessage>{error}</ErrorMessage>}
       {result && (
-        <div className="flex items-center justify-between rounded-md border border-line bg-paper-dim p-3">
-          <span className="text-sm">{result.name}</span>
-          <DownloadButton url={result.url} filename={result.name} />
-        </div>
+        <ResultCard url={result.url} filename={result.name}>{result.name}</ResultCard>
       )}
     </div>
   );

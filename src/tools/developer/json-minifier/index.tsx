@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import Button from '../../../components/Button';
 import ErrorMessage from '../../../components/ErrorMessage';
+import { CopyButton } from '../../../components/tool';
 
 export default function JsonMinifier() {
   const [input, setInput] = useState('');
@@ -21,7 +22,7 @@ export default function JsonMinifier() {
   return (
     <div className="space-y-4">
       <div>
-        <label htmlFor="json-min-input" className="mb-1.5 block text-xs font-medium text-ink/60">Paste JSON</label>
+        <label htmlFor="json-min-input" className="mb-1.5 block text-xs font-medium text-ink-2">Paste JSON</label>
         <textarea
           id="json-min-input"
           value={input}
@@ -36,12 +37,10 @@ export default function JsonMinifier() {
       {output && (
         <div>
           <div className="mb-1.5 flex items-center justify-between">
-            <span className="text-xs font-medium text-ink/60">
+            <span className="text-xs font-medium text-ink-2">
               Result — {output.length.toLocaleString()} characters
             </span>
-            <button onClick={() => navigator.clipboard.writeText(output)} className="text-xs font-medium text-workshop hover:underline">
-              Copy
-            </button>
+            <CopyButton text={output} label="Copy" />
           </div>
           <pre className="max-h-64 overflow-auto whitespace-pre-wrap break-all rounded-md border border-line bg-paper-dim px-3 py-2 font-mono text-xs leading-relaxed">
             {output}

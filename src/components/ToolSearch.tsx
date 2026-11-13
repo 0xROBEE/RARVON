@@ -97,7 +97,7 @@ export default function ToolSearch({ open, onClose }: { open: boolean; onClose: 
         className="w-full max-w-lg overflow-hidden rounded-lg border border-line bg-elevated shadow-2xl"
       >
         <div className="flex items-center gap-2 border-b border-line px-4 py-3">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="shrink-0 text-ink/40">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="shrink-0 text-ink-3">
             <circle cx="11" cy="11" r="7" />
             <path d="M21 21l-4.3-4.3" strokeLinecap="round" />
           </svg>
@@ -107,13 +107,13 @@ export default function ToolSearch({ open, onClose }: { open: boolean; onClose: 
             onChange={(e) => setQuery(e.target.value)}
             onKeyDown={onKeyDown}
             placeholder="Search tools… e.g. compress image, merge pdf, json"
-            className="w-full bg-transparent text-sm outline-none placeholder:text-ink/40"
+            className="w-full bg-transparent text-sm outline-none placeholder:text-ink-3"
             aria-label="Search tools"
           />
-          <kbd className="hidden shrink-0 rounded border border-line px-1.5 py-0.5 text-[10px] text-ink/40 sm:inline">Esc</kbd>
+          <kbd className="hidden shrink-0 rounded border border-line px-1.5 py-0.5 text-[10px] text-ink-3 sm:inline">Esc</kbd>
         </div>
         <ul className="max-h-96 overflow-auto py-1" role="listbox">
-          {results.length === 0 && <li className="px-4 py-6 text-center text-sm text-ink/40">No tools match "{query}"</li>}
+          {results.length === 0 && <li className="px-4 py-6 text-center text-sm text-ink-3">No tools match "{query}"</li>}
           {results.map((tool, i) => {
             const category = getCategory(tool.category);
             const action = matchedAction(tool, query);
@@ -126,11 +126,11 @@ export default function ToolSearch({ open, onClose }: { open: boolean; onClose: 
                 >
                   <span>
                     <span className="font-medium">{tool.name}</span>
-                    <span className="ml-2 text-xs text-ink/40">{category?.name}</span>
+                    <span className="ml-2 text-xs text-ink-3">{category?.name}</span>
                     {action && <span className="ml-2 rounded-full bg-workshop-dim px-1.5 py-0.5 text-[10px] font-medium text-workshop">{actionLabels.get(action)}</span>}
                   </span>
                   {tool.status === 'coming-soon' && (
-                    <span className="shrink-0 rounded-full border border-line px-2 py-0.5 text-[10px] uppercase text-ink/40">Soon</span>
+                    <span className="shrink-0 rounded-full border border-line px-2 py-0.5 text-[10px] uppercase text-ink-3">Soon</span>
                   )}
                   {tool.status === 'experimental' && (
                     <span className="shrink-0 rounded-full border border-warn/30 bg-warn-dim px-2 py-0.5 text-[10px] uppercase text-warn">Experimental</span>

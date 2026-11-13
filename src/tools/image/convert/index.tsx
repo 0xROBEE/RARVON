@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 import FileDropzone from '../../../components/FileDropzone';
 import Button from '../../../components/Button';
-import DownloadButton from '../../../components/DownloadButton';
 import ErrorMessage from '../../../components/ErrorMessage';
 import FormatBadge from '../../../components/FormatBadge';
 import { canvasToBlob, formatBytes } from '../../../lib/imageUtils';
@@ -12,6 +11,7 @@ import {
   guessSvgDimensions,
 } from '../../../lib/imageFormatSupport';
 import type { ImageFormatOption } from '../../../lib/imageFormatSupport';
+import { ResultCard, ActionBar } from '../../../components/tool';
 
 const INPUT_LABELS: Record<string, string> = {
   'image/jpeg': 'JPEG',
@@ -178,12 +178,12 @@ export default function ImageConvert() {
           </div>
 
           {decoded.isAnimatedGif && (
-            <p className="text-xs text-ink/50">If this GIF is animated, only its first frame will be converted — canvas-based conversion can't preserve animation.</p>
+            <p className="text-xs text-ink-3">If this GIF is animated, only its first frame will be converted — canvas-based conversion can't preserve animation.</p>
           )}
 
           {decoded.isSvgInput && (
             <div className="flex flex-wrap items-end gap-3">
-              <label className="text-xs text-ink/60">
+              <label className="text-xs text-ink-2">
                 Output width
                 <input
                   type="number" min={1} value={decoded.width}
@@ -191,7 +191,7 @@ export default function ImageConvert() {
                   className="mt-1 block w-24 rounded-md border border-line bg-paper px-2 py-1.5 text-sm"
                 />
               </label>
-              <label className="text-xs text-ink/60">
+              <label className="text-xs text-ink-2">
                 Output height
                 <input
                   type="number" min={1} value={decoded.height}
@@ -199,7 +199,7 @@ export default function ImageConvert() {
                   className="mt-1 block w-24 rounded-md border border-line bg-paper px-2 py-1.5 text-sm"
                 />
               </label>
-              <p className="pb-2 text-xs text-ink/40">SVG has no fixed pixel size — pick the resolution to render at.</p>
+              <p className="pb-2 text-xs text-ink-3">SVG has no fixed pixel size — pick the resolution to render at.</p>
             </div>
           )}
 
@@ -207,7 +207,7 @@ export default function ImageConvert() {
             <ErrorMessage>This browser doesn't support encoding to any image format from this tool. Try a recent version of Chrome, Firefox, Edge or Safari.</ErrorMessage>
           ) : (
             <>
-              <label className="flex items-center gap-2 text-xs text-ink/60">
+              <label className="flex items-center gap-2 text-xs text-ink-2">
                 Convert to
                 <select
                   value={target?.mime ?? ''}
@@ -221,14 +221,14 @@ export default function ImageConvert() {
               </label>
 
               {(target?.mime === 'image/jpeg' || target?.mime === 'image/webp' || target?.mime === 'image/avif') && (
-                <label className="flex items-center gap-3 text-xs text-ink/60">
+                <label className="flex items-center gap-3 text-xs text-ink-2">
                   Quality
                   <input type="range" min={0.3} max={1} step={0.05} value={quality} onChange={(e) => setQuality(Number(e.target.value))} className="flex-1 max-w-xs" />
                   {Math.round(quality * 100)}%
                 </label>
               )}
 
-              <Button onClick={convert} disabled={busy || !target}>{busy ? 'Converting…' : 'Convert'}</Button>
+              <ActionBar><Button onClick={convert} disabled={busy || !target}>{busy ? 'Converting…' : 'Convert'}</Button></ActionBar>
             </>
           )}
         </>
@@ -236,10 +236,7 @@ export default function ImageConvert() {
 
       {convertError && <ErrorMessage>{convertError}</ErrorMessage>}
       {result && (
-        <div className="flex items-center justify-between rounded-md border border-line bg-paper-dim p-3">
-          <span className="text-sm">{result.name} · {formatBytes(result.size)}</span>
-          <DownloadButton url={result.url} filename={result.name} />
-        </div>
+        <ResultCard url={result.url} filename={result.name}>{result.name} · {formatBytes(result.size)}</ResultCard>
       )}
     </div>
   );

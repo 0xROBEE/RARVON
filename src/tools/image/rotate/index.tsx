@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import FileDropzone from '../../../components/FileDropzone';
 import Button from '../../../components/Button';
-import DownloadButton from '../../../components/DownloadButton';
 import ErrorMessage from '../../../components/ErrorMessage';
 import { loadImage, canvasToBlob } from '../../../lib/imageUtils';
+import { ResultCard } from '../../../components/tool';
 
 export default function ImageRotate() {
   const [file, setFile] = useState<File | null>(null);
@@ -58,16 +58,13 @@ export default function ImageRotate() {
             <Button variant="secondary" onClick={() => setFlipH((v) => !v)}>Flip horizontal</Button>
             <Button variant="secondary" onClick={() => setFlipV((v) => !v)}>Flip vertical</Button>
           </div>
-          <p className="text-xs text-ink/50">Current: {rotation}° rotation{flipH ? ', flipped horizontally' : ''}{flipV ? ', flipped vertically' : ''}</p>
+          <p className="text-xs text-ink-3">Current: {rotation}° rotation{flipH ? ', flipped horizontally' : ''}{flipV ? ', flipped vertically' : ''}</p>
           <Button onClick={apply}>Apply and export</Button>
         </>
       )}
       {error && <ErrorMessage>{error}</ErrorMessage>}
       {result && (
-        <div className="flex items-center justify-between rounded-md border border-line bg-paper-dim p-3">
-          <span className="text-sm">{result.name}</span>
-          <DownloadButton url={result.url} filename={result.name} />
-        </div>
+        <ResultCard url={result.url} filename={result.name}>{result.name}</ResultCard>
       )}
     </div>
   );

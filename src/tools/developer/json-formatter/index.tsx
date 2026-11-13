@@ -26,7 +26,7 @@ export default function JsonFormatter() {
   return (
     <div className="space-y-4">
       <div>
-        <label htmlFor="json-input" className="mb-1.5 block text-xs font-medium text-ink/60">Paste JSON</label>
+        <label htmlFor="json-input" className="mb-1.5 block text-xs font-medium text-ink-2">Paste JSON</label>
         <textarea
           id="json-input"
           value={input}
@@ -39,7 +39,7 @@ export default function JsonFormatter() {
       </div>
 
       <div className="flex flex-wrap items-center gap-3">
-        <label className="flex items-center gap-2 text-xs text-ink/60">
+        <label className="flex items-center gap-2 text-xs text-ink-2">
           Indent
           <select
             value={indent}
@@ -59,7 +59,7 @@ export default function JsonFormatter() {
       {output && (
         <div>
           <div className="mb-1.5 flex items-center justify-between">
-            <span className="text-xs font-medium text-ink/60">Result</span>
+            <span className="text-xs font-medium text-ink-2">Result</span>
             <button onClick={copy} className="text-xs font-medium text-workshop hover:underline">Copy</button>
           </div>
           <pre className="max-h-96 overflow-auto rounded-md border border-line bg-paper-dim px-3 py-2 font-mono text-xs leading-relaxed">

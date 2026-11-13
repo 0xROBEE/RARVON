@@ -26,7 +26,7 @@ export default function QrTool() {
   return (
     <div className="space-y-4">
       <div>
-        <label htmlFor="qr-text" className="mb-1.5 block text-xs font-medium text-ink/60">Text or URL</label>
+        <label htmlFor="qr-text" className="mb-1.5 block text-xs font-medium text-ink-2">Text or URL</label>
         <input
           id="qr-text"
           value={text}
@@ -34,7 +34,7 @@ export default function QrTool() {
           className="w-full rounded-md border border-line bg-paper px-3 py-2 text-sm focus:border-workshop"
         />
       </div>
-      <label className="flex items-center gap-2 text-xs text-ink/60">
+      <label className="flex items-center gap-2 text-xs text-ink-2">
         Size
         <input type="range" min={160} max={640} step={20} value={size} onChange={(e) => setSize(Number(e.target.value))} />
         {size}px

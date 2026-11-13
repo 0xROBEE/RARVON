@@ -2,9 +2,9 @@ import { useRef, useState } from 'react';
 import type { PointerEvent as ReactPointerEvent } from 'react';
 import FileDropzone from '../../../components/FileDropzone';
 import Button from '../../../components/Button';
-import DownloadButton from '../../../components/DownloadButton';
 import ErrorMessage from '../../../components/ErrorMessage';
 import { canvasToBlob } from '../../../lib/imageUtils';
+import { ResultCard } from '../../../components/tool';
 
 interface Rect { x: number; y: number; w: number; h: number }
 
@@ -116,7 +116,7 @@ export default function ImageCrop() {
               />
             )}
           </div>
-          <p className="text-xs text-ink/50">Drag on the image to select the region to keep.</p>
+          <p className="text-xs text-ink-3">Drag on the image to select the region to keep.</p>
           <div className="flex gap-2">
             <Button onClick={crop} disabled={!rect || rect.w < 4}>Crop</Button>
             <Button variant="secondary" onClick={() => { setFile(null); setImgUrl(''); setRect(null); setResult(null); }}>
@@ -127,10 +127,7 @@ export default function ImageCrop() {
       )}
       {error && <ErrorMessage>{error}</ErrorMessage>}
       {result && (
-        <div className="flex items-center justify-between rounded-md border border-line bg-paper-dim p-3">
-          <span className="text-sm">{result.name}</span>
-          <DownloadButton url={result.url} filename={result.name} />
-        </div>
+        <ResultCard url={result.url} filename={result.name}>{result.name}</ResultCard>
       )}
     </div>
   );

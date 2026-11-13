@@ -9,6 +9,7 @@ import { formatBytes } from '../../../lib/imageUtils';
 import { AUDIO_TARGETS, CancelledError, convertAudio, encodableAudioTargets, probeAudio } from '../../../lib/audioEngine';
 import type { AudioInfo, AudioTarget } from '../../../lib/audioEngine';
 import { extractAudioFromVideo } from '../../../lib/videoAudioCapture';
+import { ActionBar, OptionCards } from '../../../components/tool';
 
 const supportsCaptureStream =
   typeof HTMLVideoElement !== 'undefined' &&
@@ -109,28 +110,20 @@ export default function ExtractAudioTool() {
       )}
 
       {file && !useCapture && (
-        <fieldset className="space-y-1.5" disabled={busy}>
-          <legend className="mb-1 text-xs font-medium text-ink/60">Save as</legend>
-          {options.map((o) => (
-            <label key={o.value} className="flex items-center gap-2 text-sm">
-              <input type="radio" name="extract-format" checked={choice === o.value} onChange={() => setChoice(o.value)} />
-              {o.label}
-            </label>
-          ))}
-        </fieldset>
+        <OptionCards legend="Save as" name="extract-format" disabled={busy} value={choice} onChange={setChoice} options={options.map((o) => { const [label, hint] = o.label.split(' — '); return { value: o.value, label, hint }; })} />
       )}
       {file && useCapture && (
-        <p className="text-xs text-ink/50">
+        <p className="text-xs text-ink-3">
           This video’s format can’t be read directly, so its audio is captured while it plays in the background — this takes about as
           long as the video itself.
         </p>
       )}
       {file && (
         <>
-          <div className="flex flex-wrap items-center gap-2">
+          <ActionBar>
             <Button onClick={extract} disabled={busy}>{busy ? 'Extracting…' : 'Extract audio'}</Button>
             {busy && !useCapture && <Button variant="secondary" onClick={() => abortRef.current?.abort()}>Cancel</Button>}
-          </div>
+          </ActionBar>
           {busy && <ProgressBar value={progress * 100} label={useCapture ? 'Capturing audio' : `Extracting… ${Math.round(progress * 100)}%`} />}
         </>
       )}
@@ -141,7 +134,7 @@ export default function ExtractAudioTool() {
             <span className="text-sm">{result.name} · {formatBytes(result.size)}</span>
             <DownloadButton url={result.url} filename={result.name} />
           </div>
-          {result.note && <p className="text-xs text-ink/50">{result.note}</p>}
+          {result.note && <p className="text-xs text-ink-3">{result.note}</p>}
         </div>
       )}
     </div>

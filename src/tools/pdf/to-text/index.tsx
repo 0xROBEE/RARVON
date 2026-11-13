@@ -142,14 +142,14 @@ export default function PdfToText() {
             {' '}Bench can read them with OCR, on your device.
           </p>
           <div className="flex flex-wrap items-end gap-3">
-            <label className="text-xs text-ink/60">
+            <label className="text-xs text-ink-2">
               Language
               <select value={lang} onChange={(e) => setLang(e.target.value)} disabled={busy === 'ocr'} className="mt-1 block rounded-md border border-line bg-paper px-2 py-1.5 text-sm text-ink">
                 {OCR_LANGUAGES.map((l) => <option key={l.code} value={l.code}>{l.label}{l.native !== l.label ? ` — ${l.native}` : ''}</option>)}
               </select>
             </label>
             {lang !== 'eng' && (
-              <label className="flex items-center gap-2 pb-2 text-xs text-ink/70">
+              <label className="flex items-center gap-2 pb-2 text-xs text-ink-2">
                 <input type="checkbox" checked={withEnglish} onChange={(e) => setWithEnglish(e.target.checked)} disabled={busy === 'ocr'} />
                 Also contains English
               </label>
@@ -166,7 +166,7 @@ export default function PdfToText() {
 
       {file && busy !== 'reading' && (
         <section aria-label="Extracted text" className="rounded-lg border border-line">
-          <div className="flex flex-wrap items-center justify-between gap-2 border-b border-line px-3 py-2 text-xs text-ink/60">
+          <div className="flex flex-wrap items-center justify-between gap-2 border-b border-line px-3 py-2 text-xs text-ink-2">
             <label className="flex items-center gap-2">
               <input type="checkbox" checked={separators} onChange={(e) => { setSeparators(e.target.checked); setEditedText(null); }} />
               Page separators
@@ -191,7 +191,7 @@ export default function PdfToText() {
         </section>
       )}
 
-      {notice && <p role="status" className="text-xs text-ink/60">{notice}</p>}
+      {notice && <p role="status" className="text-xs text-ink-2">{notice}</p>}
       {error && <ErrorMessage>{error}</ErrorMessage>}
     </div>
   );

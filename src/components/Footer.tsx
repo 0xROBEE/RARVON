@@ -10,14 +10,14 @@ export default function Footer() {
           {categories.map((c) => (
             <div key={c.slug}>
               <h3 className="font-display text-sm font-semibold">{c.name}</h3>
-              <p className="mt-1 text-xs text-ink/50">{c.description}</p>
+              <p className="mt-1 text-xs text-ink-3">{c.description}</p>
               <Link to={`/tools/${c.slug}`} className="mt-2 inline-block text-xs font-medium text-workshop hover:underline">
                 Browse {c.name.toLowerCase()} tools
               </Link>
             </div>
           ))}
         </div>
-        <div className="mt-10 flex flex-col gap-2 border-t border-line pt-6 text-xs text-ink/50 sm:flex-row sm:items-center sm:justify-between">
+        <div className="mt-10 flex flex-col gap-2 border-t border-line pt-6 text-xs text-ink-3 sm:flex-row sm:items-center sm:justify-between">
           <p>Free. No ads. No account. Your files never leave your device.</p>
           <div className="flex items-center gap-4">
             <Link to="/privacy" className="hover:text-ink">Privacy</Link>

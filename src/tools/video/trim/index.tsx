@@ -1,13 +1,13 @@
 import { useRef, useState } from 'react';
 import FileDropzone from '../../../components/FileDropzone';
 import Button from '../../../components/Button';
-import DownloadButton from '../../../components/DownloadButton';
 import ErrorMessage from '../../../components/ErrorMessage';
 import ProgressBar from '../../../components/ProgressBar';
 import { formatDuration } from '../../../lib/audioUtils';
 import { formatBytes } from '../../../lib/imageUtils';
 import { VideoCancelledError, probeVideo, runVideoConversion, checkFileSize } from '../../../lib/videoEngine';
 import type { VideoInfo } from '../../../lib/videoEngine';
+import { ResultCard, ActionBar } from '../../../components/tool';
 
 export default function TrimVideoTool() {
   const [file, setFile] = useState<File | null>(null);
@@ -89,28 +89,27 @@ export default function TrimVideoTool() {
       {info && (
         <>
           <div className="grid grid-cols-2 gap-4">
-            <label className="text-xs text-ink/60">
+            <label className="text-xs text-ink-2">
               Start ({formatDuration(start)})
               <input type="range" min={0} max={info.durationSec} step={0.1} value={start} onChange={(e) => setStart(Math.min(Number(e.target.value), end - 0.1))} className="mt-2 block w-full" />
             </label>
-            <label className="text-xs text-ink/60">
+            <label className="text-xs text-ink-2">
               End ({formatDuration(end)})
               <input type="range" min={0} max={info.durationSec} step={0.1} value={end} onChange={(e) => setEnd(Math.max(Number(e.target.value), start + 0.1))} className="mt-2 block w-full" />
             </label>
           </div>
-          <p className="text-xs text-ink/50">Clip length: {formatDuration(end - start)}. This is designed to copy the existing video stream directly rather than re-encode it, which keeps quality intact when your browser can do that for this file.</p>
-          <Button onClick={trim} disabled={busy}>{busy ? 'Trimming…' : 'Trim video'}</Button>
-          {busy && <Button variant="secondary" onClick={() => abortRef.current?.abort()}>Cancel</Button>}
+          <p className="text-xs text-ink-3">Clip length: {formatDuration(end - start)}. This is designed to copy the existing video stream directly rather than re-encode it, which keeps quality intact when your browser can do that for this file.</p>
+          <ActionBar>
+            <Button onClick={trim} disabled={busy}>{busy ? 'Trimming…' : 'Trim video'}</Button>
+            {busy && <Button variant="secondary" onClick={() => abortRef.current?.abort()}>Cancel</Button>}
+          </ActionBar>
           {busy && <ProgressBar value={progress * 100} label="Processing" />}
         </>
       )}
 
       {error && <ErrorMessage>{error}</ErrorMessage>}
       {result && (
-        <div className="flex items-center justify-between rounded-md border border-line bg-paper-dim p-3">
-          <span className="text-sm">{result.name}</span>
-          <DownloadButton url={result.url} filename={result.name} />
-        </div>
+        <ResultCard url={result.url} filename={result.name}>{result.name}</ResultCard>
       )}
     </div>
   );

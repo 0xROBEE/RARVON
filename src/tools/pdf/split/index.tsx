@@ -3,10 +3,10 @@ import { PDFDocument } from 'pdf-lib';
 import JSZip from 'jszip';
 import FileDropzone from '../../../components/FileDropzone';
 import Button from '../../../components/Button';
-import DownloadButton from '../../../components/DownloadButton';
 import ErrorMessage from '../../../components/ErrorMessage';
 import { getPdfPageCount } from '../../../lib/pdfjs';
 import { parsePageRange } from '../../../lib/pageRange';
+import { ResultCard, ActionBar } from '../../../components/tool';
 
 export default function SplitPdf() {
   const [file, setFile] = useState<File | null>(null);
@@ -86,28 +86,25 @@ export default function SplitPdf() {
       {file && (
         <>
           <div className="flex gap-1 rounded-md border border-line bg-paper-dim p-1 text-xs font-medium">
-            <button onClick={() => setMode('each')} className={`flex-1 rounded px-3 py-1.5 ${mode === 'each' ? 'bg-ink text-paper' : 'text-ink/60'}`}>
+            <button onClick={() => setMode('each')} className={`flex-1 rounded px-3 py-1.5 ${mode === 'each' ? 'bg-ink text-paper' : 'text-ink-2'}`}>
               Every page as its own file
             </button>
-            <button onClick={() => setMode('range')} className={`flex-1 rounded px-3 py-1.5 ${mode === 'range' ? 'bg-ink text-paper' : 'text-ink/60'}`}>
+            <button onClick={() => setMode('range')} className={`flex-1 rounded px-3 py-1.5 ${mode === 'range' ? 'bg-ink text-paper' : 'text-ink-2'}`}>
               A page range
             </button>
           </div>
           {mode === 'range' && (
-            <label className="block text-xs text-ink/60">
+            <label className="block text-xs text-ink-2">
               Pages (e.g. 1-3, 5)
               <input value={range} onChange={(e) => setRange(e.target.value)} className="mt-1 block w-full rounded-md border border-line bg-paper px-3 py-2 text-sm" />
             </label>
           )}
-          <Button onClick={split} disabled={busy}>{busy ? 'Splitting…' : 'Split PDF'}</Button>
+          <ActionBar><Button onClick={split} disabled={busy}>{busy ? 'Splitting…' : 'Split PDF'}</Button></ActionBar>
         </>
       )}
       {error && <ErrorMessage>{error}</ErrorMessage>}
       {result && (
-        <div className="flex items-center justify-between rounded-md border border-line bg-paper-dim p-3">
-          <span className="text-sm">{result.name}</span>
-          <DownloadButton url={result.url} filename={result.name} />
-        </div>
+        <ResultCard url={result.url} filename={result.name}>{result.name}</ResultCard>
       )}
     </div>
   );

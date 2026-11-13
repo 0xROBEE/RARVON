@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import Layout from './components/Layout';
 import Home from './pages/Home';
 import CategoryPage from './pages/CategoryPage';
+import AllToolsPage from './pages/AllToolsPage';
 import ToolPage from './pages/ToolPage';
 import Privacy from './pages/Privacy';
 import About from './pages/About';
@@ -24,6 +25,7 @@ export default function App() {
                 <Route path="/privacy" element={<Privacy />} />
                 <Route path="/about" element={<About />} />
                 <Route path="/support" element={<Support />} />
+                <Route path="/tools" element={<AllToolsPage />} />
                 <Route path="/tools/:category" element={<CategoryPage />} />
                 <Route path="/tools/:category/:slug" element={<ToolPage />} />
                 <Route path="/:action" element={<ActionPage />} />

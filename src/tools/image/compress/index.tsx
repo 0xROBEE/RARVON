@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import FileDropzone from '../../../components/FileDropzone';
 import Button from '../../../components/Button';
-import DownloadButton from '../../../components/DownloadButton';
 import ErrorMessage from '../../../components/ErrorMessage';
 import { loadImage, canvasToBlob, formatBytes } from '../../../lib/imageUtils';
+import { ActionBar, OptionCards, ResultCard, SizeDelta } from '../../../components/tool';
 
 /** Palette sizes for PNG. 0 = lossless re-compression (no colour reduction). */
 const PNG_LEVELS = [
@@ -93,36 +93,27 @@ export default function ImageCompress() {
       )}
 
       {file && !isPng && (
-        <label className="flex items-center gap-3 text-xs text-ink/60">
+        <label className="flex items-center gap-3 text-xs text-ink-2">
           Quality
           <input type="range" min={0.1} max={1} step={0.05} value={quality} onChange={(e) => setQuality(Number(e.target.value))} className="flex-1" aria-label="Quality" />
           {Math.round(quality * 100)}%
         </label>
       )}
       {file && isPng && (
-        <fieldset className="space-y-1.5" disabled={busy}>
-          <legend className="mb-1 text-xs font-medium text-ink/60">PNG compression</legend>
-          {PNG_LEVELS.map((l) => (
-            <label key={l.colors} className="flex items-center gap-2 text-sm">
-              <input type="radio" name="png-colors" checked={colors === l.colors} onChange={() => setColors(l.colors)} />
-              {l.label} <span className="text-xs text-ink/50">— {l.hint}</span>
-            </label>
-          ))}
-          <p className="pt-1 text-xs text-ink/50">Transparency is kept. Reducing to a colour palette is how PNGs get dramatically smaller.</p>
-        </fieldset>
+        <div className="grid gap-2">
+          <OptionCards legend="PNG compression" name="png-colors" disabled={busy} value={colors} onChange={setColors} options={PNG_LEVELS.map((l) => ({ value: l.colors, label: l.label, hint: l.hint }))} />
+          <p className="text-xs text-ink-3">Transparency is kept. Reducing to a colour palette is how PNGs get dramatically smaller.</p>
+        </div>
       )}
 
-      <Button onClick={compress} disabled={!file || busy}>{busy ? 'Compressing…' : 'Compress'}</Button>
+      <ActionBar><Button onClick={compress} disabled={!file || busy}>{busy ? 'Compressing…' : 'Compress'}</Button></ActionBar>
       {error && <ErrorMessage>{error}</ErrorMessage>}
       {result && file && (
         result.size < file.size ? (
-          <div className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-line bg-paper-dim p-3">
-            <span className="text-sm">
-              {result.name} · {formatBytes(result.size)}
-              <span className="ml-1 text-signal">(−{Math.round((1 - result.size / file.size) * 100)}%)</span>
-            </span>
-            <DownloadButton url={result.url} filename={result.name} />
-          </div>
+          <ResultCard url={result.url} filename={result.name}>
+            {result.name} · {formatBytes(result.size)}
+            <SizeDelta before={file.size} after={result.size} />
+          </ResultCard>
         ) : (
           <ErrorMessage>
             This image is already well compressed — the result ({formatBytes(result.size)}) isn’t smaller than the original

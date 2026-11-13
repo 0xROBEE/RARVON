@@ -59,3 +59,20 @@ describe('tool registry', () => {
     }
   });
 });
+
+describe('file-kind routing', async () => {
+  const { TOOLS_FOR_KIND, kindOfFile } = await import('../../src/lib/fileKinds');
+  it('only routes to tools that exist', () => {
+    const known = new Set(tools.map((t) => `${t.category}/${t.slug}`));
+    for (const [kind, keys] of Object.entries(TOOLS_FOR_KIND)) for (const k of keys) expect(known.has(k), `${kind} -> ${k}`).toBe(true);
+  });
+  it('detects kinds by extension and MIME type', () => {
+    expect(kindOfFile('a.PDF')).toBe('pdf');
+    expect(kindOfFile('photo.heic')).toBe('image');
+    expect(kindOfFile('clip.mov')).toBe('video');
+    expect(kindOfFile('voice.opus')).toBe('audio');
+    expect(kindOfFile('bundle.zip')).toBe('zip');
+    expect(kindOfFile('blob', 'image/png')).toBe('image');
+    expect(kindOfFile('data.bin')).toBe('other');
+  });
+});

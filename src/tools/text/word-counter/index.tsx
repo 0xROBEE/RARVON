@@ -32,7 +32,7 @@ export default function WordCounter() {
           ['Reading time', `${stats.readingMinutes} min`],
         ].map(([label, value]) => (
           <div key={label} className="rounded-md border border-line bg-paper-dim p-3">
-            <p className="text-xs text-ink/50">{label}</p>
+            <p className="text-xs text-ink-3">{label}</p>
             <p className="font-display text-lg font-semibold">{value}</p>
           </div>
         ))}

@@ -1,7 +1,65 @@
 import type { ReactNode } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import type { ToolMeta } from '../lib/toolRegistry';
 import { getCategory, relatedTools } from '../lib/toolRegistry';
+import { CategoryIcon } from '../lib/categoryIcons';
+import { useWorkspace } from '../lib/workspaceContext';
+import { KIND_LABEL, kindOfFile, toolsForKind } from '../lib/fileKinds';
+
+/**
+ * Next steps under a tool: once it has produced a result, tools that accept
+ * that kind of file (opening one loads the result automatically); before
+ * that, related tools from the same category.
+ */
+function NextSteps({ tool, wide }: { tool: ToolMeta; wide: boolean }) {
+  const { pending } = useWorkspace();
+  const { pathname } = useLocation();
+  const own = pending && pending.source === pathname ? pending : null;
+  const key = `${tool.category}/${tool.slug}`;
+  const kind = own ? kindOfFile(own.filename) : null;
+  const next = kind ? toolsForKind(kind, key).slice(0, 8) : [];
+  const related = relatedTools(tool);
+  if (!next.length && !related.length) return null;
+  return (
+    <section className={`mt-10 border-t border-line pt-6 ${wide ? 'mx-auto max-w-3xl' : ''}`} aria-labelledby="next-heading">
+      {next.length > 0 && own && kind ? (
+        <>
+          <h2 id="next-heading" className="font-display text-sm font-semibold">Continue with {own.filename}</h2>
+          <p className="mt-1 text-xs text-ink-3">Opens the tool with your {KIND_LABEL[kind]} already loaded.</p>
+          <div className="mt-3 flex flex-wrap gap-2">
+            {next.map((t) => (
+              <Link
+                key={t.slug + t.category}
+                to={`/tools/${t.category}/${t.slug}`}
+                state={{ useResult: true }}
+                className="flex items-center gap-2 rounded-full border border-line py-1 pe-3 ps-1 text-xs font-medium text-ink-2 hover:border-ink hover:text-ink"
+              >
+                <CategoryIcon category={t.category} size={22} />
+                {t.name}
+              </Link>
+            ))}
+          </div>
+        </>
+      ) : (
+        <>
+          <h2 id="next-heading" className="font-display text-sm font-semibold">Related tools</h2>
+          <div className="mt-3 flex flex-wrap gap-2">
+            {related.map((t) => (
+              <Link
+                key={t.slug}
+                to={`/tools/${t.category}/${t.slug}`}
+                className="flex items-center gap-2 rounded-full border border-line py-1 pe-3 ps-1 text-xs font-medium text-ink-2 hover:border-ink hover:text-ink"
+              >
+                <CategoryIcon category={t.category} size={22} />
+                {t.name}
+              </Link>
+            ))}
+          </div>
+        </>
+      )}
+    </section>
+  );
+}
 
 export default function ToolPageShell({ tool, children }: { tool: ToolMeta; children: ReactNode }) {
   const category = getCategory(tool.category);
@@ -12,44 +70,23 @@ export default function ToolPageShell({ tool, children }: { tool: ToolMeta; chil
           open a workspace (an element with data-workspace), then the header
           collapses to a compact full-width bar above it. */}
       <div className={wide ? 'mx-auto max-w-3xl pt-6 group-has-[[data-workspace]]/shell:max-w-none group-has-[[data-workspace]]/shell:pt-0' : undefined}>
-        <nav aria-label="Breadcrumb" className="mb-2 flex flex-wrap items-center gap-1 text-xs text-ink/50">
-          <Link to="/" className="hover:text-ink">Home</Link>
+        <nav aria-label="Breadcrumb" className="mb-2 flex flex-wrap items-center gap-1 text-xs text-ink-3">
+          <Link to="/tools" className="hover:text-ink">All tools</Link>
           <span aria-hidden="true">/</span>
           <Link to={`/tools/${tool.category}`} className="hover:text-ink">{category?.name}</Link>
           <span aria-hidden="true">/</span>
           <span className="text-ink">{tool.name}</span>
         </nav>
-        <h1 className={`font-display text-2xl font-semibold tracking-tight sm:text-3xl ${wide ? 'group-has-[[data-workspace]]/shell:text-lg sm:group-has-[[data-workspace]]/shell:text-xl' : ''}`}>{tool.name}</h1>
-        <p className={`mt-2 max-w-xl text-sm text-ink/60 ${wide ? 'group-has-[[data-workspace]]/shell:hidden' : ''}`}>{tool.description}</p>
+        <div className="flex items-center gap-3">
+          <CategoryIcon category={tool.category} size={40} className={wide ? 'group-has-[[data-workspace]]/shell:hidden' : undefined} />
+          <h1 className={`font-display text-2xl font-semibold tracking-tight sm:text-3xl ${wide ? 'group-has-[[data-workspace]]/shell:text-lg sm:group-has-[[data-workspace]]/shell:text-xl' : ''}`}>{tool.name}</h1>
+        </div>
+        <p className={`mt-2 max-w-xl text-sm text-ink-2 ${wide ? 'group-has-[[data-workspace]]/shell:hidden' : ''}`}>{tool.description}</p>
       </div>
 
       <div className={wide ? 'mt-8 group-has-[[data-workspace]]/shell:mt-3' : 'mt-8'}>{children}</div>
 
-      {tool.status !== 'coming-soon' && !wide && (
-        <p className="mt-8 flex items-center gap-1.5 text-xs text-ink/40">
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
-            <path d="M12 2l8 4v6c0 5-3.5 8.5-8 10-4.5-1.5-8-5-8-10V6l8-4z" strokeLinejoin="round" />
-          </svg>
-          Processed locally in your browser. Nothing is uploaded.
-        </p>
-      )}
-
-      {tool.status !== 'coming-soon' && relatedTools(tool).length > 0 && (
-        <section className={`mt-10 border-t border-line pt-6 ${wide ? 'mx-auto max-w-3xl' : ''}`}>
-          <h2 className="font-display text-sm font-semibold">Need to do something else with this file?</h2>
-          <div className="mt-3 flex flex-wrap gap-2">
-            {relatedTools(tool).map((t) => (
-              <Link
-                key={t.slug}
-                to={`/tools/${t.category}/${t.slug}`}
-                className="rounded-full border border-line px-3 py-1.5 text-xs font-medium text-ink/70 hover:border-ink hover:text-ink"
-              >
-                {t.name}
-              </Link>
-            ))}
-          </div>
-        </section>
-      )}
+      {tool.status !== 'coming-soon' && <NextSteps tool={tool} wide={wide} />}
 
       {tool.faq && tool.faq.length > 0 && (
         <section className={`mt-12 border-t border-line pt-6 ${wide ? 'mx-auto max-w-3xl' : ''}`} aria-labelledby="faq-heading">
@@ -58,7 +95,7 @@ export default function ToolPageShell({ tool, children }: { tool: ToolMeta; chil
             {tool.faq.map((f) => (
               <div key={f.q}>
                 <dt className="text-sm font-medium">{f.q}</dt>
-                <dd className="mt-1 text-sm text-ink/60">{f.a}</dd>
+                <dd className="mt-1 text-sm text-ink-2">{f.a}</dd>
               </div>
             ))}
           </dl>

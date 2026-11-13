@@ -1,13 +1,13 @@
 import { useEffect, useRef, useState } from 'react';
 import FileDropzone from '../../../components/FileDropzone';
 import Button from '../../../components/Button';
-import DownloadButton from '../../../components/DownloadButton';
 import ErrorMessage from '../../../components/ErrorMessage';
 import ProgressBar from '../../../components/ProgressBar';
 import { formatDuration } from '../../../lib/audioUtils';
 import { formatBytes } from '../../../lib/imageUtils';
 import { CancelledError, convertAudio, encodableAudioTargets, probeAudio } from '../../../lib/audioEngine';
 import type { AudioInfo, AudioTarget } from '../../../lib/audioEngine';
+import { ActionBar, OptionCards, ResultCard, SizeDelta } from '../../../components/tool';
 
 const PRESETS = [
   { bitrate: 128_000, label: 'High', hint: '128 kb/s — music, near-transparent' },
@@ -96,17 +96,9 @@ export default function AudioCompressTool() {
 
       {info && (
         <>
-          <fieldset className="space-y-1.5" disabled={busy}>
-            <legend className="mb-1 text-xs font-medium text-ink/60">Quality</legend>
-            {PRESETS.map((p) => (
-              <label key={p.bitrate} className="flex items-center gap-2 text-sm">
-                <input type="radio" name="bitrate" checked={bitrate === p.bitrate} onChange={() => setBitrate(p.bitrate)} />
-                {p.label} <span className="text-xs text-ink/50">— {p.hint}</span>
-              </label>
-            ))}
-          </fieldset>
+          <OptionCards legend="Quality" name="bitrate" disabled={busy} value={bitrate} onChange={setBitrate} options={PRESETS.map((p) => ({ value: p.bitrate, label: p.label, hint: p.hint }))} />
           {codecs.length > 1 && (
-            <label className="flex items-center gap-2 text-xs text-ink/60">
+            <label className="flex items-center gap-2 text-xs text-ink-2">
               Format
               <select value={codec} disabled={busy} onChange={(e) => setCodec(e.target.value as AudioTarget)} className="rounded-md border border-line bg-paper px-2 py-1 text-xs text-ink">
                 {codecs.includes('opus') && <option value="opus">Opus (.ogg) — best quality for its size</option>}
@@ -115,23 +107,21 @@ export default function AudioCompressTool() {
               </select>
             </label>
           )}
-          <p className="text-xs text-ink/50">Estimated result: about {formatBytes(estimate)} (now {formatBytes(file!.size)}).</p>
-          <div className="flex flex-wrap items-center gap-2">
+          <p className="text-xs text-ink-3">Estimated result: about {formatBytes(estimate)} (now {formatBytes(file!.size)}).</p>
+          <ActionBar>
             <Button onClick={compress} disabled={busy}>{busy ? 'Compressing…' : 'Compress'}</Button>
             {busy && <Button variant="secondary" onClick={() => abortRef.current?.abort()}>Cancel</Button>}
-          </div>
+          </ActionBar>
           {busy && <ProgressBar value={progress * 100} label={`Encoding… ${Math.round(progress * 100)}%`} />}
         </>
       )}
       {error && <ErrorMessage>{error}</ErrorMessage>}
       {result && file && (
         result.size < file.size ? (
-          <div className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-line bg-paper-dim p-3">
-            <span className="text-sm">
-              {result.name} · {formatBytes(result.size)} <span className="text-signal">(−{Math.round((1 - result.size / file.size) * 100)}%)</span>
-            </span>
-            <DownloadButton url={result.url} filename={result.name} />
-          </div>
+          <ResultCard url={result.url} filename={result.name}>
+            {result.name} · {formatBytes(result.size)}
+            <SizeDelta before={file.size} after={result.size} />
+          </ResultCard>
         ) : (
           <ErrorMessage>
             This file is already smaller than that quality setting ({formatBytes(result.size)} vs. {formatBytes(file.size)}), so keep your

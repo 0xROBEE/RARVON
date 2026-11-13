@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import Button from '../../../components/Button';
+import { CopyButton } from '../../../components/tool';
 
 export default function DedupeTool() {
   const [text, setText] = useState('');
@@ -34,11 +35,11 @@ export default function DedupeTool() {
         className="w-full rounded-md border border-line bg-paper px-3 py-2 font-mono text-xs leading-relaxed focus:border-workshop"
       />
       <div className="flex flex-wrap gap-4">
-        <label className="flex items-center gap-2 text-xs text-ink/60">
+        <label className="flex items-center gap-2 text-xs text-ink-2">
           <input type="checkbox" checked={ignoreCase} onChange={(e) => setIgnoreCase(e.target.checked)} />
           Ignore case
         </label>
-        <label className="flex items-center gap-2 text-xs text-ink/60">
+        <label className="flex items-center gap-2 text-xs text-ink-2">
           <input type="checkbox" checked={trim} onChange={(e) => setTrim(e.target.checked)} />
           Ignore leading/trailing whitespace
         </label>
@@ -47,12 +48,10 @@ export default function DedupeTool() {
       {output !== '' && (
         <div>
           <div className="mb-1.5 flex items-center justify-between">
-            <span className="text-xs font-medium text-ink/60">
+            <span className="text-xs font-medium text-ink-2">
               {removed} duplicate line{removed !== 1 ? 's' : ''} removed
             </span>
-            <button onClick={() => navigator.clipboard.writeText(output)} className="text-xs font-medium text-workshop hover:underline">
-              Copy
-            </button>
+            <CopyButton text={output} label="Copy" />
           </div>
           <pre className="max-h-72 overflow-auto whitespace-pre-wrap rounded-md border border-line bg-paper-dim px-3 py-2 font-mono text-xs leading-relaxed">
             {output}

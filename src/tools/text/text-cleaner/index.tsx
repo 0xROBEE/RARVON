@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import Button from '../../../components/Button';
+import { CopyButton } from '../../../components/tool';
 
 export default function TextCleaner() {
   const [text, setText] = useState('');
@@ -49,7 +50,7 @@ export default function TextCleaner() {
           ['collapseBlankLines', 'Collapse blank lines'],
           ['removeInvisible', 'Remove invisible characters'],
         ].map(([key, label]) => (
-          <label key={key} className="flex items-center gap-2 text-xs text-ink/60">
+          <label key={key} className="flex items-center gap-2 text-xs text-ink-2">
             <input type="checkbox" checked={options[key as keyof typeof options]} onChange={() => toggle(key as keyof typeof options)} />
             {label}
           </label>
@@ -59,10 +60,8 @@ export default function TextCleaner() {
       {output && (
         <div>
           <div className="mb-1.5 flex items-center justify-between">
-            <span className="text-xs font-medium text-ink/60">Result</span>
-            <button onClick={() => navigator.clipboard.writeText(output)} className="text-xs font-medium text-workshop hover:underline">
-              Copy
-            </button>
+            <span className="text-xs font-medium text-ink-2">Result</span>
+            <CopyButton text={output} label="Copy" />
           </div>
           <pre className="max-h-72 overflow-auto whitespace-pre-wrap rounded-md border border-line bg-paper-dim px-3 py-2 text-sm leading-relaxed">
             {output}

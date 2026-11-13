@@ -1,13 +1,13 @@
 import { useEffect, useRef, useState } from 'react';
 import FileDropzone from '../../../components/FileDropzone';
 import Button from '../../../components/Button';
-import DownloadButton from '../../../components/DownloadButton';
 import ErrorMessage from '../../../components/ErrorMessage';
 import ProgressBar from '../../../components/ProgressBar';
 import { formatDuration } from '../../../lib/audioUtils';
 import { formatBytes } from '../../../lib/imageUtils';
 import { VideoCancelledError, probeVideo, runVideoConversion, checkFileSize, detectVideoCapabilities, videoCodecFor } from '../../../lib/videoEngine';
 import type { VideoInfo, OutputContainer, VideoCapabilities } from '../../../lib/videoEngine';
+import { ResultCard } from '../../../components/tool';
 
 export default function VideoConvertTool() {
   const [caps, setCaps] = useState<VideoCapabilities | null>(null);
@@ -93,7 +93,7 @@ export default function VideoConvertTool() {
                 key={c}
                 onClick={() => setTarget(c)}
                 disabled={c === info.sourceFormat}
-                className={`flex-1 rounded px-3 py-1.5 uppercase disabled:opacity-30 ${target === c ? 'bg-ink text-paper' : 'text-ink/60'}`}
+                className={`flex-1 rounded px-3 py-1.5 uppercase disabled:opacity-30 ${target === c ? 'bg-ink text-paper' : 'text-ink-2'}`}
               >
                 {c}
               </button>
@@ -110,10 +110,7 @@ export default function VideoConvertTool() {
 
       {error && <ErrorMessage>{error}</ErrorMessage>}
       {result && (
-        <div className="flex items-center justify-between rounded-md border border-line bg-paper-dim p-3">
-          <span className="text-sm">{result.name}</span>
-          <DownloadButton url={result.url} filename={result.name} />
-        </div>
+        <ResultCard url={result.url} filename={result.name}>{result.name}</ResultCard>
       )}
     </div>
   );

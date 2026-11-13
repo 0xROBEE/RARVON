@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import Button from '../../../components/Button';
+import { CopyButton } from '../../../components/tool';
 
 type Mode = 'alpha' | 'alpha-desc' | 'numeric' | 'length' | 'random';
 
@@ -53,7 +54,7 @@ export default function SortLinesTool() {
           <option value="length">By length</option>
           <option value="random">Shuffle</option>
         </select>
-        <label className="flex items-center gap-2 text-xs text-ink/60">
+        <label className="flex items-center gap-2 text-xs text-ink-2">
           <input type="checkbox" checked={removeEmpty} onChange={(e) => setRemoveEmpty(e.target.checked)} />
           Remove empty lines
         </label>
@@ -62,10 +63,8 @@ export default function SortLinesTool() {
       {output !== '' && (
         <div>
           <div className="mb-1.5 flex items-center justify-between">
-            <span className="text-xs font-medium text-ink/60">Result</span>
-            <button onClick={() => navigator.clipboard.writeText(output)} className="text-xs font-medium text-workshop hover:underline">
-              Copy
-            </button>
+            <span className="text-xs font-medium text-ink-2">Result</span>
+            <CopyButton text={output} label="Copy" />
           </div>
           <pre className="max-h-72 overflow-auto whitespace-pre-wrap rounded-md border border-line bg-paper-dim px-3 py-2 font-mono text-xs leading-relaxed">
             {output}

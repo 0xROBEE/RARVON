@@ -3,6 +3,7 @@ import Button from '../../../components/Button';
 import ErrorMessage from '../../../components/ErrorMessage';
 import FileDropzone from '../../../components/FileDropzone';
 import DownloadButton from '../../../components/DownloadButton';
+import { CopyButton } from '../../../components/tool';
 
 export default function Base64Tool() {
   const [mode, setMode] = useState<'text' | 'file'>('text');
@@ -66,7 +67,7 @@ export default function Base64Tool() {
           <button
             key={m}
             onClick={() => setMode(m)}
-            className={`flex-1 rounded px-3 py-1.5 capitalize transition-colors ${mode === m ? 'bg-ink text-paper' : 'text-ink/60 hover:text-ink'}`}
+            className={`flex-1 rounded px-3 py-1.5 capitalize transition-colors ${mode === m ? 'bg-ink text-paper' : 'text-ink-2 hover:text-ink'}`}
           >
             {m}
           </button>
@@ -97,10 +98,8 @@ export default function Base64Tool() {
           {output && (
             <div>
               <div className="mb-1.5 flex items-center justify-between">
-                <span className="text-xs font-medium text-ink/60">Result</span>
-                <button onClick={() => navigator.clipboard.writeText(output)} className="text-xs font-medium text-workshop hover:underline">
-                  Copy
-                </button>
+                <span className="text-xs font-medium text-ink-2">Result</span>
+                <CopyButton text={output} label="Copy" />
               </div>
               <pre className="max-h-64 overflow-auto whitespace-pre-wrap break-all rounded-md border border-line bg-paper-dim px-3 py-2 font-mono text-xs leading-relaxed">
                 {output}

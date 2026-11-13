@@ -71,7 +71,7 @@ export default function CompressHub() {
                   </svg>
                 </span>
                 {isSoon && (
-                  <span className="rounded-full border border-line px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-ink/50">
+                  <span className="rounded-full border border-line px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-ink-3">
                     Coming soon
                   </span>
                 )}
@@ -82,8 +82,8 @@ export default function CompressHub() {
                 )}
               </div>
               <h3 className="font-display text-base font-semibold">{d.label}</h3>
-              <p className="text-xs leading-relaxed text-ink/60">{d.description}</p>
-              {d.note && <p className="mt-auto text-[11px] leading-relaxed text-ink/40">{d.note}</p>}
+              <p className="text-xs leading-relaxed text-ink-2">{d.description}</p>
+              {d.note && <p className="mt-auto text-[11px] leading-relaxed text-ink-3">{d.note}</p>}
             </div>
           );
           return d.href ? (
@@ -96,7 +96,7 @@ export default function CompressHub() {
         })}
       </div>
 
-      <div className="mt-6 rounded-md border border-line bg-paper-dim p-4 text-xs leading-relaxed text-ink/60">
+      <div className="mt-6 rounded-md border border-line bg-paper-dim p-4 text-xs leading-relaxed text-ink-2">
         <strong className="font-medium text-ink">Worth knowing:</strong> not every file shrinks much. JPEG, MP4
         and ZIP are already compressed formats, so re-compressing them may only save a little — sometimes
         nothing. You'll always see the real before/after size before deciding whether to keep the result.

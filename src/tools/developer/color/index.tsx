@@ -62,7 +62,7 @@ export default function ColorTool() {
             { label: 'HSL', value: `hsl(${hsl.h}, ${hsl.s}%, ${hsl.l}%)` },
           ].map((f) => (
             <div key={f.label} className="rounded-md border border-line bg-paper-dim p-3">
-              <p className="text-xs font-medium text-ink/50">{f.label}</p>
+              <p className="text-xs font-medium text-ink-3">{f.label}</p>
               <button
                 onClick={() => navigator.clipboard.writeText(f.value)}
                 className="mt-1 font-mono text-sm hover:text-workshop"

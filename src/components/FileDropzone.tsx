@@ -1,7 +1,7 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import type { DragEvent } from 'react';
 import clsx from 'clsx';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { useWorkspace, isLikelyCompatible, pendingResultToFile } from '../lib/workspaceContext';
 
 interface FileDropzoneProps {
@@ -16,7 +16,10 @@ export default function FileDropzone({ accept, multiple = false, label, hint, on
   const [isOver, setIsOver] = useState(false);
   const { pending, clearPending } = useWorkspace();
   const [loadingPending, setLoadingPending] = useState(false);
-  const { pathname } = useLocation();
+  const location = useLocation();
+  const navigate = useNavigate();
+  const { pathname } = location;
+  const autoUsed = useRef(false);
 
   const handleDrop = useCallback(
     (e: DragEvent<HTMLLabelElement>) => {
@@ -33,7 +36,17 @@ export default function FileDropzone({ accept, multiple = false, label, hint, on
   // the outgoing tool's banner could catch the click meant for the next one).
   const showChainBanner = pending && pending.source !== pathname && isLikelyCompatible(pending.filename, accept);
 
-  async function useChainedFile() {
+  // Arriving from a "Continue with" button: load the result straight away.
+  const wantsResult = Boolean((location.state as { useResult?: boolean } | null)?.useResult);
+  useEffect(() => {
+    if (!wantsResult || !showChainBanner || autoUsed.current) return;
+    autoUsed.current = true;
+    navigate(pathname, { replace: true, state: null });
+    void loadChainedFile();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [wantsResult, showChainBanner]);
+
+  async function loadChainedFile() {
     if (!pending) return;
     setLoadingPending(true);
     try {
@@ -51,14 +64,14 @@ export default function FileDropzone({ accept, multiple = false, label, hint, on
     <div className="space-y-2">
       {showChainBanner && (
         <div className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-workshop/30 bg-workshop-dim px-3 py-2 text-xs">
-          <span className="text-ink/70">
+          <span className="text-ink-2">
             Continue with <span className="font-medium text-ink">{pending!.filename}</span>, your last result?
           </span>
           <div className="flex shrink-0 gap-2">
-            <button onClick={useChainedFile} disabled={loadingPending} className="rounded-md bg-ink px-2.5 py-1 font-medium text-paper hover:bg-workshop disabled:opacity-50">
+            <button onClick={loadChainedFile} disabled={loadingPending} className="rounded-md bg-ink px-2.5 py-1 font-medium text-paper hover:bg-workshop disabled:opacity-50">
               {loadingPending ? 'Loading…' : 'Use this file'}
             </button>
-            <button onClick={clearPending} className="rounded-md px-2 py-1 font-medium text-ink/50 hover:text-ink">
+            <button onClick={clearPending} className="rounded-md px-2 py-1 font-medium text-ink-3 hover:text-ink">
               Dismiss
             </button>
           </div>
@@ -84,7 +97,7 @@ export default function FileDropzone({ accept, multiple = false, label, hint, on
         <span className="font-display text-sm font-medium">
           {label ?? (multiple ? 'Drop files here, or click to browse' : 'Drop a file here, or click to browse')}
         </span>
-        {hint && <span className="text-xs text-ink/50">{hint}</span>}
+        {hint && <span className="text-xs text-ink-3">{hint}</span>}
         <input
           type="file"
           accept={accept}

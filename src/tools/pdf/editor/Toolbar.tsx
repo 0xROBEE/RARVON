@@ -44,7 +44,7 @@ export default function EditorToolbar({
             title={t.label}
             aria-label={t.label}
             aria-pressed={active === t.value}
-            className={`flex h-8 w-8 items-center justify-center rounded-md border ${active === t.value ? 'border-workshop bg-workshop-dim text-workshop' : 'border-transparent text-ink/60 hover:bg-paper-dim'}`}
+            className={`flex h-8 w-8 items-center justify-center rounded-md border ${active === t.value ? 'border-workshop bg-workshop-dim text-workshop' : 'border-transparent text-ink-2 hover:bg-paper-dim'}`}
           >
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
               <path d={t.icon} strokeLinecap="round" strokeLinejoin="round" />
@@ -52,31 +52,31 @@ export default function EditorToolbar({
           </button>
         ))}
         <div className="mx-1 h-5 w-px bg-line" aria-hidden="true" />
-        <button onClick={onUndo} disabled={!canUndo} title="Undo" aria-label="Undo" className="flex h-8 w-8 items-center justify-center rounded-md text-ink/60 hover:bg-paper-dim disabled:opacity-30">
+        <button onClick={onUndo} disabled={!canUndo} title="Undo" aria-label="Undo" className="flex h-8 w-8 items-center justify-center rounded-md text-ink-2 hover:bg-paper-dim disabled:opacity-30">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 14L4 9l5-5M4 9h11a5 5 0 015 5v1" strokeLinecap="round" strokeLinejoin="round" /></svg>
         </button>
-        <button onClick={onRedo} disabled={!canRedo} title="Redo" aria-label="Redo" className="flex h-8 w-8 items-center justify-center rounded-md text-ink/60 hover:bg-paper-dim disabled:opacity-30">
+        <button onClick={onRedo} disabled={!canRedo} title="Redo" aria-label="Redo" className="flex h-8 w-8 items-center justify-center rounded-md text-ink-2 hover:bg-paper-dim disabled:opacity-30">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M15 14l5-5-5-5M20 9H9a5 5 0 00-5 5v1" strokeLinecap="round" strokeLinejoin="round" /></svg>
         </button>
       </div>
 
       <div className="flex items-center gap-3">
-        <span className="hidden text-xs text-ink/40 sm:inline">Page {currentPageNum} / {totalPages}</span>
+        <span className="hidden text-xs text-ink-3 sm:inline">Page {currentPageNum} / {totalPages}</span>
         <div className="mx-1 hidden h-5 w-px bg-line sm:block" aria-hidden="true" />
 
         <div className="flex items-center gap-1" role="group" aria-label="Zoom">
-          <button onClick={() => onZoomStep(-0.1)} aria-label="Zoom out" title="Zoom out" className="flex h-7 w-7 items-center justify-center rounded text-ink/60 hover:bg-paper-dim">−</button>
+          <button onClick={() => onZoomStep(-0.1)} aria-label="Zoom out" title="Zoom out" className="flex h-7 w-7 items-center justify-center rounded text-ink-2 hover:bg-paper-dim">−</button>
           <button
             onClick={onFit}
             title="Fit page to window"
             aria-label="Fit page to window"
             aria-pressed={zoomMode === 'fit'}
-            className={`rounded px-2 py-1 text-xs font-medium ${zoomMode === 'fit' ? 'bg-workshop-dim text-workshop' : 'text-ink/60 hover:bg-paper-dim'}`}
+            className={`rounded px-2 py-1 text-xs font-medium ${zoomMode === 'fit' ? 'bg-workshop-dim text-workshop' : 'text-ink-2 hover:bg-paper-dim'}`}
           >
             Fit
           </button>
-          <span className="w-11 text-center text-xs text-ink/50">{Math.round(zoomPercent * 100)}%</span>
-          <button onClick={() => onZoomStep(0.1)} aria-label="Zoom in" title="Zoom in" className="flex h-7 w-7 items-center justify-center rounded text-ink/60 hover:bg-paper-dim">+</button>
+          <span className="w-11 text-center text-xs text-ink-3">{Math.round(zoomPercent * 100)}%</span>
+          <button onClick={() => onZoomStep(0.1)} aria-label="Zoom in" title="Zoom in" className="flex h-7 w-7 items-center justify-center rounded text-ink-2 hover:bg-paper-dim">+</button>
         </div>
 
         <button

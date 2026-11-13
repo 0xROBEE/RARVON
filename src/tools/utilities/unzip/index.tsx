@@ -210,7 +210,7 @@ export default function UnzipTool() {
       )}
 
       {file && hadNonUtf8 && (
-        <label className="flex flex-wrap items-center gap-2 rounded-md border border-line bg-paper-dim px-3 py-2 text-xs text-ink/70">
+        <label className="flex flex-wrap items-center gap-2 rounded-md border border-line bg-paper-dim px-3 py-2 text-xs text-ink-2">
           Some file names weren’t stored as Unicode. If they look garbled, choose the language they were written in:
           <select
             value={encoding}
@@ -249,13 +249,13 @@ export default function UnzipTool() {
               <li key={e.path} className="flex flex-wrap items-center justify-between gap-2 px-3 py-2 text-sm">
                 <div className="min-w-0 flex-1">
                   <p className="truncate" dir="auto" title={e.path}>{e.name}</p>
-                  <p className="truncate text-xs text-ink/45" dir="auto">
+                  <p className="truncate text-xs text-ink-3" dir="auto">
                     {e.folder ? `${e.folder}/ · ` : ''}{e.size !== null ? formatBytes(e.size) : ''}
                   </p>
                 </div>
                 <div className="flex shrink-0 flex-wrap gap-1.5">
                   {toolsFor(e.name).filter(([, p]) => knownPaths.has(p)).map(([label, p]) => (
-                    <button key={p} onClick={() => void openInTool(e, p)} className="rounded-md border border-line px-2 py-1 text-xs text-ink/70 hover:border-ink hover:text-ink">
+                    <button key={p} onClick={() => void openInTool(e, p)} className="rounded-md border border-line px-2 py-1 text-xs text-ink-2 hover:border-ink hover:text-ink">
                       {label}
                     </button>
                   ))}
@@ -265,12 +265,12 @@ export default function UnzipTool() {
                 </div>
               </li>
             ))}
-            {!visible.length && <li className="px-3 py-4 text-center text-xs text-ink/50">No files match “{filter}”.</li>}
+            {!visible.length && <li className="px-3 py-4 text-center text-xs text-ink-3">No files match “{filter}”.</li>}
           </ul>
         </>
       )}
 
-      {busy && !entries.length && <p className="text-sm text-ink/50">Reading archive…</p>}
+      {busy && !entries.length && <p className="text-sm text-ink-3">Reading archive…</p>}
       {notice && <p role="status" className="rounded-md border border-signal/30 bg-signal-dim px-4 py-3 text-sm text-signal">{notice}</p>}
       {error && <ErrorMessage>{error}</ErrorMessage>}
     </div>

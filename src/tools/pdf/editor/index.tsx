@@ -225,7 +225,7 @@ function PdfEditorInner() {
 
   return (
     <div data-workspace className="space-y-2">
-      <div className="flex items-center justify-between text-xs text-ink/50">
+      <div className="flex items-center justify-between text-xs text-ink-3">
         <span className="truncate">{file.name} · {pages.length} page{pages.length !== 1 ? 's' : ''} · processed locally, not uploaded</span>
         <div className="flex gap-2 md:hidden">
           <button onClick={() => setShowThumbsMobile((v) => !v)} className="rounded border border-line px-2 py-1">Pages</button>
@@ -374,7 +374,7 @@ function PdfEditorInner() {
         </div>
       )}
 
-      <p className="text-xs text-ink/40">
+      <p className="text-xs text-ink-3">
         "Add/Edit Annotations" (this editor) draws new content on top of your PDF — it doesn't rewrite the
         original text underneath, which real PDF text editing would require and isn't supported yet.
       </p>

@@ -49,7 +49,7 @@ export default function HashTool() {
               setMode(m);
               setResults({});
             }}
-            className={`flex-1 rounded px-3 py-1.5 capitalize transition-colors ${mode === m ? 'bg-ink text-paper' : 'text-ink/60 hover:text-ink'}`}
+            className={`flex-1 rounded px-3 py-1.5 capitalize transition-colors ${mode === m ? 'bg-ink text-paper' : 'text-ink-2 hover:text-ink'}`}
           >
             {m}
           </button>
@@ -70,7 +70,7 @@ export default function HashTool() {
       ) : (
         <>
           <FileDropzone onFiles={hashFile} hint="Any file type" />
-          {fileName && <p className="text-xs text-ink/50">Hashed: {fileName}</p>}
+          {fileName && <p className="text-xs text-ink-3">Hashed: {fileName}</p>}
         </>
       )}
 
@@ -89,7 +89,7 @@ export default function HashTool() {
                   Copy
                 </button>
               </div>
-              <p className="break-all font-mono text-xs text-ink/70">{results[algo]}</p>
+              <p className="break-all font-mono text-xs text-ink-2">{results[algo]}</p>
             </div>
           ))}
         </div>

@@ -12,14 +12,14 @@ export default function Support() {
   return (
     <div className="mx-auto max-w-2xl px-4 py-14 sm:px-6">
       <h1 className="font-display text-2xl font-semibold tracking-tight sm:text-3xl">Support the project</h1>
-      <p className="mt-4 text-sm leading-relaxed text-ink/70">
+      <p className="mt-4 text-sm leading-relaxed text-ink-2">
         Every tool on this site is free, ad-free and works without an account — and that isn't changing. If this
         site has saved you time, you're welcome to support its development. It's completely optional and never
         affects what you can do here.
       </p>
 
       <h2 className="mt-8 font-display text-base font-semibold">What support helps with</h2>
-      <ul className="mt-3 space-y-1 text-sm text-ink/70">
+      <ul className="mt-3 space-y-1 text-sm text-ink-2">
         <li>Hosting and domain costs</li>
         <li>Time spent building and maintaining tools</li>
         <li>Testing across browsers and devices</li>
@@ -31,8 +31,8 @@ export default function Support() {
           <tbody>
             {costs.map((c) => (
               <tr key={c.label} className="border-b border-line last:border-0 odd:bg-paper-dim">
-                <th scope="row" className="px-3 py-2 font-medium text-ink/60">{c.label}</th>
-                <td className="px-3 py-2 text-ink/70">{c.value}</td>
+                <th scope="row" className="px-3 py-2 font-medium text-ink-2">{c.label}</th>
+                <td className="px-3 py-2 text-ink-2">{c.value}</td>
               </tr>
             ))}
           </tbody>
@@ -59,7 +59,7 @@ export default function Support() {
           )}
         </div>
       ) : (
-        <p className="mt-3 text-sm text-ink/50">
+        <p className="mt-3 text-sm text-ink-3">
           No donation links are configured yet. Set <code className="rounded bg-paper-dim px-1 py-0.5 font-mono text-xs">VITE_SUPPORT_DONATION_URL</code> (or the sponsorship/other variants)
           in a <code className="rounded bg-paper-dim px-1 py-0.5 font-mono text-xs">.env.local</code> file — see <code className="rounded bg-paper-dim px-1 py-0.5 font-mono text-xs">.env.example</code> — or edit
           the fallback values in <code className="rounded bg-paper-dim px-1 py-0.5 font-mono text-xs">src/lib/supportConfig.ts</code> directly. Either way, links appear here and in the
@@ -67,7 +67,7 @@ export default function Support() {
         </p>
       )}
 
-      <p className="mt-8 text-xs text-ink/40">
+      <p className="mt-8 text-xs text-ink-3">
         Donations never unlock features, remove limits, or change how the free tools work for anyone.
       </p>
     </div>

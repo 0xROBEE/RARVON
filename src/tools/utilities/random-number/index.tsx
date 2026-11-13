@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import Button from '../../../components/Button';
 import ErrorMessage from '../../../components/ErrorMessage';
+import { CopyButton } from '../../../components/tool';
 
 function secureRandomInt(min: number, max: number): number {
   // Inclusive of both min and max. Uses rejection sampling over a
@@ -71,7 +72,7 @@ export default function RandomNumberTool() {
           <button
             key={m}
             onClick={() => setMode(m)}
-            className={`flex-1 rounded px-3 py-1.5 capitalize transition-colors ${mode === m ? 'bg-ink text-paper' : 'text-ink/60 hover:text-ink'}`}
+            className={`flex-1 rounded px-3 py-1.5 capitalize transition-colors ${mode === m ? 'bg-ink text-paper' : 'text-ink-2 hover:text-ink'}`}
           >
             {m}
           </button>
@@ -79,20 +80,20 @@ export default function RandomNumberTool() {
       </div>
 
       <div className="flex flex-wrap items-end gap-3">
-        <label className="text-xs text-ink/60">
+        <label className="text-xs text-ink-2">
           Min
           <input type="number" value={min} onChange={(e) => setMin(Number(e.target.value))} className="mt-1 block w-24 rounded-md border border-line bg-paper px-2 py-1.5 text-sm" />
         </label>
-        <label className="text-xs text-ink/60">
+        <label className="text-xs text-ink-2">
           Max
           <input type="number" value={max} onChange={(e) => setMax(Number(e.target.value))} className="mt-1 block w-24 rounded-md border border-line bg-paper px-2 py-1.5 text-sm" />
         </label>
-        <label className="text-xs text-ink/60">
+        <label className="text-xs text-ink-2">
           How many
           <input type="number" min={1} max={1000} value={count} onChange={(e) => setCount(Math.min(1000, Math.max(1, Number(e.target.value))))} className="mt-1 block w-24 rounded-md border border-line bg-paper px-2 py-1.5 text-sm" />
         </label>
         {mode === 'decimal' && (
-          <label className="text-xs text-ink/60">
+          <label className="text-xs text-ink-2">
             Decimals
             <input type="number" min={0} max={10} value={decimals} onChange={(e) => setDecimals(Number(e.target.value))} className="mt-1 block w-20 rounded-md border border-line bg-paper px-2 py-1.5 text-sm" />
           </label>
@@ -100,7 +101,7 @@ export default function RandomNumberTool() {
       </div>
 
       {mode === 'integer' && (
-        <label className="flex items-center gap-2 text-xs text-ink/60">
+        <label className="flex items-center gap-2 text-xs text-ink-2">
           <input type="checkbox" checked={allowDuplicates} onChange={(e) => setAllowDuplicates(e.target.checked)} />
           Allow duplicate values
         </label>
@@ -112,10 +113,8 @@ export default function RandomNumberTool() {
       {results.length > 0 && (
         <div>
           <div className="mb-1.5 flex items-center justify-between">
-            <span className="text-xs font-medium text-ink/60">{results.length} number{results.length !== 1 ? 's' : ''}</span>
-            <button onClick={() => navigator.clipboard.writeText(results.join('\n'))} className="text-xs font-medium text-workshop hover:underline">
-              Copy all
-            </button>
+            <span className="text-xs font-medium text-ink-2">{results.length} number{results.length !== 1 ? 's' : ''}</span>
+            <CopyButton text={results.join('\n')} label="Copy all" />
           </div>
           <div className="flex flex-wrap gap-2">
             {results.map((n, i) => (

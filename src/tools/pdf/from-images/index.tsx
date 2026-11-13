@@ -2,9 +2,9 @@ import { useState } from 'react';
 import { PDFDocument } from 'pdf-lib';
 import FileDropzone from '../../../components/FileDropzone';
 import Button from '../../../components/Button';
-import DownloadButton from '../../../components/DownloadButton';
 import ErrorMessage from '../../../components/ErrorMessage';
 import { formatBytes } from '../../../lib/imageUtils';
+import { ResultCard, ActionBar } from '../../../components/tool';
 
 export default function FromImages() {
   const [files, setFiles] = useState<File[]>([]);
@@ -72,13 +72,10 @@ export default function FromImages() {
         </ul>
       )}
 
-      <Button onClick={build} disabled={!files.length || busy}>{busy ? 'Building…' : 'Create PDF'}</Button>
+      <ActionBar><Button onClick={build} disabled={!files.length || busy}>{busy ? 'Building…' : 'Create PDF'}</Button></ActionBar>
       {error && <ErrorMessage>{error}</ErrorMessage>}
       {result && (
-        <div className="flex items-center justify-between rounded-md border border-line bg-paper-dim p-3">
-          <span className="text-sm">{result.name}</span>
-          <DownloadButton url={result.url} filename={result.name} />
-        </div>
+        <ResultCard url={result.url} filename={result.name}>{result.name}</ResultCard>
       )}
     </div>
   );

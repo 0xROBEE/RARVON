@@ -21,6 +21,11 @@
   --color-warn: #b5601f; /* warning / error */
   --color-warn-dim: #fbeee1; /* warning-tinted surface */
   --color-line: #d9d7cc; /* borders */
+  /* Secondary and faint text. Both pass WCAG AA (4.5:1) on paper, paper-dim and
+     tinted surfaces in both themes; they replace the old ink/40–70 opacities,
+     which measured as low as 2.5:1. */
+  --color-ink-2: #4f535b;
+  --color-ink-3: #686b72;
 }
 
 /* Dark theme — same token names, different values. Because every Tailwind
@@ -40,11 +45,35 @@
   --color-warn: #e79a63;
   --color-warn-dim: #372316;
   --color-line: #2b2f37;
+  --color-ink-2: #bdbab2;
+  --color-ink-3: #9a978f;
   color-scheme: dark;
 }
 
 :root[data-theme='light'] {
   color-scheme: light;
+}
+
+/* Category hues: plain custom properties (not @theme) because they are read
+   through var() in inline styles, which Tailwind can't see — @theme variables
+   that no utility uses are left out of the build. Used only for icon tiles. */
+:root {
+  --color-cat-pdf: #c2410c;
+  --color-cat-image: #0f766e;
+  --color-cat-video: #7c3aed;
+  --color-cat-audio: #be185d;
+  --color-cat-developer: #1d4ed8;
+  --color-cat-text: #a16207;
+  --color-cat-utilities: #15803d;
+}
+:root[data-theme='dark'] {
+  --color-cat-pdf: #fb923c;
+  --color-cat-image: #2dd4bf;
+  --color-cat-video: #a78bfa;
+  --color-cat-audio: #f472b6;
+  --color-cat-developer: #60a5fa;
+  --color-cat-text: #facc15;
+  --color-cat-utilities: #4ade80;
 }
 
 html {

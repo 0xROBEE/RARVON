@@ -3,9 +3,9 @@ import type { PointerEvent as ReactPointerEvent } from 'react';
 import { PDFDocument } from 'pdf-lib';
 import FileDropzone from '../../../components/FileDropzone';
 import Button from '../../../components/Button';
-import DownloadButton from '../../../components/DownloadButton';
 import ErrorMessage from '../../../components/ErrorMessage';
 import { getPdfPageCount, renderPdfPageToCanvas } from '../../../lib/pdfjs';
+import { ResultCard } from '../../../components/tool';
 
 interface Box { x: number; y: number; w: number; h: number }
 
@@ -175,7 +175,7 @@ export default function SignPdfTool() {
           <div>
             <h2 className="font-display text-sm font-semibold">1. Create your signature</h2>
             <div className="mt-2 flex gap-1 rounded-md border border-line bg-paper-dim p-1 text-xs font-medium">
-              <span className="px-3 py-1.5 text-ink/50">Draw below, or upload an image instead</span>
+              <span className="px-3 py-1.5 text-ink-3">Draw below, or upload an image instead</span>
             </div>
             <canvas
               ref={padRef}
@@ -194,7 +194,7 @@ export default function SignPdfTool() {
             </div>
             {signatureDataUrl && (
               <div className="mt-2 flex items-center gap-2 rounded-md border border-line bg-paper-dim p-2">
-                <span className="text-xs text-ink/50">Signature ready:</span>
+                <span className="text-xs text-ink-3">Signature ready:</span>
                 <img src={signatureDataUrl} alt="Your signature" className="h-10 bg-white" />
               </div>
             )}
@@ -204,7 +204,7 @@ export default function SignPdfTool() {
             <div>
               <h2 className="font-display text-sm font-semibold">2. Place it on the page</h2>
               {pageCount > 1 && (
-                <label className="mt-2 flex items-center gap-2 text-xs text-ink/60">
+                <label className="mt-2 flex items-center gap-2 text-xs text-ink-2">
                   Page
                   <input
                     type="number"
@@ -217,7 +217,7 @@ export default function SignPdfTool() {
                   of {pageCount}
                 </label>
               )}
-              {loadingPreview && <p className="mt-2 text-xs text-ink/40">Rendering page…</p>}
+              {loadingPreview && <p className="mt-2 text-xs text-ink-3">Rendering page…</p>}
               {pagePreview && (
                 <div
                   ref={previewContainerRef}
@@ -237,7 +237,7 @@ export default function SignPdfTool() {
                   </div>
                 </div>
               )}
-              <label className="mt-2 flex items-center gap-3 text-xs text-ink/60">
+              <label className="mt-2 flex items-center gap-3 text-xs text-ink-2">
                 Signature size
                 <input
                   type="range"
@@ -258,10 +258,7 @@ export default function SignPdfTool() {
 
       {error && <ErrorMessage>{error}</ErrorMessage>}
       {result && (
-        <div className="flex items-center justify-between rounded-md border border-line bg-paper-dim p-3">
-          <span className="text-sm">{result.name}</span>
-          <DownloadButton url={result.url} filename={result.name} />
-        </div>
+        <ResultCard url={result.url} filename={result.name}>{result.name}</ResultCard>
       )}
     </div>
   );

@@ -58,7 +58,7 @@ export default function LazyThumb({
           style={{ transform: `rotate(${rotation}deg)` }}
         />
       ) : (
-        <span className="text-[10px] text-ink/30">…</span>
+        <span className="text-[10px] text-ink-3">…</span>
       )}
     </div>
   );

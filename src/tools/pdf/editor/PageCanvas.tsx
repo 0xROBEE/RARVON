@@ -357,7 +357,7 @@ export default function PageCanvas({
 
   return (
     <div ref={scrollAreaRef} className="flex h-full items-center justify-center overflow-auto bg-grid-paper p-6">
-      {loading && <p className="text-sm text-ink/40">Rendering page…</p>}
+      {loading && <p className="text-sm text-ink-3">Rendering page…</p>}
       {pageImg && (
         <div
           ref={containerRef}

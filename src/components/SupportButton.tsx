@@ -15,7 +15,7 @@ export default function SupportButton({ variant = 'inline' }: SupportButtonProps
       rel="noopener noreferrer"
       className={
         variant === 'footer'
-          ? 'inline-flex items-center gap-1.5 text-xs font-medium text-ink/50 hover:text-ink'
+          ? 'inline-flex items-center gap-1.5 text-xs font-medium text-ink-3 hover:text-ink'
           : 'inline-flex items-center gap-1.5 rounded-md border border-line px-3 py-2 text-xs font-medium hover:border-ink'
       }
     >

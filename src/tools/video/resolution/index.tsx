@@ -1,13 +1,13 @@
 import { useRef, useState } from 'react';
 import FileDropzone from '../../../components/FileDropzone';
 import Button from '../../../components/Button';
-import DownloadButton from '../../../components/DownloadButton';
 import ErrorMessage from '../../../components/ErrorMessage';
 import ProgressBar from '../../../components/ProgressBar';
 import { formatDuration } from '../../../lib/audioUtils';
 import { formatBytes } from '../../../lib/imageUtils';
 import { VideoCancelledError, probeVideo, runVideoConversion, checkFileSize } from '../../../lib/videoEngine';
 import type { VideoInfo } from '../../../lib/videoEngine';
+import { ResultCard, ActionBar } from '../../../components/tool';
 
 const PRESETS = [
   { label: '1080p', height: 1080 },
@@ -104,27 +104,26 @@ export default function VideoResolutionTool() {
             ))}
           </div>
           <div className="flex flex-wrap items-end gap-3">
-            <label className="text-xs text-ink/60">
+            <label className="text-xs text-ink-2">
               Width
               <input type="number" value={width} onChange={(e) => setWidth(Math.max(2, Number(e.target.value)))} className="mt-1 block w-24 rounded-md border border-line bg-paper px-2 py-1.5 text-sm" />
             </label>
-            <label className="text-xs text-ink/60">
+            <label className="text-xs text-ink-2">
               Height
               <input type="number" value={height} onChange={(e) => setHeight(Math.max(2, Number(e.target.value)))} className="mt-1 block w-24 rounded-md border border-line bg-paper px-2 py-1.5 text-sm" />
             </label>
           </div>
-          <Button onClick={apply} disabled={busy || width < 2 || height < 2}>{busy ? 'Processing…' : 'Change resolution'}</Button>
-          {busy && <Button variant="secondary" onClick={() => abortRef.current?.abort()}>Cancel</Button>}
+          <ActionBar>
+            <Button onClick={apply} disabled={busy || width < 2 || height < 2}>{busy ? 'Processing…' : 'Change resolution'}</Button>
+            {busy && <Button variant="secondary" onClick={() => abortRef.current?.abort()}>Cancel</Button>}
+          </ActionBar>
           {busy && <ProgressBar value={progress * 100} label="Re-encoding" />}
         </>
       )}
 
       {error && <ErrorMessage>{error}</ErrorMessage>}
       {result && (
-        <div className="flex items-center justify-between rounded-md border border-line bg-paper-dim p-3">
-          <span className="text-sm">{result.name}</span>
-          <DownloadButton url={result.url} filename={result.name} />
-        </div>
+        <ResultCard url={result.url} filename={result.name}>{result.name}</ResultCard>
       )}
     </div>
   );

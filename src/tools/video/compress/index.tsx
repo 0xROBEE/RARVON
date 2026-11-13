@@ -1,13 +1,13 @@
 import { useRef, useState } from 'react';
 import FileDropzone from '../../../components/FileDropzone';
 import Button from '../../../components/Button';
-import DownloadButton from '../../../components/DownloadButton';
 import ErrorMessage from '../../../components/ErrorMessage';
 import ProgressBar from '../../../components/ProgressBar';
 import { formatDuration } from '../../../lib/audioUtils';
 import { formatBytes } from '../../../lib/imageUtils';
 import { probeVideo, runVideoConversion, checkFileSize, compressionBitrates, VideoCancelledError } from '../../../lib/videoEngine';
 import type { VideoInfo } from '../../../lib/videoEngine';
+import { ActionBar, OptionCards, ResultCard, SizeDelta } from '../../../components/tool';
 
 type Level = 'high' | 'medium' | 'low';
 const LEVELS: { value: Level; label: string; hint: string }[] = [
@@ -106,16 +106,8 @@ export default function VideoCompressTool() {
 
       {info && (
         <>
-          <fieldset className="space-y-1.5" disabled={busy}>
-            <legend className="mb-1 text-xs font-medium text-ink/60">Compression</legend>
-            {LEVELS.map((l) => (
-              <label key={l.value} className="flex items-center gap-2 text-sm">
-                <input type="radio" name="video-quality" checked={level === l.value} onChange={() => setLevel(l.value)} />
-                {l.label} <span className="text-xs text-ink/50">— {l.hint}</span>
-              </label>
-            ))}
-          </fieldset>
-          <label className="flex flex-wrap items-center gap-2 text-xs text-ink/60">
+          <OptionCards legend="Compression" name="video-quality" disabled={busy} value={level} onChange={setLevel} options={LEVELS.map((l) => ({ value: l.value, label: l.label, hint: l.hint }))} />
+          <label className="flex flex-wrap items-center gap-2 text-xs text-ink-2">
             Maximum resolution
             <select value={maxHeight} disabled={busy} onChange={(e) => setMaxHeight(Number(e.target.value))} className="rounded-md border border-line bg-paper px-2 py-1 text-xs text-ink">
               {MAX_HEIGHTS.filter((h) => h === 0 || h < shortSide).map((h) => (
@@ -124,14 +116,14 @@ export default function VideoCompressTool() {
             </select>
             {resize && <span>→ {resize.width}×{resize.height}</span>}
           </label>
-          <p className="text-xs text-ink/50">
+          <p className="text-xs text-ink-3">
             Estimated result: about {formatBytes(estimate)} (now {formatBytes(file!.size)}). Re-encoding uses your device’s video
             encoder and takes a while for long videos.
           </p>
-          <div className="flex flex-wrap items-center gap-2">
+          <ActionBar>
             <Button onClick={compress} disabled={busy}>{busy ? 'Compressing…' : 'Compress video'}</Button>
             {busy && <Button variant="secondary" onClick={() => abortRef.current?.abort()}>Cancel</Button>}
-          </div>
+          </ActionBar>
           {busy && <ProgressBar value={progress * 100} label={`Re-encoding… ${Math.round(progress * 100)}%`} />}
         </>
       )}
@@ -139,13 +131,10 @@ export default function VideoCompressTool() {
       {error && <ErrorMessage>{error}</ErrorMessage>}
       {result && file && (
         result.size < file.size ? (
-          <div className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-line bg-paper-dim p-3">
-            <span className="text-sm">
-              {result.name} · {formatBytes(result.size)}
-              <span className="ml-1 text-signal">(−{Math.round((1 - result.size / file.size) * 100)}%)</span>
-            </span>
-            <DownloadButton url={result.url} filename={result.name} />
-          </div>
+          <ResultCard url={result.url} filename={result.name}>
+            {result.name} · {formatBytes(result.size)}
+            <SizeDelta before={file.size} after={result.size} />
+          </ResultCard>
         ) : (
           <ErrorMessage>
             This video is already efficiently compressed — the re-encoded file came out {formatBytes(result.size)}, not smaller than the

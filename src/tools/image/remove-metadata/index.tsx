@@ -2,10 +2,10 @@ import { useState } from 'react';
 import exifr from 'exifr';
 import FileDropzone from '../../../components/FileDropzone';
 import Button from '../../../components/Button';
-import DownloadButton from '../../../components/DownloadButton';
 import ErrorMessage from '../../../components/ErrorMessage';
 import SuccessMessage from '../../../components/SuccessMessage';
 import { loadImage, canvasToBlob, formatBytes } from '../../../lib/imageUtils';
+import { ResultCard, ActionBar } from '../../../components/tool';
 
 export default function RemoveMetadataTool() {
   const [file, setFile] = useState<File | null>(null);
@@ -76,22 +76,19 @@ export default function RemoveMetadataTool() {
       )}
 
       {file && foundCount !== null && (
-        <p className="text-xs text-ink/50">
+        <p className="text-xs text-ink-3">
           {foundCount > 0 ? `Found ${foundCount} metadata field${foundCount !== 1 ? 's' : ''} to strip.` : 'No EXIF metadata was detected — a cleaned copy will still be produced.'}
         </p>
       )}
 
       {file && (
-        <Button onClick={clean} disabled={busy}>{busy ? 'Cleaning…' : 'Remove metadata'}</Button>
+        <ActionBar><Button onClick={clean} disabled={busy}>{busy ? 'Cleaning…' : 'Remove metadata'}</Button></ActionBar>
       )}
       {error && <ErrorMessage>{error}</ErrorMessage>}
       {result && (
         <div className="space-y-2">
           <SuccessMessage>Metadata stripped. Your cleaned copy is ready.</SuccessMessage>
-          <div className="flex items-center justify-between rounded-md border border-line bg-paper-dim p-3">
-            <span className="text-sm">{result.name} · {formatBytes(result.size)}</span>
-            <DownloadButton url={result.url} filename={result.name} />
-          </div>
+          <ResultCard url={result.url} filename={result.name}>{result.name} · {formatBytes(result.size)}</ResultCard>
         </div>
       )}
     </div>

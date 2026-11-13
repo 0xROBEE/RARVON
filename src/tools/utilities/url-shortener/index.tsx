@@ -30,7 +30,7 @@ export default function UrlShortenerTool() {
   return (
     <div className="space-y-4">
       <div>
-        <label htmlFor="long-url" className="mb-1.5 block text-xs font-medium text-ink/60">Long URL</label>
+        <label htmlFor="long-url" className="mb-1.5 block text-xs font-medium text-ink-2">Long URL</label>
         <input
           id="long-url"
           value={longUrl}
@@ -42,7 +42,7 @@ export default function UrlShortenerTool() {
       <Button onClick={handleSubmit} disabled={!longUrl.trim() || submitting}>
         {submitting ? 'Shortening…' : 'Shorten URL'}
       </Button>
-      {notice && <p className="text-xs text-ink/50">{notice}</p>}
+      {notice && <p className="text-xs text-ink-3">{notice}</p>}
     </div>
   );
 }

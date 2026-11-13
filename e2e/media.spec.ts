@@ -267,12 +267,12 @@ test.describe('tool chaining', () => {
     await page.getByRole('button', { name: 'Merge PDFs' }).click();
     await expect(page.getByRole('button', { name: /Download/ })).toBeVisible();
     // A tool never offers its own result back to itself.
-    await expect(page.getByText(/Continue with/)).toHaveCount(0);
-    // Client-side navigation keeps the in-memory result.
+    await expect(page.getByRole('button', { name: 'Use this file' })).toHaveCount(0);
+    // "Continue with" opens the next tool with the result already loaded.
+    await expect(page.getByRole('heading', { name: 'Continue with merged.pdf' })).toBeVisible();
     await page.getByRole('link', { name: 'Split PDF' }).first().click();
-    await expect(page.getByText('Continue with merged.pdf')).toBeVisible();
-    await page.getByRole('button', { name: 'Use this file' }).click();
-    await expect(page.locator('main')).toContainText('merged.pdf');
+    await expect(page).toHaveURL(/\/tools\/pdf\/split/);
+    await expect(page.locator('main')).toContainText('merged.pdf · 3 pages');
     await page.getByRole('button', { name: 'Split PDF' }).click();
     const zip = await JSZip.loadAsync((await download(page)).buffer);
     expect(Object.keys(zip.files).filter((n) => n.endsWith('.pdf'))).toHaveLength(3);
@@ -283,8 +283,8 @@ test.describe('tool chaining', () => {
     await upload(page, [await makePdf({ pages: 1, label: 'A' }), await makePdf({ pages: 1, label: 'B' })]);
     await page.getByRole('button', { name: 'Merge PDFs' }).click();
     await expect(page.getByRole('button', { name: /Download/ })).toBeVisible();
-    await page.getByRole('link', { name: 'Image', exact: true }).first().click();
-    await page.getByRole('link', { name: /Image Compressor/ }).first().click();
+    await page.getByRole('button', { name: 'All tools' }).click();
+    await page.getByRole('menuitem', { name: 'Image Compressor' }).click();
     await expect(page.locator('input[type=file]')).toBeAttached();
     await expect(page.getByText(/Continue with/)).toHaveCount(0);
   });

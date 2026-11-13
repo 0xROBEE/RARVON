@@ -2,10 +2,10 @@ import { useState } from 'react';
 import { PDFDocument, degrees } from 'pdf-lib';
 import FileDropzone from '../../../components/FileDropzone';
 import Button from '../../../components/Button';
-import DownloadButton from '../../../components/DownloadButton';
 import ErrorMessage from '../../../components/ErrorMessage';
 import { getPdfPageCount } from '../../../lib/pdfjs';
 import { parsePageRange } from '../../../lib/pageRange';
+import { ResultCard, ActionBar } from '../../../components/tool';
 
 export default function RotatePdf() {
   const [file, setFile] = useState<File | null>(null);
@@ -78,31 +78,28 @@ export default function RotatePdf() {
               <button
                 key={a}
                 onClick={() => setAngle(a)}
-                className={`rounded-md border px-3 py-1.5 text-xs font-medium ${angle === a ? 'border-ink bg-ink text-paper' : 'border-line text-ink/60'}`}
+                className={`rounded-md border px-3 py-1.5 text-xs font-medium ${angle === a ? 'border-ink bg-ink text-paper' : 'border-line text-ink-2'}`}
               >
                 {a}°
               </button>
             ))}
           </div>
           <div className="flex gap-1 rounded-md border border-line bg-paper-dim p-1 text-xs font-medium">
-            <button onClick={() => setScope('all')} className={`flex-1 rounded px-3 py-1.5 ${scope === 'all' ? 'bg-ink text-paper' : 'text-ink/60'}`}>All pages</button>
-            <button onClick={() => setScope('range')} className={`flex-1 rounded px-3 py-1.5 ${scope === 'range' ? 'bg-ink text-paper' : 'text-ink/60'}`}>Specific pages</button>
+            <button onClick={() => setScope('all')} className={`flex-1 rounded px-3 py-1.5 ${scope === 'all' ? 'bg-ink text-paper' : 'text-ink-2'}`}>All pages</button>
+            <button onClick={() => setScope('range')} className={`flex-1 rounded px-3 py-1.5 ${scope === 'range' ? 'bg-ink text-paper' : 'text-ink-2'}`}>Specific pages</button>
           </div>
           {scope === 'range' && (
-            <label className="block text-xs text-ink/60">
+            <label className="block text-xs text-ink-2">
               Pages (e.g. 1-3, 5)
               <input value={range} onChange={(e) => setRange(e.target.value)} className="mt-1 block w-full rounded-md border border-line bg-paper px-3 py-2 text-sm" />
             </label>
           )}
-          <Button onClick={rotate} disabled={busy}>{busy ? 'Rotating…' : 'Rotate PDF'}</Button>
+          <ActionBar><Button onClick={rotate} disabled={busy}>{busy ? 'Rotating…' : 'Rotate PDF'}</Button></ActionBar>
         </>
       )}
       {error && <ErrorMessage>{error}</ErrorMessage>}
       {result && (
-        <div className="flex items-center justify-between rounded-md border border-line bg-paper-dim p-3">
-          <span className="text-sm">{result.name}</span>
-          <DownloadButton url={result.url} filename={result.name} />
-        </div>
+        <ResultCard url={result.url} filename={result.name}>{result.name}</ResultCard>
       )}
     </div>
   );

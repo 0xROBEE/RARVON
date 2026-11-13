@@ -2,10 +2,24 @@ import { useEffect, useRef, useState } from 'react';
 import { useTheme } from '../lib/themeContext';
 import type { ThemePreference } from '../lib/themeContext';
 
-const OPTIONS: { value: ThemePreference; label: string; icon: string }[] = [
-  { value: 'light', label: 'Light', icon: '☀️' },
-  { value: 'dark', label: 'Dark', icon: '🌙' },
-  { value: 'system', label: 'System', icon: '🖥️' },
+const ICONS: Record<ThemePreference, string> = {
+  light: 'M12 4V2m0 20v-2m8-8h2M2 12h2m13.66-5.66l1.41-1.41M4.93 19.07l1.41-1.41m0-11.32L4.93 4.93m14.14 14.14l-1.41-1.41M12 7a5 5 0 100 10 5 5 0 000-10z',
+  dark: 'M21 13A9 9 0 1111 3a7 7 0 0010 10z',
+  system: 'M3 5h18v11H3z M8 20h8 M12 16v4',
+};
+
+function ThemeIcon({ value }: { value: ThemePreference }) {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d={ICONS[value]} />
+    </svg>
+  );
+}
+
+const OPTIONS: { value: ThemePreference; label: string }[] = [
+  { value: 'light', label: 'Light' },
+  { value: 'dark', label: 'Dark' },
+  { value: 'system', label: 'System' },
 ];
 
 export default function ThemeToggle() {
@@ -37,14 +51,14 @@ export default function ThemeToggle() {
         aria-haspopup="true"
         aria-expanded={open}
         aria-label={`Theme: ${current.label}. Click to change.`}
-        className="flex h-9 w-9 items-center justify-center rounded-md border border-line text-sm hover:border-ink"
+        className="flex h-9 w-9 items-center justify-center rounded-md border border-line text-ink-2 hover:border-ink hover:text-ink"
       >
-        <span aria-hidden="true">{current.icon}</span>
+        <ThemeIcon value={current.value} />
       </button>
       {open && (
         <ul
           role="menu"
-          className="absolute right-0 z-30 mt-1 w-32 overflow-hidden rounded-md border border-line bg-elevated py-1 text-sm shadow-lg"
+          className="absolute end-0 z-30 mt-1 w-32 overflow-hidden rounded-md border border-line bg-elevated py-1 text-sm shadow-lg"
         >
           {OPTIONS.map((o) => (
             <li key={o.value} role="none">
@@ -55,9 +69,9 @@ export default function ThemeToggle() {
                   setPreference(o.value);
                   setOpen(false);
                 }}
-                className={`flex w-full items-center gap-2 px-3 py-2 text-left hover:bg-paper-dim ${preference === o.value ? 'font-medium text-workshop' : 'text-ink/70'}`}
+                className={`flex w-full items-center gap-2 px-3 py-2 text-left hover:bg-paper-dim ${preference === o.value ? 'font-medium text-workshop' : 'text-ink-2'}`}
               >
-                <span aria-hidden="true">{o.icon}</span>
+                <ThemeIcon value={o.value} />
                 {o.label}
               </button>
             </li>

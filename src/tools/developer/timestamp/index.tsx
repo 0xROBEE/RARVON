@@ -45,9 +45,9 @@ export default function TimestampTool() {
         </div>
         {dateFromUnix ? (
           <div className="rounded-md border border-line bg-paper-dim p-3 text-sm">
-            <p><span className="text-ink/50">UTC:</span> {dateFromUnix.toUTCString()}</p>
-            <p><span className="text-ink/50">Local:</span> {dateFromUnix.toString()}</p>
-            <p><span className="text-ink/50">ISO 8601:</span> {dateFromUnix.toISOString()}</p>
+            <p><span className="text-ink-3">UTC:</span> {dateFromUnix.toUTCString()}</p>
+            <p><span className="text-ink-3">Local:</span> {dateFromUnix.toString()}</p>
+            <p><span className="text-ink-3">ISO 8601:</span> {dateFromUnix.toISOString()}</p>
           </div>
         ) : (
           <p className="text-xs text-warn">Not a valid number.</p>
@@ -65,8 +65,8 @@ export default function TimestampTool() {
         />
         {dateFromInput ? (
           <div className="rounded-md border border-line bg-paper-dim p-3 text-sm font-mono">
-            <p>{Math.floor(dateFromInput.getTime() / 1000)} <span className="text-ink/40">seconds</span></p>
-            <p>{dateFromInput.getTime()} <span className="text-ink/40">milliseconds</span></p>
+            <p>{Math.floor(dateFromInput.getTime() / 1000)} <span className="text-ink-3">seconds</span></p>
+            <p>{dateFromInput.getTime()} <span className="text-ink-3">milliseconds</span></p>
           </div>
         ) : (
           <p className="text-xs text-warn">Enter a valid date.</p>

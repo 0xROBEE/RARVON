@@ -35,9 +35,9 @@ export default function ImageMetadata() {
     <div className="space-y-4">
       <FileDropzone accept="image/*" onFiles={handleFile} hint="JPG works best — PNG/WebP rarely embed EXIF" />
       {file && (
-        <p className="text-xs text-ink/50">{file.name} · {formatBytes(file.size)}</p>
+        <p className="text-xs text-ink-3">{file.name} · {formatBytes(file.size)}</p>
       )}
-      {busy && <p className="text-xs text-ink/40">Reading metadata…</p>}
+      {busy && <p className="text-xs text-ink-3">Reading metadata…</p>}
       {error && <ErrorMessage>{error}</ErrorMessage>}
       {entries.length > 0 && (
         <div className="overflow-hidden rounded-md border border-line">
@@ -45,7 +45,7 @@ export default function ImageMetadata() {
             <tbody>
               {entries.map(([key, value]) => (
                 <tr key={key} className="border-b border-line last:border-0 odd:bg-paper-dim">
-                  <th scope="row" className="px-3 py-2 font-medium text-ink/60">{key}</th>
+                  <th scope="row" className="px-3 py-2 font-medium text-ink-2">{key}</th>
                   <td className="px-3 py-2 font-mono">{String(value)}</td>
                 </tr>
               ))}

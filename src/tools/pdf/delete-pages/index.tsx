@@ -2,10 +2,10 @@ import { useState } from 'react';
 import { PDFDocument } from 'pdf-lib';
 import FileDropzone from '../../../components/FileDropzone';
 import Button from '../../../components/Button';
-import DownloadButton from '../../../components/DownloadButton';
 import ErrorMessage from '../../../components/ErrorMessage';
 import { getPdfPageCount } from '../../../lib/pdfjs';
 import { parsePageRange } from '../../../lib/pageRange';
+import { ResultCard, ActionBar } from '../../../components/tool';
 
 export default function DeletePdfPages() {
   const [file, setFile] = useState<File | null>(null);
@@ -77,19 +77,16 @@ export default function DeletePdfPages() {
 
       {file && (
         <>
-          <label className="block text-xs text-ink/60">
+          <label className="block text-xs text-ink-2">
             Pages to delete (e.g. 2, 4-6)
             <input value={range} onChange={(e) => setRange(e.target.value)} placeholder="e.g. 2, 4-6" className="mt-1 block w-full rounded-md border border-line bg-paper px-3 py-2 text-sm" />
           </label>
-          <Button onClick={remove} disabled={busy || !range.trim()}>{busy ? 'Deleting…' : 'Delete pages'}</Button>
+          <ActionBar><Button onClick={remove} disabled={busy || !range.trim()}>{busy ? 'Deleting…' : 'Delete pages'}</Button></ActionBar>
         </>
       )}
       {error && <ErrorMessage>{error}</ErrorMessage>}
       {result && (
-        <div className="flex items-center justify-between rounded-md border border-line bg-paper-dim p-3">
-          <span className="text-sm">{result.name}</span>
-          <DownloadButton url={result.url} filename={result.name} />
-        </div>
+        <ResultCard url={result.url} filename={result.name}>{result.name}</ResultCard>
       )}
     </div>
   );

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import Button from '../../../components/Button';
 import ErrorMessage from '../../../components/ErrorMessage';
+import { CopyButton } from '../../../components/tool';
 
 export default function UrlEncodeTool() {
   const [input, setInput] = useState('');
@@ -39,10 +40,8 @@ export default function UrlEncodeTool() {
       {output && (
         <div>
           <div className="mb-1.5 flex items-center justify-between">
-            <span className="text-xs font-medium text-ink/60">Result</span>
-            <button onClick={() => navigator.clipboard.writeText(output)} className="text-xs font-medium text-workshop hover:underline">
-              Copy
-            </button>
+            <span className="text-xs font-medium text-ink-2">Result</span>
+            <CopyButton text={output} label="Copy" />
           </div>
           <pre className="max-h-64 overflow-auto whitespace-pre-wrap break-all rounded-md border border-line bg-paper-dim px-3 py-2 font-mono text-xs leading-relaxed">
             {output}

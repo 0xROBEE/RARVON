@@ -2,12 +2,12 @@ import { useEffect, useRef, useState } from 'react';
 import type { PointerEvent as ReactPointerEvent } from 'react';
 import FileDropzone from '../../../components/FileDropzone';
 import Button from '../../../components/Button';
-import DownloadButton from '../../../components/DownloadButton';
 import ErrorMessage from '../../../components/ErrorMessage';
 import { loadImage, canvasToBlob, formatBytes } from '../../../lib/imageUtils';
 import { getSupportedEncodeFormats } from '../../../lib/imageFormatSupport';
 import type { ImageFormatOption } from '../../../lib/imageFormatSupport';
 import { resolutionPresets, socialPresets } from '../../../lib/resizePresets';
+import { ResultCard, ActionBar } from '../../../components/tool';
 
 const MAX_PREVIEW_DIM = 380;
 const MIN_DIM = 8;
@@ -242,25 +242,25 @@ export default function ImageResize() {
             <div className="space-y-3">
               <div className="grid grid-cols-2 gap-3 text-xs">
                 <div className="rounded-md border border-line bg-paper-dim p-3">
-                  <p className="text-ink/50">Original</p>
+                  <p className="text-ink-3">Original</p>
                   <p className="mt-0.5 font-display text-sm font-semibold">{original.w} × {original.h}</p>
-                  <p className="text-ink/40">{formatBytes(file.size)}</p>
+                  <p className="text-ink-3">{formatBytes(file.size)}</p>
                 </div>
                 <div className="rounded-md border border-line bg-paper-dim p-3">
-                  <p className="text-ink/50">Current</p>
+                  <p className="text-ink-3">Current</p>
                   <p className="mt-0.5 font-display text-sm font-semibold">{width} × {height}</p>
-                  <p className="text-ink/40">
+                  <p className="text-ink-3">
                     {estimating ? 'estimating…' : estimatedSize !== null ? `~${formatBytes(estimatedSize)} (estimated)` : '—'}
                   </p>
                 </div>
               </div>
 
               <div className="flex flex-wrap items-end gap-3">
-                <label className="text-xs text-ink/60">
+                <label className="text-xs text-ink-2">
                   Width
                   <input type="number" value={width} onChange={(e) => onWidthChange(Number(e.target.value))} className="mt-1 block w-24 rounded-md border border-line bg-paper px-2 py-1.5 text-sm" />
                 </label>
-                <label className="text-xs text-ink/60">
+                <label className="text-xs text-ink-2">
                   Height
                   <input type="number" value={height} onChange={(e) => onHeightChange(Number(e.target.value))} className="mt-1 block w-24 rounded-md border border-line bg-paper px-2 py-1.5 text-sm" />
                 </label>
@@ -268,7 +268,7 @@ export default function ImageResize() {
                   onClick={() => setLockRatio((v) => !v)}
                   aria-pressed={lockRatio}
                   title={lockRatio ? 'Aspect ratio locked' : 'Aspect ratio unlocked'}
-                  className={`mb-0.5 flex h-8 w-8 items-center justify-center rounded-md border ${lockRatio ? 'border-workshop bg-workshop-dim text-workshop' : 'border-line text-ink/50'}`}
+                  className={`mb-0.5 flex h-8 w-8 items-center justify-center rounded-md border ${lockRatio ? 'border-workshop bg-workshop-dim text-workshop' : 'border-line text-ink-3'}`}
                 >
                   {lockRatio ? (
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="5" y="11" width="14" height="9" rx="1" /><path d="M8 11V7a4 4 0 018 0v4" /></svg>
@@ -278,7 +278,7 @@ export default function ImageResize() {
                 </button>
               </div>
 
-              <label className="flex items-center gap-3 text-xs text-ink/60">
+              <label className="flex items-center gap-3 text-xs text-ink-2">
                 Scale
                 <input type="range" min={5} max={200} value={percent} onChange={(e) => onPercentChange(Number(e.target.value))} className="flex-1 max-w-xs" />
                 <span className="w-12 text-right font-mono">{percent}%</span>
@@ -289,7 +289,7 @@ export default function ImageResize() {
           <div>
             <button
               onClick={() => setShowAdvanced((v) => !v)}
-              className="flex items-center gap-1.5 text-xs font-medium text-ink/60 hover:text-ink"
+              className="flex items-center gap-1.5 text-xs font-medium text-ink-2 hover:text-ink"
             >
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className={showAdvanced ? 'rotate-90' : ''}>
                 <path d="M9 6l6 6-6 6" strokeLinecap="round" strokeLinejoin="round" />
@@ -300,27 +300,27 @@ export default function ImageResize() {
             {showAdvanced && (
               <div className="mt-3 space-y-4 rounded-md border border-line bg-paper-dim p-4">
                 <div>
-                  <p className="mb-2 text-xs font-medium text-ink/60">Resolution presets</p>
+                  <p className="mb-2 text-xs font-medium text-ink-2">Resolution presets</p>
                   <div className="flex flex-wrap gap-2">
                     {resolutionPresets.map((p) => (
                       <button key={p.label} onClick={() => applyPreset(p.width, p.height)} className="rounded-md border border-line bg-paper px-2.5 py-1 text-xs hover:border-ink">
-                        {p.label} <span className="text-ink/40">({p.width}×{p.height})</span>
+                        {p.label} <span className="text-ink-3">({p.width}×{p.height})</span>
                       </button>
                     ))}
                   </div>
                 </div>
                 <div>
-                  <p className="mb-2 text-xs font-medium text-ink/60">Social media presets</p>
+                  <p className="mb-2 text-xs font-medium text-ink-2">Social media presets</p>
                   <div className="flex flex-wrap gap-2">
                     {socialPresets.map((p) => (
                       <button key={p.label} onClick={() => applyPreset(p.width, p.height)} className="rounded-md border border-line bg-paper px-2.5 py-1 text-xs hover:border-ink">
-                        {p.label} <span className="text-ink/40">({p.width}×{p.height})</span>
+                        {p.label} <span className="text-ink-3">({p.width}×{p.height})</span>
                       </button>
                     ))}
                   </div>
                 </div>
                 <div className="flex flex-wrap items-center gap-4">
-                  <label className="flex items-center gap-2 text-xs text-ink/60">
+                  <label className="flex items-center gap-2 text-xs text-ink-2">
                     Output format
                     <select
                       value={format?.mime ?? ''}
@@ -333,7 +333,7 @@ export default function ImageResize() {
                     </select>
                   </label>
                   {supportsQuality && (
-                    <label className="flex items-center gap-3 text-xs text-ink/60">
+                    <label className="flex items-center gap-3 text-xs text-ink-2">
                       Quality
                       <input type="range" min={0.3} max={1} step={0.05} value={quality} onChange={(e) => setQuality(Number(e.target.value))} className="w-32" />
                       {Math.round(quality * 100)}%
@@ -345,7 +345,7 @@ export default function ImageResize() {
           </div>
 
           {original && Math.abs(original.w / original.h - width / height) > 0.01 && (
-            <label className="flex flex-wrap items-center gap-2 text-xs text-ink/60">
+            <label className="flex flex-wrap items-center gap-2 text-xs text-ink-2">
               The new shape differs from the original —
               <select value={fit} onChange={(e) => setFit(e.target.value as Fit)} className="rounded-md border border-line bg-paper px-2 py-1 text-xs text-ink" aria-label="Fit">
                 <option value="cover">Crop to fill</option>
@@ -354,16 +354,13 @@ export default function ImageResize() {
               </select>
             </label>
           )}
-          <Button onClick={download} disabled={busy || !format}>{busy ? 'Preparing…' : 'Resize image'}</Button>
+          <ActionBar><Button onClick={download} disabled={busy || !format}>{busy ? 'Preparing…' : 'Resize image'}</Button></ActionBar>
         </>
       )}
 
       {error && <ErrorMessage>{error}</ErrorMessage>}
       {result && (
-        <div className="flex items-center justify-between rounded-md border border-line bg-paper-dim p-3">
-          <span className="text-sm">{result.name}</span>
-          <DownloadButton url={result.url} filename={result.name} />
-        </div>
+        <ResultCard url={result.url} filename={result.name}>{result.name}</ResultCard>
       )}
     </div>
   );

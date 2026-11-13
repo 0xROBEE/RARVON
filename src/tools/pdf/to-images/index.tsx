@@ -2,11 +2,11 @@ import { useState } from 'react';
 import JSZip from 'jszip';
 import FileDropzone from '../../../components/FileDropzone';
 import Button from '../../../components/Button';
-import DownloadButton from '../../../components/DownloadButton';
 import ErrorMessage from '../../../components/ErrorMessage';
 import ProgressBar from '../../../components/ProgressBar';
 import { getPdfPageCount, renderPdfPageToCanvas } from '../../../lib/pdfjs';
 import { canvasToBlob } from '../../../lib/imageUtils';
+import { ResultCard, ActionBar } from '../../../components/tool';
 
 export default function PdfToImages() {
   const [file, setFile] = useState<File | null>(null);
@@ -70,29 +70,26 @@ export default function PdfToImages() {
       {file && (
         <>
           <div className="flex flex-wrap items-center gap-4">
-            <label className="flex items-center gap-2 text-xs text-ink/60">
+            <label className="flex items-center gap-2 text-xs text-ink-2">
               Format
               <select value={format} onChange={(e) => setFormat(e.target.value as typeof format)} className="rounded-md border border-line bg-paper px-2 py-1.5 text-xs">
                 <option value="image/png">PNG</option>
                 <option value="image/jpeg">JPG</option>
               </select>
             </label>
-            <label className="flex items-center gap-2 text-xs text-ink/60">
+            <label className="flex items-center gap-2 text-xs text-ink-2">
               Resolution
               <input type="range" min={1} max={4} step={0.5} value={scale} onChange={(e) => setScale(Number(e.target.value))} />
               {scale}×
             </label>
           </div>
-          <Button onClick={convert} disabled={busy}>{busy ? 'Converting…' : 'Convert to images'}</Button>
+          <ActionBar><Button onClick={convert} disabled={busy}>{busy ? 'Converting…' : 'Convert to images'}</Button></ActionBar>
           {busy && <ProgressBar value={progress} label="Rendering pages" />}
         </>
       )}
       {error && <ErrorMessage>{error}</ErrorMessage>}
       {result && (
-        <div className="flex items-center justify-between rounded-md border border-line bg-paper-dim p-3">
-          <span className="text-sm">{result.name}</span>
-          <DownloadButton url={result.url} filename={result.name} />
-        </div>
+        <ResultCard url={result.url} filename={result.name}>{result.name}</ResultCard>
       )}
     </div>
   );

@@ -2,8 +2,8 @@ import { useState } from 'react';
 import { PDFDocument } from 'pdf-lib';
 import FileDropzone from '../../../components/FileDropzone';
 import Button from '../../../components/Button';
-import DownloadButton from '../../../components/DownloadButton';
 import ErrorMessage from '../../../components/ErrorMessage';
+import { ResultCard, ActionBar } from '../../../components/tool';
 
 interface Meta {
   title: string; author: string; subject: string; keywords: string; creator: string; producer: string;
@@ -82,7 +82,7 @@ export default function PdfMetadata() {
       {meta && (
         <div className="space-y-3">
           {fields.map(({ key, label }) => (
-            <label key={key} className="block text-xs text-ink/60">
+            <label key={key} className="block text-xs text-ink-2">
               {label}
               <input
                 value={meta[key]}
@@ -91,15 +91,12 @@ export default function PdfMetadata() {
               />
             </label>
           ))}
-          <Button onClick={save} disabled={busy}>{busy ? 'Saving…' : 'Save changes'}</Button>
+          <ActionBar><Button onClick={save} disabled={busy}>{busy ? 'Saving…' : 'Save changes'}</Button></ActionBar>
         </div>
       )}
       {error && <ErrorMessage>{error}</ErrorMessage>}
       {result && (
-        <div className="flex items-center justify-between rounded-md border border-line bg-paper-dim p-3">
-          <span className="text-sm">{result.name}</span>
-          <DownloadButton url={result.url} filename={result.name} />
-        </div>
+        <ResultCard url={result.url} filename={result.name}>{result.name}</ResultCard>
       )}
     </div>
   );

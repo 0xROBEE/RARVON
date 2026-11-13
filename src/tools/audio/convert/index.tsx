@@ -9,6 +9,7 @@ import { audioBufferToWavBlob, decodeAudioFile, formatDuration } from '../../../
 import { formatBytes } from '../../../lib/imageUtils';
 import { AUDIO_TARGETS, CancelledError, convertAudio, encodableAudioTargets, probeAudio } from '../../../lib/audioEngine';
 import type { AudioInfo, AudioTarget } from '../../../lib/audioEngine';
+import { ActionBar, OptionCards } from '../../../components/tool';
 
 const CODEC_LABELS: Record<string, string> = {
   aac: 'AAC', opus: 'Opus', mp3: 'MP3', vorbis: 'Vorbis', flac: 'FLAC', alac: 'ALAC',
@@ -106,23 +107,15 @@ export default function AudioConvertTool() {
 
       {file && (
         <>
-          <fieldset className="space-y-1.5" disabled={busy}>
-            <legend className="mb-1 text-xs font-medium text-ink/60">Convert to</legend>
-            {options.map((o) => (
-              <label key={o.value} className="flex items-center gap-2 text-sm">
-                <input type="radio" name="audio-target" checked={(fallback ? 'wav' : target) === o.value} onChange={() => setTarget(o.value)} />
-                {o.label}
-              </label>
-            ))}
-          </fieldset>
-          {fallback && <p className="text-xs text-ink/50">This file can be decoded but not re-packaged by the converter, so only WAV output is available for it.</p>}
+          <OptionCards legend="Convert to" name="audio-target" disabled={busy} value={fallback ? 'wav' : target} onChange={setTarget} options={options.map((o) => { const [label, hint] = o.label.split(' — '); return { value: o.value, label, hint }; })} />
+          {fallback && <p className="text-xs text-ink-3">This file can be decoded but not re-packaged by the converter, so only WAV output is available for it.</p>}
           {target === 'mp3' && !fallback && (
-            <p className="text-xs text-ink/50">The first MP3 export downloads the MP3 encoder once (about 120 KB compressed); it runs on your device like everything else.</p>
+            <p className="text-xs text-ink-3">The first MP3 export downloads the MP3 encoder once (about 120 KB compressed); it runs on your device like everything else.</p>
           )}
-          <div className="flex flex-wrap items-center gap-2">
+          <ActionBar>
             <Button onClick={convert} disabled={busy}>{busy ? 'Converting…' : 'Convert'}</Button>
             {busy && <Button variant="secondary" onClick={() => abortRef.current?.abort()}>Cancel</Button>}
-          </div>
+          </ActionBar>
           {busy && <ProgressBar value={progress * 100} label={`Converting… ${Math.round(progress * 100)}%`} />}
         </>
       )}

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { CopyButton } from '../../../components/tool';
 
 const converters: Record<string, (s: string) => string> = {
   UPPERCASE: (s) => s.toUpperCase(),
@@ -39,14 +40,12 @@ export default function CaseConverter() {
           return (
             <div key={label} className="rounded-md border border-line bg-paper-dim p-3">
               <div className="mb-1 flex items-center justify-between">
-                <span className="text-xs font-medium text-ink/50">{label}</span>
+                <span className="text-xs font-medium text-ink-3">{label}</span>
                 {result && (
-                  <button onClick={() => navigator.clipboard.writeText(result)} className="text-xs font-medium text-workshop hover:underline">
-                    Copy
-                  </button>
+                  <CopyButton text={result} label="Copy" />
                 )}
               </div>
-              <p className="min-h-5 break-words text-sm">{result || <span className="text-ink/30">—</span>}</p>
+              <p className="min-h-5 break-words text-sm">{result || <span className="text-ink-3">—</span>}</p>
             </div>
           );
         })}
