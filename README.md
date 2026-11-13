@@ -20,6 +20,8 @@ tools that run entirely in your browser.
 - **Tailwind CSS v4** — design tokens and light/dark themes in `src/index.css`
 - **pdf-lib** (MIT) — create/edit PDFs · **pdfjs-dist** (Apache-2.0) — render PDF pages
 - **mediabunny** (MPL-2.0) — MP4/WebM demux/mux on top of the browser's WebCodecs, for the video tools
+- **tesseract.js** + **tesseract.js-core** (Apache-2.0) — OCR engine (WebAssembly) for Image to Text, with
+  language models from **@tesseract.js-data/*** (Apache-2.0, Tesseract `tessdata_best` integer models)
 - **jszip** (MIT), **qrcode** (MIT), **exifr** (MIT) — ZIP creation, QR codes, EXIF reading
 
 No backend. Every tool runs in the browser.
@@ -29,7 +31,7 @@ No backend. Every tool runs in the browser.
 | Category | Tools |
 |---|---|
 | PDF | Editor (annotate, draw, highlight, sign, redact, reorder/rotate/delete pages), Merge, Split, Compress, Rotate, Extract pages, Delete pages, Reorder, PDF→Images, Images→PDF, Metadata, Page numbers, Watermark, Sign |
-| Image | Convert, Compress, Resize (interactive), Crop, Rotate/flip, Metadata viewer, Remove EXIF |
+| Image | **Image to Text (OCR)**, Convert, Compress, Resize (interactive), Crop, Rotate/flip, Metadata viewer, Remove EXIF |
 | Video (experimental) | Trim, Change resolution, Convert (MP4 ⇄ WebM), Compress — WebCodecs via Mediabunny, MP4/WebM only, 250 MB limit |
 | Audio | Trim (WAV), Convert (WAV / WebM-Opus), Compress (WebM-Opus), Extract audio from video |
 | Developer | JSON format/minify, Base64, URL encode, UUID, Hash, Timestamp, Color, JWT decoder, Regex tester |
@@ -39,6 +41,20 @@ No backend. Every tool runs in the browser.
 Cross-cutting features: global search (⌘K), action pages, a Compress hub, light/dark/system theme, and **tool
 chaining** — a tool's last result can be picked up by the next tool without re-uploading
 (`src/lib/workspaceContext.tsx` + `DownloadButton`).
+
+### Image to Text (OCR)
+
+`src/lib/ocrEngine.ts` (Tesseract in a Web Worker, LSTM models) and `src/lib/ocrPreprocess.ts` (rotation, scaling,
+grayscale/contrast, dark-background inversion, automatic deskew). All OCR files — worker, WASM cores and one
+`<lang>.traineddata.gz` per installed `@tesseract.js-data/<lang>` package — are self-hosted under `/ocr/` by the
+`ocrAssets` plugin in `vite.config.ts` and only downloaded when OCR runs (1–15 MB per language, then cached).
+To add a language: `npm i -D @tesseract.js-data/<code>` and add it to `OCR_LANGUAGES`.
+
+Arabic is handled as a first-class case: Arabic + English is read together for mixed text, and pure Arabic is
+re-read with the Arabic model alone when no confident Latin words are found. Character error rates measured on
+rendered test images: clean Arabic 0.5–1.5%, mixed Arabic/English 0.7%, tilted noisy photos 1–5%, dark-mode
+screenshots ~4%, English 0%. Eastern Arabic digits (٠–٩) are a known weak spot of the Arabic model (~14% CER on a
+digit-heavy sample); handwriting is not supported; Sorani Kurdish has no packaged model.
 
 ### Known limitations
 

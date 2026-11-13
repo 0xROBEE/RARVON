@@ -216,6 +216,21 @@ export const tools: ToolMeta[] = [
     faq: [{ q: 'Does this guarantee every trace of metadata is gone?', a: 'It removes the EXIF/XMP/IPTC metadata blocks by re-drawing the image onto a canvas and re-encoding it, which strips this metadata by construction, since canvas output never carries it. It doesn\u2019t alter pixel data.' }],
   },
 
+  {
+    slug: 'to-text', category: 'image', name: 'Image to Text (OCR)',
+    shortDescription: 'Extract editable text from screenshots, scans and photos — Arabic, English and 15 more languages.',
+    description: 'Image to Text reads the text in a screenshot, scanned page or photo of a document and gives it back as editable text you can review, search, copy or download. Arabic is fully supported, including right-to-left paragraphs mixed with English. Recognition runs on your device — the image is never uploaded.',
+    status: 'available', keywords: ['ocr', 'image to text', 'extract text from image', 'arabic ocr', 'screenshot to text', 'scan to text', 'استخراج النص من الصورة', 'تحويل الصورة إلى نص'],
+    actions: ['extract', 'convert'],
+    layout: 'wide',
+    faq: [
+      { q: 'Is my image uploaded anywhere?', a: 'No. Text recognition (Tesseract, compiled to WebAssembly) runs in your browser. The first time you use a language, its recognition data (about 1–15 MB depending on the language) is downloaded from this site and then cached on your device.' },
+      { q: 'How good is Arabic recognition?', a: 'On clear screenshots and scans, Arabic is read very accurately, including headings, punctuation, Western digits and English words mixed into Arabic sentences. Tilted images are straightened automatically. Two known weak spots: Eastern Arabic digits (٠–٩) are often misread, and handwriting is not supported. Very small or blurry text loses accuracy — a sharper or closer photo helps most.' },
+      { q: 'Which languages are supported?', a: 'Arabic, English, Persian, Urdu, Kurdish (Kurmanji, Latin script), Turkish, French, German, Spanish, Italian, Portuguese, Russian, Chinese (Simplified and Traditional), Japanese, Korean and Hindi. Sorani Kurdish is not available yet because the recognition engine has no packaged model for it.' },
+      { q: 'My image is sideways or upside down.', a: 'Use the rotate buttons above the image, then Re-run OCR. Small tilts are corrected automatically.' },
+    ],
+  },
+
   // Video
   {
     slug: 'trim', category: 'video', name: 'Trim Video',
@@ -462,6 +477,6 @@ export function relatedTools(tool: ToolMeta, max = 3): ToolMeta[] {
 }
 
 export const popularToolKeys = [
-  'pdf/merge', 'pdf/compress', 'image/convert', 'image/compress',
+  'image/to-text', 'pdf/merge', 'pdf/compress', 'image/convert', 'image/compress',
   'developer/json-formatter', 'utilities/qr',
 ];
