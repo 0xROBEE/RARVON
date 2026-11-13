@@ -14,49 +14,62 @@ tools that run entirely in your browser.
 
 ## Stack
 
-- **React + TypeScript + Vite** — component model fits a large, growing set of independent tools well, and Vite's
-  per-route code splitting keeps the homepage light even as the tool count grows
-- **React Router** — one route per tool (`/tools/pdf/merge`), so every tool is directly linkable and indexable
-- **Tailwind CSS v4** — utility-first styling with a small custom design-token theme (see `src/index.css`)
-- **pdf-lib** (MIT) — create/edit PDFs client-side
-- **pdfjs-dist** (Apache-2.0) — render PDF pages to canvas for thumbnails, page-to-image export, and the
-  rasterization-based compressor
-- **qrcode** (MIT), **exifr** (MIT), **jszip** (MIT) — QR generation, EXIF reading, multi-file zip downloads
+- **React 19 + TypeScript + Vite** — one lazy-loaded chunk per tool, so the homepage stays light and heavy
+  libraries (pdfjs, the video engine) only load on the pages that use them
+- **React Router** — one route per tool (`/tools/pdf/merge`), plus action pages (`/compress`, `/convert`, ...)
+- **Tailwind CSS v4** — design tokens and light/dark themes in `src/index.css`
+- **pdf-lib** (MIT) — create/edit PDFs · **pdfjs-dist** (Apache-2.0) — render PDF pages
+- **mediabunny** (MPL-2.0) — MP4/WebM demux/mux on top of the browser's WebCodecs, for the video tools
+- **jszip** (MIT), **qrcode** (MIT), **exifr** (MIT) — ZIP creation, QR codes, EXIF reading
 
-All dependencies are permissively licensed and compatible with a future commercial version.
+No backend. Every tool runs in the browser.
+
+## Tools
+
+| Category | Tools |
+|---|---|
+| PDF | Editor (annotate, draw, highlight, sign, redact, reorder/rotate/delete pages), Merge, Split, Compress, Rotate, Extract pages, Delete pages, Reorder, PDF→Images, Images→PDF, Metadata, Page numbers, Watermark, Sign |
+| Image | Convert, Compress, Resize (interactive), Crop, Rotate/flip, Metadata viewer, Remove EXIF |
+| Video (experimental) | Trim, Change resolution, Convert (MP4 ⇄ WebM), Compress — WebCodecs via Mediabunny, MP4/WebM only, 250 MB limit |
+| Audio | Trim (WAV), Convert (WAV / WebM-Opus), Compress (WebM-Opus), Extract audio from video |
+| Developer | JSON format/minify, Base64, URL encode, UUID, Hash, Timestamp, Color, JWT decoder, Regex tester |
+| Text | Word counter, Case converter, Text cleaner, Remove duplicate lines, Line sorter |
+| Utilities | File Compressor (create ZIP), QR code, Password, Random number, URL shortener (UI only — needs a server) |
+
+Cross-cutting features: global search (⌘K), action pages, a Compress hub, light/dark/system theme, and **tool
+chaining** — a tool's last result can be picked up by the next tool without re-uploading
+(`src/lib/workspaceContext.tsx` + `DownloadButton`).
+
+### Known limitations
+
+- Audio Convert/Compress/Extract encode in real time (a 5-minute file takes about 5 minutes).
+- PDF Editor exports text with a Latin-only font; non-Latin text (Arabic, Cyrillic, CJK, ...) is not yet supported,
+  and annotations on pages that carry their own embedded rotation can be misplaced.
+- Compress PDF rasterizes pages (text stops being selectable) and helps mainly with scanned/image-heavy PDFs.
+- Video Compress can produce a larger file for already low-bitrate sources.
+- Video tools have been verified in Chromium only.
 
 ## Project structure
 
 ```
 src/
-  components/     Shared UI: FileDropzone, Button, ToolCard, ToolSearch, SupportButton, ...
-  lib/             toolRegistry.ts (all tool metadata), toolComponents.tsx (lazy-loaded map),
-                    pdfjs.ts / imageUtils.ts (processing helpers), supportConfig.ts, searchContext.tsx
-  pages/          Home, CategoryPage, ToolPage (dynamic), Privacy, About, Support, NotFound
-  tools/
-    pdf/          merge, split, compress, rotate, extract, reorder, to-images, from-images, metadata
-    image/        convert, compress, resize, crop, rotate, metadata
-    video/        (Coming Soon — see below)
-    developer/    json-formatter, json-minifier, base64, url-encode, uuid, hash, timestamp, color
-    text/         word-counter, case-converter, text-cleaner, dedupe, sort-lines
-    utilities/    qr, password, url-shortener (UI only)
+  components/   Shared UI: FileDropzone, DownloadButton, ToolPageShell, ToolSearch, ...
+  lib/          toolRegistry.ts (all tool metadata), toolComponents.tsx (lazy-loaded map),
+                workspaceContext.tsx (chaining + result URL lifetime), pdfjs.ts, imageUtils.ts,
+                audioUtils.ts, videoEngine.ts, themeContext.tsx, searchContext.tsx
+  pages/        Home, CategoryPage, ToolPage, ActionPage, CompressHub, Privacy, About, Support, NotFound
+  tools/<category>/<slug>/index.tsx   one folder per tool
+docs/           VIDEO_ARCHITECTURE.md — why WebCodecs/Mediabunny instead of FFmpeg-WASM
 ```
 
-Every tool is a self-contained folder with an `index.tsx` default export. To add a new one:
+To add a tool:
 
-1. Create `src/tools/<category>/<slug>/index.tsx`
+1. Create `src/tools/<category>/<slug>/index.tsx` with a default export
 2. Add its metadata to `src/lib/toolRegistry.ts`
 3. Register the lazy import in `src/lib/toolComponents.tsx`
 
-The homepage never imports tool code directly — each tool's JS only loads when its page is visited.
-
-## Why video tools are "Coming Soon"
-
-Real video compression/conversion in-browser needs a WebAssembly build of FFmpeg, which needs
-`SharedArrayBuffer`, which needs the whole site served with `Cross-Origin-Opener-Policy` and
-`Cross-Origin-Embedder-Policy` headers. Turning that on affects every other page, including all the tools that
-already work. The architecture (a `workers/` layer plus each tool's `index.tsx`) is ready for this; it's staged
-rather than shipped half-working.
+Show results with `DownloadButton` — it makes the result available for chaining and releases the blob URL
+when it's no longer used.
 
 ## Why the URL shortener isn't real
 
@@ -76,10 +89,11 @@ npm install
 npm run dev
 ```
 
-## Production build
+## Checks and production build
 
 ```
-npm run build
+npm run lint
+npm run build      # runs tsc -b, then vite build
 npm run preview
 ```
 

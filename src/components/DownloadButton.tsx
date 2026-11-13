@@ -9,13 +9,21 @@ interface DownloadButtonProps {
 }
 
 export default function DownloadButton({ url, filename, label = 'Download result' }: DownloadButtonProps) {
-  const { setPending } = useWorkspace();
+  const { setPending, retainUrl, releaseUrl } = useWorkspace();
+
+  // Hold the result URL while this button is shown; once it unmounts (new
+  // result, file removed, page left) and chaining no longer points at it,
+  // the workspace revokes it so the blob can be garbage-collected.
+  useEffect(() => {
+    retainUrl(url);
+    return () => releaseUrl(url);
+  }, [url, retainUrl, releaseUrl]);
 
   // Every result a tool produces becomes available for other tools to pick
   // up directly, without the user re-downloading and re-uploading it. This
   // one effect is what makes chaining work across the whole site, since
   // DownloadButton is already the shared result affordance almost every
-  // tool uses.
+  // tool uses. setPending is stable and ignores repeats, so this can't loop.
   useEffect(() => {
     setPending({ url, filename });
   }, [url, filename, setPending]);

@@ -21,6 +21,34 @@ export async function renderPdfPageToCanvas(
   return canvas;
 }
 
+/**
+ * Opens a PDF once and renders pages from it on demand, instead of re-parsing
+ * the whole document for every page. Returns each page's canvas plus its
+ * displayed size in PDF points (crop box and embedded rotation applied), so
+ * callers can rebuild pages at their real physical size.
+ */
+export async function openPdfForRendering(data: ArrayBuffer) {
+  const task = pdfjsLib.getDocument({ data });
+  const doc = await task.promise;
+  return {
+    numPages: doc.numPages,
+    async renderPage(pageNumber: number, scale: number) {
+      const page = await doc.getPage(pageNumber);
+      const base = page.getViewport({ scale: 1 });
+      const viewport = page.getViewport({ scale });
+      const canvas = document.createElement('canvas');
+      canvas.width = Math.max(1, Math.round(viewport.width));
+      canvas.height = Math.max(1, Math.round(viewport.height));
+      const ctx = canvas.getContext('2d');
+      if (!ctx) throw new Error('Canvas is not supported in this browser.');
+      await page.render({ canvasContext: ctx, viewport, canvas }).promise;
+      page.cleanup();
+      return { canvas, widthPt: base.width, heightPt: base.height };
+    },
+    destroy: () => task.destroy(),
+  };
+}
+
 export async function getPdfPageCount(data: ArrayBuffer): Promise<number> {
   const doc = await pdfjsLib.getDocument({ data }).promise;
   const count = doc.numPages;

@@ -6,7 +6,7 @@ import DownloadButton from '../../../components/DownloadButton';
 import ErrorMessage from '../../../components/ErrorMessage';
 import ProgressBar from '../../../components/ProgressBar';
 import { formatBytes } from '../../../lib/imageUtils';
-import { getPdfPageCount, renderPdfPageToCanvas } from '../../../lib/pdfjs';
+import { openPdfForRendering } from '../../../lib/pdfjs';
 
 export default function CompressPdf() {
   const [file, setFile] = useState<File | null>(null);
@@ -30,17 +30,25 @@ export default function CompressPdf() {
     setProgress(0);
     try {
       const bytes = await file.arrayBuffer();
-      const pageCount = await getPdfPageCount(bytes.slice(0));
+      const pdf = await openPdfForRendering(bytes.slice(0));
       const outDoc = await PDFDocument.create();
 
-      for (let i = 1; i <= pageCount; i++) {
-        const canvas = await renderPdfPageToCanvas(bytes.slice(0), i, scale);
-        const dataUrl = canvas.toDataURL('image/jpeg', quality);
-        const jpegBytes = Uint8Array.from(atob(dataUrl.split(',')[1]), (c) => c.charCodeAt(0));
-        const jpegImage = await outDoc.embedJpg(jpegBytes);
-        const page = outDoc.addPage([canvas.width, canvas.height]);
-        page.drawImage(jpegImage, { x: 0, y: 0, width: canvas.width, height: canvas.height });
-        setProgress(Math.round((i / pageCount) * 100));
+      try {
+        for (let i = 1; i <= pdf.numPages; i++) {
+          const { canvas, widthPt, heightPt } = await pdf.renderPage(i, scale);
+          const jpegBlob = await new Promise<Blob>((resolve, reject) =>
+            canvas.toBlob((b) => (b ? resolve(b) : reject(new Error('JPEG encode failed'))), 'image/jpeg', quality),
+          );
+          const jpegImage = await outDoc.embedJpg(new Uint8Array(await jpegBlob.arrayBuffer()));
+          // Keep the original physical page size (in points); the scale
+          // setting only controls how many pixels the page image gets.
+          const page = outDoc.addPage([widthPt, heightPt]);
+          page.drawImage(jpegImage, { x: 0, y: 0, width: widthPt, height: heightPt });
+          canvas.width = 0; // release the canvas backing store early on long documents
+          setProgress(Math.round((i / pdf.numPages) * 100));
+        }
+      } finally {
+        void pdf.destroy();
       }
 
       const outBytes = await outDoc.save();
@@ -92,6 +100,13 @@ export default function CompressPdf() {
           </span>
           <DownloadButton url={result.url} filename={result.name} />
         </div>
+      )}
+      {result && file && result.size >= file.size && (
+        <p className="text-xs text-ink/60">
+          The result isn&rsquo;t smaller than your original, so you&rsquo;re better off keeping the original. This method
+          works best on scanned or image-heavy PDFs; text-only documents are usually already compact. Lowering quality or
+          resolution may help.
+        </p>
       )}
     </div>
   );
