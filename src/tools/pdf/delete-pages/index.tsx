@@ -5,6 +5,7 @@ import Button from '../../../components/Button';
 import DownloadButton from '../../../components/DownloadButton';
 import ErrorMessage from '../../../components/ErrorMessage';
 import { getPdfPageCount } from '../../../lib/pdfjs';
+import { parsePageRange } from '../../../lib/pageRange';
 
 export default function DeletePdfPages() {
   const [file, setFile] = useState<File | null>(null);
@@ -16,33 +17,25 @@ export default function DeletePdfPages() {
 
   async function handleFile(files: File[]) {
     const f = files[0];
-    setFile(f);
     setResult(null);
     setError(null);
+    // Only show the page controls once the page count is known, so nothing
+    // typed into them can be overwritten by this load finishing.
     try {
       const count = await getPdfPageCount(await f.arrayBuffer());
       setPageCount(count);
       setRange('');
+      setFile(f);
     } catch {
-      setError('Could not read this PDF.');
+      setFile(null);
+      setError('Could not read this PDF. Make sure it is a valid, unencrypted PDF file.');
     }
   }
 
-  function parseRange(input: string, max: number): Set<number> {
-    const pages = new Set<number>();
-    for (const part of input.split(',').map((p) => p.trim()).filter(Boolean)) {
-      const m = part.match(/^(\d+)(?:-(\d+))?$/);
-      if (!m) continue;
-      const start = Number(m[1]);
-      const end = m[2] ? Number(m[2]) : start;
-      for (let p = start; p <= end; p++) if (p >= 1 && p <= max) pages.add(p);
-    }
-    return pages;
-  }
 
   async function remove() {
     if (!file) return;
-    const toRemove = parseRange(range, pageCount);
+    const toRemove = new Set(parsePageRange(range, pageCount));
     if (!toRemove.size) {
       setError('Enter at least one valid page number to delete.');
       return;

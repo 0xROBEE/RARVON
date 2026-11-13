@@ -6,6 +6,7 @@ import Button from '../../../components/Button';
 import DownloadButton from '../../../components/DownloadButton';
 import ErrorMessage from '../../../components/ErrorMessage';
 import { getPdfPageCount } from '../../../lib/pdfjs';
+import { parsePageRange } from '../../../lib/pageRange';
 
 export default function SplitPdf() {
   const [file, setFile] = useState<File | null>(null);
@@ -18,29 +19,21 @@ export default function SplitPdf() {
 
   async function handleFile(files: File[]) {
     const f = files[0];
-    setFile(f);
     setResult(null);
     setError(null);
+    // Only show the page controls once the page count is known, so nothing
+    // typed into them can be overwritten by this load finishing.
     try {
       const count = await getPdfPageCount(await f.arrayBuffer());
       setPageCount(count);
       setRange(`1-${count}`);
+      setFile(f);
     } catch {
-      setError('Could not read this PDF.');
+      setFile(null);
+      setError('Could not read this PDF. Make sure it is a valid, unencrypted PDF file.');
     }
   }
 
-  function parseRange(input: string, max: number): number[] {
-    const pages = new Set<number>();
-    for (const part of input.split(',').map((p) => p.trim()).filter(Boolean)) {
-      const m = part.match(/^(\d+)(?:-(\d+))?$/);
-      if (!m) continue;
-      const start = Number(m[1]);
-      const end = m[2] ? Number(m[2]) : start;
-      for (let p = start; p <= end; p++) if (p >= 1 && p <= max) pages.add(p);
-    }
-    return Array.from(pages).sort((a, b) => a - b);
-  }
 
   async function split() {
     if (!file) return;
@@ -52,7 +45,7 @@ export default function SplitPdf() {
       const base = file.name.replace(/\.pdf$/i, '');
 
       if (mode === 'range') {
-        const pages = parseRange(range, pageCount);
+        const pages = parsePageRange(range, pageCount);
         if (!pages.length) throw new Error('No valid pages in that range.');
         const outDoc = await PDFDocument.create();
         const copied = await outDoc.copyPages(srcDoc, pages.map((p) => p - 1));
