@@ -13,6 +13,7 @@ export const toolComponents: Record<string, ReturnType<typeof lazy>> = {
   'pdf/reorder': lazy(() => import('../tools/pdf/reorder')),
   'pdf/to-images': lazy(() => import('../tools/pdf/to-images')),
   'pdf/from-images': lazy(() => import('../tools/pdf/from-images')),
+  'pdf/to-text': lazy(() => import('../tools/pdf/to-text')),
   'pdf/metadata': lazy(() => import('../tools/pdf/metadata')),
   'pdf/delete-pages': lazy(() => import('../tools/pdf/delete-pages')),
   'pdf/page-numbers': lazy(() => import('../tools/pdf/page-numbers')),
@@ -59,4 +60,5 @@ export const toolComponents: Record<string, ReturnType<typeof lazy>> = {
   'utilities/random-number': lazy(() => import('../tools/utilities/random-number')),
   'utilities/url-shortener': lazy(() => import('../tools/utilities/url-shortener')),
   'utilities/archive': lazy(() => import('../tools/utilities/archive')),
+  'utilities/unzip': lazy(() => import('../tools/utilities/unzip')),
 };

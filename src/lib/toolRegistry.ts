@@ -122,6 +122,17 @@ export const tools: ToolMeta[] = [
     actions: ['convert'],
   },
   {
+    slug: 'to-text', category: 'pdf', name: 'PDF to Text',
+    shortDescription: 'Extract the text of a PDF — with OCR for scanned pages.',
+    description: 'PDF to Text pulls the text out of every page, keeping lines and paragraphs, and lets you edit, copy or download it as TXT or Markdown. Scanned pages with no text layer can be read with OCR — including Arabic — entirely on your device.',
+    status: 'available', keywords: ['pdf to txt', 'extract text from pdf', 'copy text from pdf', 'scanned pdf ocr', 'arabic pdf text', 'تحويل pdf إلى نص'],
+    actions: ['extract', 'convert'],
+    faq: [
+      { q: 'Why is the text from my scanned PDF empty?', a: 'Scanned PDFs are pictures of pages — there’s no text inside to extract. Use “Read scanned pages with OCR”: each scanned page is rendered and its text recognized on your device.' },
+      { q: 'Does it keep the layout?', a: 'It keeps reading order, line breaks and paragraphs. Columns, tables and exact positioning become plain text; for those, the PDF Editor or PDF to Images keep the visual layout.' },
+    ],
+  },
+  {
     slug: 'from-images', category: 'pdf', name: 'Images to PDF',
     shortDescription: 'Combine images into a single PDF.',
     description: 'Images to PDF lays out one or more images, one per page, into a new PDF file.',
@@ -437,6 +448,17 @@ export const tools: ToolMeta[] = [
     comingSoonReason: 'A real short link has to resolve from somewhere, which means a lookup server. We built the interface and the architecture to plug in a backend later, rather than faking a shortener that only works on your own device.',
     keywords: ['shorten link'],
     actions: ['generate'],
+  },
+  {
+    slug: 'unzip', category: 'utilities', name: 'ZIP Extractor',
+    shortDescription: 'Open a ZIP, see what’s inside and extract files.',
+    description: 'ZIP Extractor opens a .zip archive on your device, lists every file with its folder and size, and lets you download single files, extract everything into a folder, or send a file straight to another Bench tool. Archives with Arabic or other non-Unicode file names from Windows are supported.',
+    status: 'available', keywords: ['unzip', 'extract zip', 'open zip', 'zip viewer', 'فك الضغط', 'استخراج zip'],
+    actions: ['extract'],
+    faq: [
+      { q: 'Can it open RAR, 7z or password-protected ZIPs?', a: 'Not yet. It reads standard ZIP archives (including .zip files created by Windows, macOS and most apps). Encrypted ZIPs, RAR and 7z need decoders that aren’t included.' },
+      { q: 'Why are some file names garbled?', a: 'Older ZIP tools on Windows store names in the computer’s local encoding instead of Unicode. When that happens, pick the language the names were written in (for example Arabic) and the list is re-read.' },
+    ],
   },
   {
     slug: 'archive', category: 'utilities', name: 'File Compressor',

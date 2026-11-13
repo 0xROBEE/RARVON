@@ -101,3 +101,69 @@ export async function renderAllThumbnails(data: ArrayBuffer, scale = 0.3): Promi
     void task.destroy();
   }
 }
+
+export interface PdfPageText {
+  page: number;
+  text: string;
+}
+
+/**
+ * Extracts each page's text layer, rebuilding line breaks from the text
+ * positions (pdf.js returns runs of text, not lines) and keeping blank lines
+ * between paragraphs. Pages that are only images (scans) come back empty.
+ * Throws `PasswordRequired` for encrypted PDFs.
+ */
+export class PasswordRequired extends Error {}
+
+export async function extractPdfText(data: ArrayBuffer, onProgress?: (done: number, total: number) => void): Promise<PdfPageText[]> {
+  const task = open(data);
+  try {
+    let doc;
+    try {
+      doc = await task.promise;
+    } catch (e) {
+      if (e && typeof e === 'object' && 'name' in e && (e as { name: string }).name === 'PasswordException') throw new PasswordRequired();
+      throw e;
+    }
+    const out: PdfPageText[] = [];
+    for (let n = 1; n <= doc.numPages; n++) {
+      const page = await doc.getPage(n);
+      const content = await page.getTextContent();
+      let text = '';
+      let lastY: number | null = null;
+      let lastH = 0;
+      let lastXEnd: number | null = null;
+      for (const item of content.items) {
+        if (!('str' in item)) continue;
+        const [, , , d, x, y] = item.transform;
+        const h = Math.abs(d) || item.height || 10;
+        if (lastY !== null && item.str.trim()) {
+          const dy = Math.abs(y - lastY);
+          const lineH = Math.max(h, lastH);
+          if (dy > lineH * 0.5) {
+            // New line; a gap of more than ~1.7 lines means a new paragraph.
+            text = text.replace(/[ \t]+$/, '');
+            const wanted = dy > lineH * 1.7 ? '\n\n' : '\n';
+            if (!text.endsWith(wanted)) text = text.replace(/\n*$/, '') + wanted;
+            lastXEnd = null;
+          } else if (lastXEnd !== null && item.dir !== 'rtl' && x - lastXEnd > h * 0.2 && !/\s$/.test(text) && !/^\s/.test(item.str)) {
+            text += ' '; // separate runs on one line with a visible gap between them
+          }
+        }
+        text += item.str;
+        if (item.hasEOL) text += '\n';
+        if (item.str.trim()) {
+          lastY = y;
+          lastH = h;
+          lastXEnd = x + item.width;
+        }
+      }
+      out.push({ page: n, text: text.replace(/[ \t]+\n/g, '\n').replace(/\n{3,}/g, '\n\n').trim() });
+      page.cleanup();
+      onProgress?.(n, doc.numPages);
+    }
+    return out;
+  } finally {
+    void task.destroy();
+  }
+}

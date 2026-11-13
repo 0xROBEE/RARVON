@@ -25,6 +25,7 @@ tools that run entirely in your browser.
 - **mediabunny** (MPL-2.0) — MP4/WebM demux/mux on top of the browser's WebCodecs, for the video tools
 - **tesseract.js** + **tesseract.js-core** (Apache-2.0) — OCR engine (WebAssembly) for Image to Text, with
   language models from **@tesseract.js-data/*** (Apache-2.0, Tesseract `tessdata_best` integer models)
+- **upng-js** (MIT) + **pako** (MIT) — PNG palette compression, in a Web Worker
 - **jszip** (MIT), **qrcode** (MIT), **exifr** (MIT) — ZIP creation, QR codes, EXIF reading
 
 No backend. Every tool runs in the browser.
@@ -33,13 +34,13 @@ No backend. Every tool runs in the browser.
 
 | Category | Tools |
 |---|---|
-| PDF | Editor (text incl. Arabic/RTL, draw, highlight, underline, shapes/arrows, images, sticky-note comments, signature, redact; reorder/rotate/duplicate/delete/insert blank pages), Merge, Split, Compress, Rotate, Extract pages, Delete pages, Reorder, PDF→Images, Images→PDF, Metadata, Page numbers, Watermark, Sign |
-| Image | **Image to Text (OCR)**, Convert, Compress, Resize (interactive), Crop, Rotate/flip, Metadata viewer, Remove EXIF |
+| PDF | Editor (text incl. Arabic/RTL, draw, highlight, underline, shapes/arrows, images, sticky-note comments, signature, redact; reorder/rotate/duplicate/delete/insert blank pages), Merge, Split, Compress, **PDF→Text (with OCR for scans)**, Rotate, Extract pages, Delete pages, Reorder, PDF→Images, Images→PDF, Metadata, Page numbers, Watermark, Sign |
+| Image | **Image to Text (OCR)**, Convert, Compress (JPEG/WebP quality, PNG palette reduction), Resize (interactive), Crop, Rotate/flip, Metadata viewer, Remove EXIF |
 | Video (experimental) | Trim, Change resolution, Convert (MOV/MKV/MP4/WebM → MP4 or WebM), Compress (source-relative bitrate, optional resolution cap) — WebCodecs via Mediabunny, cancellable, 250 MB limit |
 | Audio | Trim (WAV), Convert (MP3 / AAC .m4a / Opus .ogg / WAV), Compress (Opus, AAC or MP3, 32–128 kb/s), Extract audio from video (direct copy or re-encode) — Mediabunny + WebCodecs, much faster than real time |
 | Developer | JSON format/minify, Base64, URL encode, UUID, Hash, Timestamp, Color, JWT decoder, Regex tester |
 | Text | Word counter, Case converter, Text cleaner, Remove duplicate lines, Line sorter |
-| Utilities | File Compressor (create ZIP), QR code, Password, Random number, URL shortener (UI only — needs a server) |
+| Utilities | File Compressor (create ZIP), ZIP Extractor (incl. legacy Arabic/Windows file names), QR code, Password, Random number, URL shortener (UI only — needs a server) |
 
 Cross-cutting features: global search (⌘K), action pages, a Compress hub, light/dark/system theme, and **tool
 chaining** — a tool's last result can be picked up by the next tool without re-uploading
