@@ -10,8 +10,11 @@ import PageCanvas from './PageCanvas';
 import OptionsPanel from './OptionsPanel';
 import EditorErrorBoundary from './EditorErrorBoundary';
 import { exportEditedPdf } from './exportPdf';
+import type { ImageAsset } from './PageCanvas';
+import '@fontsource/noto-sans/400.css';
+import '@fontsource/noto-sans-arabic/400.css';
 import { newId } from './types';
-import type { Annotation, EditorSnapshot, EditorTool, PageInstance } from './types';
+import type { Annotation, EditorSnapshot, EditorTool, PageInstance, ShapeKind } from './types';
 
 export default function PdfEditor() {
   return (
@@ -35,6 +38,9 @@ function PdfEditorInner() {
   const [tool, setTool] = useState<EditorTool>('select');
   const [color, setColor] = useState('#14171c');
   const [signatureDataUrl, setSignatureDataUrl] = useState<string | null>(null);
+  const [shapeKind, setShapeKind] = useState<ShapeKind>('rect');
+  const [strokeWidth, setStrokeWidth] = useState(0.004);
+  const [imageAsset, setImageAsset] = useState<ImageAsset | null>(null);
 
   const [zoomMode, setZoomMode] = useState<'fit' | 'custom'>('fit');
   const [customZoom, setCustomZoom] = useState(1);
@@ -82,7 +88,12 @@ function PdfEditorInner() {
       const bytes = await f.arrayBuffer();
       const doc = await PDFDocument.load(bytes);
       const count = doc.getPageCount();
-      const sizes = doc.getPages().map((p) => p.getSize());
+      // Displayed size: crop box, with the page's own rotation applied.
+      const sizes = doc.getPages().map((p) => {
+        const box = p.getCropBox();
+        const r = ((p.getRotation().angle % 360) + 360) % 360;
+        return r === 90 || r === 270 ? { width: box.height, height: box.width } : { width: box.width, height: box.height };
+      });
       const initialPages: PageInstance[] = Array.from({ length: count }, (_, i) => ({ id: newId(), originalIndex: i, extraRotation: 0 }));
       setFile(f);
       setSrcBytes(bytes);
@@ -113,7 +124,7 @@ function PdfEditorInner() {
 
   const updateText = useCallback((id: string, text: string) => {
     pushHistory();
-    setAnnotations((prev) => prev.map((a) => (a.id === id && a.type === 'text' ? { ...a, text } : a)));
+    setAnnotations((prev) => prev.map((a) => (a.id === id && (a.type === 'text' || a.type === 'note') ? { ...a, text } : a)));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pages, annotations]);
 
@@ -153,6 +164,21 @@ function PdfEditorInner() {
       return next;
     });
   }
+  function insertBlankPage(afterId: string) {
+    const idx = pages.findIndex((p) => p.id === afterId);
+    if (idx === -1) return;
+    pushHistory();
+    const ref = pages[idx];
+    // Same size and orientation as the page it follows (A4 if unknown).
+    const size = ref.blank ?? pageSizes[ref.originalIndex] ?? { width: 595.28, height: 841.89 };
+    const blank: PageInstance = { id: newId(), originalIndex: -1, extraRotation: 0, blank: { width: size.width, height: size.height } };
+    setPages((prev) => {
+      const next = [...prev];
+      next.splice(prev.findIndex((p) => p.id === afterId) + 1, 0, blank);
+      return next;
+    });
+    setCurrentPageId(blank.id);
+  }
   function rotatePage(id: string) {
     pushHistory();
     setPages((prev) => prev.map((p) => (p.id === id ? { ...p, extraRotation: (p.extraRotation + 90) % 360 } : p)));
@@ -173,7 +199,8 @@ function PdfEditorInner() {
       const blob = new Blob([bytes as BlobPart], { type: 'application/pdf' });
       const base = file.name.replace(/\.pdf$/i, '');
       setResult({ url: URL.createObjectURL(blob), name: `${base}-edited.pdf` });
-    } catch {
+    } catch (e) {
+      console.warn('PDF export failed', e);
       setExportError('Could not export this PDF. Try undoing your most recent change and exporting again.');
     } finally {
       setExporting(false);
@@ -194,7 +221,7 @@ function PdfEditorInner() {
   const currentPage = pages.find((p) => p.id === currentPageId) ?? pages[0];
   const currentIndex = pages.findIndex((p) => p.id === currentPage?.id);
   const currentAnnotations = annotations.filter((a) => a.pageId === currentPage?.id);
-  const currentSize = currentPage ? pageSizes[currentPage.originalIndex] : undefined;
+  const currentSize = currentPage ? currentPage.blank ?? pageSizes[currentPage.originalIndex] : undefined;
 
   return (
     <div data-workspace className="space-y-2">
@@ -236,6 +263,7 @@ function PdfEditorInner() {
                 onDelete={deletePage}
                 onDuplicate={duplicatePage}
                 onRotate={rotatePage}
+                onInsertBlank={insertBlankPage}
               />
             )}
           </div>
@@ -251,7 +279,10 @@ function PdfEditorInner() {
                 onZoomResolved={setResolvedZoom}
                 activeTool={tool}
                 color={color}
+                shapeKind={shapeKind}
+                strokeWidth={strokeWidth}
                 signatureDataUrl={signatureDataUrl}
+                imageAsset={imageAsset}
                 onAddAnnotation={addAnnotation}
                 onMoveAnnotation={moveAnnotation}
                 onUpdateText={updateText}
@@ -267,6 +298,12 @@ function PdfEditorInner() {
               onColorChange={setColor}
               signatureDataUrl={signatureDataUrl}
               onSignatureReady={setSignatureDataUrl}
+              shapeKind={shapeKind}
+              onShapeKindChange={setShapeKind}
+              strokeWidth={strokeWidth}
+              onStrokeWidthChange={setStrokeWidth}
+              imageAsset={imageAsset}
+              onImageAsset={setImageAsset}
               docInfo={currentSize ? {
                 fileName: file.name,
                 fileSize: file.size,
@@ -298,6 +335,7 @@ function PdfEditorInner() {
               onDelete={deletePage}
               onDuplicate={duplicatePage}
               onRotate={rotatePage}
+                onInsertBlank={insertBlankPage}
             />
           </div>
           <div className="flex-1 bg-ink/40" onClick={() => setShowThumbsMobile(false)} />
@@ -317,6 +355,12 @@ function PdfEditorInner() {
               onColorChange={setColor}
               signatureDataUrl={signatureDataUrl}
               onSignatureReady={setSignatureDataUrl}
+              shapeKind={shapeKind}
+              onShapeKindChange={setShapeKind}
+              strokeWidth={strokeWidth}
+              onStrokeWidthChange={setStrokeWidth}
+              imageAsset={imageAsset}
+              onImageAsset={setImageAsset}
               docInfo={currentSize ? {
                 fileName: file.name,
                 fileSize: file.size,

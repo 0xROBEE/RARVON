@@ -19,6 +19,8 @@ tools that run entirely in your browser.
 - **React Router** — one route per tool (`/tools/pdf/merge`), plus action pages (`/compress`, `/convert`, ...)
 - **Tailwind CSS v4** — design tokens and light/dark themes in `src/index.css`
 - **pdf-lib** (MIT) — create/edit PDFs · **pdfjs-dist** (Apache-2.0) — render PDF pages
+- **@pdf-lib/fontkit** (MIT) + **bidi-js** (MIT) + **Noto Sans / Noto Sans Arabic** (OFL-1.1, via fontsource) — font
+  shaping, bidirectional layout and fonts for PDF Editor text in any direction
 - **mediabunny** (MPL-2.0) — MP4/WebM demux/mux on top of the browser's WebCodecs, for the video tools
 - **tesseract.js** + **tesseract.js-core** (Apache-2.0) — OCR engine (WebAssembly) for Image to Text, with
   language models from **@tesseract.js-data/*** (Apache-2.0, Tesseract `tessdata_best` integer models)
@@ -30,7 +32,7 @@ No backend. Every tool runs in the browser.
 
 | Category | Tools |
 |---|---|
-| PDF | Editor (annotate, draw, highlight, sign, redact, reorder/rotate/delete pages), Merge, Split, Compress, Rotate, Extract pages, Delete pages, Reorder, PDF→Images, Images→PDF, Metadata, Page numbers, Watermark, Sign |
+| PDF | Editor (text incl. Arabic/RTL, draw, highlight, underline, shapes/arrows, images, sticky-note comments, signature, redact; reorder/rotate/duplicate/delete/insert blank pages), Merge, Split, Compress, Rotate, Extract pages, Delete pages, Reorder, PDF→Images, Images→PDF, Metadata, Page numbers, Watermark, Sign |
 | Image | **Image to Text (OCR)**, Convert, Compress, Resize (interactive), Crop, Rotate/flip, Metadata viewer, Remove EXIF |
 | Video (experimental) | Trim, Change resolution, Convert (MP4 ⇄ WebM), Compress — WebCodecs via Mediabunny, MP4/WebM only, 250 MB limit |
 | Audio | Trim (WAV), Convert (WAV / WebM-Opus), Compress (WebM-Opus), Extract audio from video |
@@ -59,8 +61,8 @@ digit-heavy sample); handwriting is not supported; Sorani Kurdish has no package
 ### Known limitations
 
 - Audio Convert/Compress/Extract encode in real time (a 5-minute file takes about 5 minutes).
-- PDF Editor exports text with a Latin-only font; non-Latin text (Arabic, Cyrillic, CJK, ...) is not yet supported,
-  and annotations on pages that carry their own embedded rotation can be misplaced.
+- PDF Editor: Arabic-script text is exported as shaped vector outlines (exact, but not selectable); CJK/Devanagari
+  text as an image of the text. Existing PDF text can't be edited, only annotated on top.
 - Compress PDF rasterizes pages (text stops being selectable) and helps mainly with scanned/image-heavy PDFs.
 - Video Compress can produce a larger file for already low-bitrate sources.
 - Video tools have been verified in Chromium only.

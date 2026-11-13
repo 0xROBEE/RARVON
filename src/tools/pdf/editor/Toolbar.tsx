@@ -5,6 +5,10 @@ const TOOLS: { value: EditorTool; label: string; icon: string }[] = [
   { value: 'text', label: 'Text', icon: 'M5 5h14M12 5v14' },
   { value: 'draw', label: 'Draw', icon: 'M17 3a2.83 2.83 0 114 4L7.5 20.5 2 22l1.5-5.5z' },
   { value: 'highlight', label: 'Highlight', icon: 'M4 20h16M6 16l8-8 4 4-8 8H6v-4z' },
+  { value: 'underline', label: 'Underline', icon: 'M7 4v7a5 5 0 0010 0V4M5 20h14' },
+  { value: 'shape', label: 'Shapes', icon: 'M3 3h8v8H3zM17 7m-4 0a4 4 0 108 0 4 4 0 10-8 0M4 20L20 14' },
+  { value: 'image', label: 'Image', icon: 'M4 5h16v14H4zM4 16l5-5 4 4 3-3 4 4M15 9h.01' },
+  { value: 'note', label: 'Note', icon: 'M4 5h16v10H9l-5 4z' },
   { value: 'signature', label: 'Signature', icon: 'M3 17c3-1 5-4 6-8 1 4 3 7 6 8 2-1 3-3 3-3M3 17l2 3M18 14s1 2 3 3' },
   { value: 'redact', label: 'Redact', icon: 'M4 6h16v12H4zM7 9h4M7 12h6M7 15h3' },
 ];

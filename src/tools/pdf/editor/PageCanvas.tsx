@@ -1,8 +1,15 @@
 import { useEffect, useRef, useState } from 'react';
 import type { PointerEvent as ReactPointerEvent } from 'react';
 import { renderPdfPageToCanvas } from '../../../lib/pdfjs';
-import type { Annotation, EditorTool, PageInstance } from './types';
-import { newId } from './types';
+import type { Annotation, EditorTool, PageInstance, ShapeKind } from './types';
+import { NOTE_ICON_PT, UNDERLINE_THICKNESS, newId } from './types';
+import { EDITOR_FONT_STACK } from './exportPdf';
+
+export interface ImageAsset {
+  dataUrl: string;
+  width: number;
+  height: number;
+}
 
 interface Props {
   srcBytes: ArrayBuffer;
@@ -13,22 +20,35 @@ interface Props {
   onZoomResolved: (z: number) => void;
   activeTool: EditorTool;
   color: string;
+  shapeKind: ShapeKind;
+  strokeWidth: number;
   signatureDataUrl: string | null;
+  imageAsset: ImageAsset | null;
   onAddAnnotation: (a: Annotation) => void;
   onMoveAnnotation: (id: string, x: number, y: number) => void;
   onUpdateText: (id: string, text: string) => void;
   onDeleteAnnotation: (id: string) => void;
 }
 
-interface DragBox { x: number; y: number; w: number; h: number }
-interface Bounds { x: number; y: number; w: number; h: number }
+interface Box { x: number; y: number; w: number; h: number }
 
 const FIT_PADDING = 48; // px breathing room around the page at 100% fit
 const CLICK_THRESHOLD = 0.006; // fractional movement below this counts as a click, not a drag
+const RENDER_SCALE = 2; // page bitmap pixels per PDF point
+
+function arrowPoints(x1: number, y1: number, x2: number, y2: number, width: number) {
+  const len = Math.hypot(x2 - x1, y2 - y1) || 1;
+  const ux = (x2 - x1) / len;
+  const uy = (y2 - y1) / len;
+  const L = Math.max(width * 4, 8);
+  const a = (28 * Math.PI) / 180;
+  const wing = (s: number) => `${x2 - L * (ux * Math.cos(a) - s * uy * Math.sin(a))},${y2 - L * (uy * Math.cos(a) + s * ux * Math.sin(a))}`;
+  return `${wing(1)} ${x2},${y2} ${wing(-1)}`;
+}
 
 export default function PageCanvas({
-  srcBytes, page, annotations, zoomMode, customZoom, onZoomResolved, activeTool, color, signatureDataUrl,
-  onAddAnnotation, onMoveAnnotation, onUpdateText, onDeleteAnnotation,
+  srcBytes, page, annotations, zoomMode, customZoom, onZoomResolved, activeTool, color, shapeKind, strokeWidth,
+  signatureDataUrl, imageAsset, onAddAnnotation, onMoveAnnotation, onUpdateText, onDeleteAnnotation,
 }: Props) {
   const [pageImg, setPageImg] = useState<{ url: string; w: number; h: number } | null>(null);
   const [loading, setLoading] = useState(true);
@@ -36,10 +56,11 @@ export default function PageCanvas({
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  const [dragBox, setDragBox] = useState<DragBox | null>(null);
+  const [dragBox, setDragBox] = useState<Box | null>(null);
+  const [dragLine, setDragLine] = useState<{ x1: number; y1: number; x2: number; y2: number } | null>(null);
   const dragStart = useRef<{ x: number; y: number } | null>(null);
   const [drawPoints, setDrawPoints] = useState<{ x: number; y: number }[] | null>(null);
-  const [textEditor, setTextEditor] = useState<{ x: number; y: number } | null>(null);
+  const [textEditor, setTextEditor] = useState<{ x: number; y: number; kind: 'text' | 'note' } | null>(null);
   const [textValue, setTextValue] = useState('');
   const [editingId, setEditingId] = useState<string | null>(null);
 
@@ -49,22 +70,37 @@ export default function PageCanvas({
   const movingAnnotation = useRef<Annotation | null>(null);
 
   useEffect(() => {
+    let cancelled = false;
     setLoading(true);
     setPageImg(null);
-    renderPdfPageToCanvas(srcBytes.slice(0), page.originalIndex + 1, 2).then((canvas) => {
+    if (page.blank) {
+      const c = document.createElement('canvas');
+      c.width = Math.round(page.blank.width * RENDER_SCALE);
+      c.height = Math.round(page.blank.height * RENDER_SCALE);
+      const ctx = c.getContext('2d')!;
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, c.width, c.height);
+      setPageImg({ url: c.toDataURL('image/png'), w: c.width, h: c.height });
+      setLoading(false);
+      return;
+    }
+    renderPdfPageToCanvas(srcBytes.slice(0), page.originalIndex + 1, RENDER_SCALE).then((canvas) => {
+      if (cancelled) return;
       setPageImg({ url: canvas.toDataURL('image/png'), w: canvas.width, h: canvas.height });
       setLoading(false);
     });
-  }, [srcBytes, page.originalIndex]);
+    return () => {
+      cancelled = true;
+    };
+  }, [srcBytes, page.originalIndex, page.blank]);
 
-  // Selection shouldn't survive a page switch or a tool change away from Select.
+  // Selection and open editors shouldn't survive a page switch or tool change.
   useEffect(() => {
     setSelectedId(null);
+    setTextEditor(null);
   }, [page.id, activeTool]);
 
-  // Recompute "fit" zoom whenever the available space or the page bitmap
-  // changes, so resizing the window or toggling a drawer keeps the page
-  // properly fitted rather than leaving it at a stale, tiny scale.
+  // Recompute "fit" zoom whenever the available space or the page bitmap changes.
   useEffect(() => {
     const scrollEl = scrollAreaRef.current;
     if (!scrollEl || !pageImg) return;
@@ -75,8 +111,7 @@ export default function PageCanvas({
     function recompute() {
       const availW = scrollEl!.clientWidth - FIT_PADDING;
       const availH = scrollEl!.clientHeight - FIT_PADDING;
-      const next = Math.max(0.1, Math.min(availW / naturalW, availH / naturalH));
-      setFitZoom(next);
+      setFitZoom(Math.max(0.1, Math.min(availW / naturalW, availH / naturalH)));
     }
     recompute();
     const observer = new ResizeObserver(recompute);
@@ -85,17 +120,22 @@ export default function PageCanvas({
   }, [pageImg, page.extraRotation]);
 
   const effectiveZoom = zoomMode === 'fit' ? fitZoom : customZoom;
+  const pxW = (pageImg?.w ?? 1) * effectiveZoom; // page width on screen (unrotated)
+  const pxH = (pageImg?.h ?? 1) * effectiveZoom;
+  const noteW = pageImg ? (NOTE_ICON_PT * RENDER_SCALE) / pageImg.w : 0.04;
+  const noteH = pageImg ? (NOTE_ICON_PT * RENDER_SCALE) / pageImg.h : 0.03;
 
   useEffect(() => {
     onZoomResolved(effectiveZoom);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [effectiveZoom]);
 
-  // Delete/Backspace removes the selected annotation — but never while the
-  // text editor is focused, since backspace there means "edit the text."
+  // Delete/Backspace removes the selected annotation — never while typing.
   useEffect(() => {
     function onKeyDown(e: KeyboardEvent) {
       if (!selectedId || textEditor) return;
+      const target = e.target as HTMLElement | null;
+      if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable)) return;
       if (e.key === 'Delete' || e.key === 'Backspace') {
         e.preventDefault();
         onDeleteAnnotation(selectedId);
@@ -106,32 +146,52 @@ export default function PageCanvas({
     return () => window.removeEventListener('keydown', onKeyDown);
   }, [selectedId, textEditor, onDeleteAnnotation]);
 
+  /** Pointer position as a fraction of the (unrotated) page. The page element
+   * is CSS-rotated by the editor's extra rotation, so its bounding box is
+   * rotated too: undo that rotation around the center before dividing. */
   function getRelative(e: ReactPointerEvent): { x: number; y: number } {
     const box = containerRef.current!.getBoundingClientRect();
+    const cx = box.left + box.width / 2;
+    const cy = box.top + box.height / 2;
+    const rad = (-page.extraRotation * Math.PI) / 180;
+    const dx = e.clientX - cx;
+    const dy = e.clientY - cy;
+    const rx = dx * Math.cos(rad) - dy * Math.sin(rad);
+    const ry = dx * Math.sin(rad) + dy * Math.cos(rad);
     return {
-      x: Math.min(Math.max((e.clientX - box.left) / box.width, 0), 1),
-      y: Math.min(Math.max((e.clientY - box.top) / box.height, 0), 1),
+      x: Math.min(Math.max(rx / pxW + 0.5, 0), 1),
+      y: Math.min(Math.max(ry / pxH + 0.5, 0), 1),
     };
   }
 
-  // A single bounding-box shape for every annotation type, in fractional
-  // page coordinates — used for both hit-testing (Select tool) and drawing
-  // the selection outline. Text has no stored width, so its box is an
-  // approximation from its string length and font size, not exact.
-  function getBounds(a: Annotation): Bounds {
-    if (a.type === 'highlight' || a.type === 'redact' || a.type === 'signature') {
-      return { x: a.x, y: a.y, w: a.w, h: a.h };
+  /** Bounding box of any annotation in page fractions (hit-testing and selection outline). */
+  function getBounds(a: Annotation): Box {
+    switch (a.type) {
+      case 'highlight':
+      case 'redact':
+      case 'signature':
+      case 'image':
+      case 'underline':
+        return { x: a.x, y: a.y, w: a.w, h: a.h };
+      case 'shape': {
+        const pad = 0.008;
+        const x = Math.min(a.x, a.x + a.w);
+        const y = Math.min(a.y, a.y + a.h);
+        return { x: x - pad, y: y - pad, w: Math.abs(a.w) + pad * 2, h: Math.abs(a.h) + pad * 2 };
+      }
+      case 'note':
+        return { x: a.x, y: a.y, w: noteW, h: noteH };
+      case 'draw': {
+        const xs = a.points.map((p) => p.x);
+        const ys = a.points.map((p) => p.y);
+        return { x: a.x + Math.min(0, ...xs), y: a.y + Math.min(0, ...ys), w: Math.max(0, ...xs) - Math.min(0, ...xs), h: Math.max(0, ...ys) - Math.min(0, ...ys) };
+      }
+      case 'text': {
+        const el = containerRef.current?.querySelector<HTMLElement>(`[data-ann="${a.id}"]`);
+        if (el) return { x: a.x, y: a.y, w: el.offsetWidth / pxW, h: el.offsetHeight / pxH };
+        return { x: a.x, y: a.y, w: a.text.length * a.size * 0.55 * (pxH / pxW), h: a.size };
+      }
     }
-    if (a.type === 'draw') {
-      const xs = a.points.map((p) => p.x);
-      const ys = a.points.map((p) => p.y);
-      return { x: a.x + Math.min(0, ...xs), y: a.y + Math.min(0, ...ys), w: Math.max(0, ...xs) - Math.min(0, ...xs), h: Math.max(0, ...ys) - Math.min(0, ...ys) };
-    }
-    // text
-    if (!pageImg) return { x: a.x, y: a.y, w: 0.05, h: a.size };
-    const fontPx = a.size * pageImg.h * effectiveZoom;
-    const approxWidthPx = a.text.length * fontPx * 0.55;
-    return { x: a.x, y: a.y, w: approxWidthPx / (pageImg.w * effectiveZoom), h: a.size * 1.3 };
   }
 
   function hitTest(pos: { x: number; y: number }): Annotation | null {
@@ -143,7 +203,18 @@ export default function PageCanvas({
     return null;
   }
 
+  function openEditor(a: Annotation & { type: 'text' | 'note' }) {
+    setTextEditor({ x: a.x, y: a.y, kind: a.type });
+    setTextValue(a.text);
+    setEditingId(a.id);
+  }
+
   function onPointerDown(e: ReactPointerEvent) {
+    if (textEditor) {
+      // Clicking the page while a note is open saves it (a text input saves on blur by itself).
+      if (textEditor.kind === 'note') commitText();
+      return;
+    }
     try {
       e.currentTarget.setPointerCapture(e.pointerId);
     } catch {
@@ -167,8 +238,8 @@ export default function PageCanvas({
     }
 
     e.preventDefault();
-    if (activeTool === 'text') {
-      setTextEditor(pos);
+    if (activeTool === 'text' || activeTool === 'note') {
+      setTextEditor({ x: pos.x, y: pos.y, kind: activeTool });
       setTextValue('');
       setEditingId(null);
       return;
@@ -179,6 +250,10 @@ export default function PageCanvas({
       return;
     }
     dragStart.current = pos;
+    if (activeTool === 'shape' && (shapeKind === 'line' || shapeKind === 'arrow')) {
+      setDragLine({ x1: pos.x, y1: pos.y, x2: pos.x, y2: pos.y });
+      return;
+    }
     setDragBox({ x: pos.x, y: pos.y, w: 0, h: 0 });
   }
 
@@ -194,6 +269,10 @@ export default function PageCanvas({
       setDrawPoints((pts) => [...(pts ?? []), { x: pos.x - dragStart.current!.x, y: pos.y - dragStart.current!.y }]);
       return;
     }
+    if (dragLine) {
+      setDragLine({ ...dragLine, x2: pos.x, y2: pos.y });
+      return;
+    }
     if (dragBox) {
       setDragBox({
         x: Math.min(dragStart.current.x, pos.x),
@@ -204,18 +283,20 @@ export default function PageCanvas({
     }
   }
 
+  /** Height (as a page fraction) that keeps the image's aspect ratio for a given width fraction. */
+  function imageHeightFor(wFrac: number, asset: ImageAsset) {
+    return wFrac * (pxW / pxH) * (asset.height / asset.width);
+  }
+
   function onPointerUp() {
     if (activeTool === 'select' && movingAnnotation.current && dragStart.current) {
       const moved = movingAnnotation.current;
       const offset = moveOffset ?? { dx: 0, dy: 0 };
-      const distance = Math.hypot(offset.dx, offset.dy);
-      if (distance > CLICK_THRESHOLD) {
+      if (Math.hypot(offset.dx, offset.dy) > CLICK_THRESHOLD) {
         onMoveAnnotation(moved.id, moved.x + offset.dx, moved.y + offset.dy);
-      } else if (moved.type === 'text') {
-        // A real click (not a drag) on a text annotation re-opens it for editing.
-        setTextEditor({ x: moved.x, y: moved.y });
-        setTextValue(moved.text);
-        setEditingId(moved.id);
+      } else if (moved.type === 'text' || moved.type === 'note') {
+        // A real click (not a drag) re-opens text and notes for editing.
+        openEditor(moved);
       }
       movingAnnotation.current = null;
       setMoveOffset(null);
@@ -223,35 +304,44 @@ export default function PageCanvas({
       return;
     }
 
-    if (activeTool === 'draw' && drawPoints && dragStart.current && drawPoints.length > 1) {
-      onAddAnnotation({
-        id: newId(), pageId: page.id, type: 'draw',
-        x: dragStart.current.x, y: dragStart.current.y,
-        points: drawPoints, color, strokeWidth: 0.004,
-      });
-    } else if (dragBox && dragBox.w > 0.01 && dragBox.h > 0.01) {
-      if (activeTool === 'highlight') {
-        onAddAnnotation({ id: newId(), pageId: page.id, type: 'highlight', ...dragBox, color });
-      } else if (activeTool === 'redact') {
-        onAddAnnotation({ id: newId(), pageId: page.id, type: 'redact', ...dragBox });
-      } else if (activeTool === 'signature' && signatureDataUrl) {
-        onAddAnnotation({ id: newId(), pageId: page.id, type: 'signature', ...dragBox, dataUrl: signatureDataUrl });
+    const base = { id: newId(), pageId: page.id };
+    const start = dragStart.current;
+    if (activeTool === 'draw' && drawPoints && start && drawPoints.length > 1) {
+      onAddAnnotation({ ...base, type: 'draw', x: start.x, y: start.y, points: drawPoints, color, strokeWidth: strokeWidth });
+    } else if (dragLine) {
+      if (Math.hypot(dragLine.x2 - dragLine.x1, dragLine.y2 - dragLine.y1) > 0.01) {
+        onAddAnnotation({ ...base, type: 'shape', kind: shapeKind, x: dragLine.x1, y: dragLine.y1, w: dragLine.x2 - dragLine.x1, h: dragLine.y2 - dragLine.y1, color, strokeWidth });
       }
+    } else if (activeTool === 'image' && imageAsset && start) {
+      // Drag sets the width (height follows the image's aspect ratio); a plain click places it at a default size.
+      const dragged = dragBox && dragBox.w > 0.02;
+      const w = dragged ? dragBox!.w : 0.35;
+      const h = imageHeightFor(w, imageAsset);
+      const x = dragged ? dragBox!.x : Math.min(Math.max(0, start.x - w / 2), Math.max(0, 1 - w));
+      const y = dragged ? dragBox!.y : Math.min(Math.max(0, start.y - h / 2), Math.max(0, 1 - h));
+      onAddAnnotation({ ...base, type: 'image', x, y, w, h, dataUrl: imageAsset.dataUrl });
+    } else if (dragBox && dragBox.w > 0.01 && (dragBox.h > 0.01 || activeTool === 'underline')) {
+      if (activeTool === 'highlight') onAddAnnotation({ ...base, type: 'highlight', ...dragBox, color });
+      else if (activeTool === 'underline') onAddAnnotation({ ...base, type: 'underline', ...dragBox, h: Math.max(dragBox.h, 0.004), color });
+      else if (activeTool === 'redact') onAddAnnotation({ ...base, type: 'redact', ...dragBox });
+      else if (activeTool === 'shape') onAddAnnotation({ ...base, type: 'shape', kind: shapeKind, ...dragBox, color, strokeWidth });
+      else if (activeTool === 'signature' && signatureDataUrl) onAddAnnotation({ ...base, type: 'signature', ...dragBox, dataUrl: signatureDataUrl });
     }
     dragStart.current = null;
     setDragBox(null);
+    setDragLine(null);
     setDrawPoints(null);
   }
 
   function commitText() {
-    if (textEditor && textValue.trim()) {
-      if (editingId) {
-        onUpdateText(editingId, textValue);
-      } else {
-        onAddAnnotation({ id: newId(), pageId: page.id, type: 'text', x: textEditor.x, y: textEditor.y, text: textValue, size: 0.025, color });
-      }
-    } else if (editingId && !textValue.trim()) {
-      // Editing down to an empty string removes the annotation rather than leaving a ghost text box.
+    if (!textEditor) return;
+    const value = textValue.replace(/\s+$/, '');
+    if (value.trim()) {
+      if (editingId) onUpdateText(editingId, value);
+      else if (textEditor.kind === 'note') onAddAnnotation({ id: newId(), pageId: page.id, type: 'note', x: textEditor.x, y: textEditor.y, text: value, color: '#f5c518' });
+      else onAddAnnotation({ id: newId(), pageId: page.id, type: 'text', x: textEditor.x, y: textEditor.y, text: value, size: 0.025, color });
+    } else if (editingId) {
+      // Editing down to an empty string removes it rather than leaving a ghost.
       onDeleteAnnotation(editingId);
     }
     setTextEditor(null);
@@ -262,6 +352,8 @@ export default function PageCanvas({
   const selectedAnnotation = selectedId ? annotations.find((a) => a.id === selectedId) ?? null : null;
   const selectedBounds = selectedAnnotation ? getBounds(selectedAnnotation) : null;
   const liveOffset = movingAnnotation.current && moveOffset ? moveOffset : null;
+  const pct = (n: number) => `${n * 100}%`;
+  const strokePx = (frac: number) => Math.max(1.5, frac * pxW);
 
   return (
     <div ref={scrollAreaRef} className="flex h-full items-center justify-center overflow-auto bg-grid-paper p-6">
@@ -269,47 +361,106 @@ export default function PageCanvas({
       {pageImg && (
         <div
           ref={containerRef}
+          data-testid="editor-page"
           onPointerDown={onPointerDown}
           onPointerMove={onPointerMove}
           onPointerUp={onPointerUp}
           onPointerLeave={onPointerUp}
           className={`relative shrink-0 select-none rounded shadow-lg ${activeTool === 'select' && !movingAnnotation.current ? '' : 'touch-none'}`}
           style={{
-            width: pageImg.w * effectiveZoom,
-            height: pageImg.h * effectiveZoom,
+            width: pxW,
+            height: pxH,
             transform: `rotate(${page.extraRotation}deg)`,
             cursor: activeTool === 'select' ? (selectedAnnotation ? 'grab' : 'default') : 'crosshair',
           }}
         >
           <img src={pageImg.url} alt="Page" className="pointer-events-none block h-full w-full" draggable={false} />
 
+          {/* Vector overlay for shapes, drawings and underlines, in screen pixels. */}
+          <svg className="pointer-events-none absolute inset-0 h-full w-full overflow-visible" viewBox={`0 0 ${pxW} ${pxH}`}>
+            {annotations.map((a) => {
+              const moving = liveOffset && a.id === selectedId;
+              const ox = (moving ? liveOffset!.dx : 0) * pxW;
+              const oy = (moving ? liveOffset!.dy : 0) * pxH;
+              if (a.type === 'draw') {
+                const pts = a.points.map((p) => `${(a.x + p.x) * pxW + ox},${(a.y + p.y) * pxH + oy}`).join(' ');
+                return <polyline key={a.id} points={pts} fill="none" stroke={a.color} strokeWidth={strokePx(a.strokeWidth)} strokeLinecap="round" strokeLinejoin="round" />;
+              }
+              if (a.type === 'shape') {
+                const [x, y, w, h] = [a.x * pxW + ox, a.y * pxH + oy, a.w * pxW, a.h * pxH];
+                const sw = strokePx(a.strokeWidth);
+                if (a.kind === 'rect') return <rect key={a.id} x={x} y={y} width={w} height={h} fill="none" stroke={a.color} strokeWidth={sw} />;
+                if (a.kind === 'ellipse') return <ellipse key={a.id} cx={x + w / 2} cy={y + h / 2} rx={Math.abs(w / 2)} ry={Math.abs(h / 2)} fill="none" stroke={a.color} strokeWidth={sw} />;
+                return (
+                  <g key={a.id} stroke={a.color} strokeWidth={sw} strokeLinecap="round" fill="none">
+                    <line x1={x} y1={y} x2={x + w} y2={y + h} />
+                    {a.kind === 'arrow' && <polyline points={arrowPoints(x, y, x + w, y + h, sw)} strokeLinejoin="round" />}
+                  </g>
+                );
+              }
+              if (a.type === 'underline') {
+                return <rect key={a.id} x={a.x * pxW + ox} y={(a.y + a.h - UNDERLINE_THICKNESS) * pxH + oy} width={a.w * pxW} height={Math.max(1.5, UNDERLINE_THICKNESS * pxH)} fill={a.color} />;
+              }
+              return null;
+            })}
+            {drawPoints && dragStart.current && (
+              <polyline
+                points={drawPoints.map((p) => `${(dragStart.current!.x + p.x) * pxW},${(dragStart.current!.y + p.y) * pxH}`).join(' ')}
+                fill="none" stroke={color} strokeWidth={strokePx(strokeWidth)} strokeLinecap="round" strokeLinejoin="round"
+              />
+            )}
+            {dragLine && (
+              <g stroke={color} strokeWidth={strokePx(strokeWidth)} strokeLinecap="round" fill="none">
+                <line x1={dragLine.x1 * pxW} y1={dragLine.y1 * pxH} x2={dragLine.x2 * pxW} y2={dragLine.y2 * pxH} />
+                {shapeKind === 'arrow' && <polyline points={arrowPoints(dragLine.x1 * pxW, dragLine.y1 * pxH, dragLine.x2 * pxW, dragLine.y2 * pxH, strokePx(strokeWidth))} />}
+              </g>
+            )}
+            {dragBox && activeTool === 'shape' && shapeKind === 'rect' && (
+              <rect x={dragBox.x * pxW} y={dragBox.y * pxH} width={dragBox.w * pxW} height={dragBox.h * pxH} fill="none" stroke={color} strokeWidth={strokePx(strokeWidth)} />
+            )}
+            {dragBox && activeTool === 'shape' && shapeKind === 'ellipse' && (
+              <ellipse cx={(dragBox.x + dragBox.w / 2) * pxW} cy={(dragBox.y + dragBox.h / 2) * pxH} rx={(dragBox.w / 2) * pxW} ry={(dragBox.h / 2) * pxH} fill="none" stroke={color} strokeWidth={strokePx(strokeWidth)} />
+            )}
+            {dragBox && activeTool === 'underline' && (
+              <rect x={dragBox.x * pxW} y={(dragBox.y + dragBox.h) * pxH - 2} width={dragBox.w * pxW} height={2} fill={color} />
+            )}
+          </svg>
+
           {annotations.map((a) => {
-            const isMoving = liveOffset && a.id === selectedId;
-            const dx = isMoving ? liveOffset!.dx : 0;
-            const dy = isMoving ? liveOffset!.dy : 0;
+            const moving = liveOffset && a.id === selectedId;
+            const dx = moving ? liveOffset!.dx : 0;
+            const dy = moving ? liveOffset!.dy : 0;
+            const pos = { position: 'absolute' as const, left: pct(a.x + dx), top: pct(a.y + dy) };
 
             if (a.type === 'text') {
+              if (editingId === a.id) return null;
               return (
-                <div key={a.id} style={{ position: 'absolute', left: `${(a.x + dx) * 100}%`, top: `${(a.y + dy) * 100}%`, fontSize: a.size * (pageImg.h * effectiveZoom), color: a.color, whiteSpace: 'nowrap' }}>
+                <div
+                  key={a.id}
+                  data-ann={a.id}
+                  dir="auto"
+                  style={{ ...pos, fontSize: a.size * pxH, lineHeight: 1, color: a.color, whiteSpace: 'pre', fontFamily: EDITOR_FONT_STACK }}
+                >
                   {a.text}
                 </div>
               );
             }
-            if (a.type === 'highlight') {
-              return <div key={a.id} style={{ position: 'absolute', left: `${(a.x + dx) * 100}%`, top: `${(a.y + dy) * 100}%`, width: `${a.w * 100}%`, height: `${a.h * 100}%`, background: a.color, opacity: 0.35 }} />;
+            if (a.type === 'highlight') return <div key={a.id} style={{ ...pos, width: pct(a.w), height: pct(a.h), background: a.color, opacity: 0.35 }} />;
+            if (a.type === 'redact') return <div key={a.id} style={{ ...pos, width: pct(a.w), height: pct(a.h), background: '#000' }} />;
+            if (a.type === 'signature' || a.type === 'image') {
+              return <img key={a.id} src={a.dataUrl} alt={a.type === 'image' ? 'Inserted image' : 'Signature'} draggable={false} style={{ ...pos, width: pct(a.w), height: pct(a.h), objectFit: 'contain' }} />;
             }
-            if (a.type === 'redact') {
-              return <div key={a.id} style={{ position: 'absolute', left: `${(a.x + dx) * 100}%`, top: `${(a.y + dy) * 100}%`, width: `${a.w * 100}%`, height: `${a.h * 100}%`, background: '#000' }} />;
-            }
-            if (a.type === 'signature') {
-              return <img key={a.id} src={a.dataUrl} alt="Signature" style={{ position: 'absolute', left: `${(a.x + dx) * 100}%`, top: `${(a.y + dy) * 100}%`, width: `${a.w * 100}%`, height: `${a.h * 100}%`, objectFit: 'contain' }} />;
-            }
-            if (a.type === 'draw') {
-              const pts = a.points.map((p) => `${(a.x + dx + p.x) * 100},${(a.y + dy + p.y) * 100}`).join(' ');
+            if (a.type === 'note') {
               return (
-                <svg key={a.id} viewBox="0 0 100 100" preserveAspectRatio="none" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', overflow: 'visible' }}>
-                  <polyline points={pts} fill="none" stroke={a.color} strokeWidth={Math.max(1.5, a.strokeWidth * (pageImg.w * effectiveZoom))} strokeLinecap="round" strokeLinejoin="round" vectorEffect="non-scaling-stroke" />
-                </svg>
+                <div
+                  key={a.id}
+                  title={a.text}
+                  aria-label={`Note: ${a.text}`}
+                  style={{ ...pos, width: pct(noteW), height: pct(noteH), background: a.color }}
+                  className="flex items-center justify-center rounded-sm text-[#5a4300] shadow"
+                >
+                  <svg width="60%" height="60%" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" aria-hidden="true"><path d="M4 5h16v10H9l-5 4z" strokeLinejoin="round" /></svg>
+                </div>
               );
             }
             return null;
@@ -320,10 +471,10 @@ export default function PageCanvas({
               <div
                 style={{
                   position: 'absolute',
-                  left: `${(selectedBounds.x + (liveOffset?.dx ?? 0)) * 100}%`,
-                  top: `${(selectedBounds.y + (liveOffset?.dy ?? 0)) * 100}%`,
-                  width: `${selectedBounds.w * 100}%`,
-                  height: `${selectedBounds.h * 100}%`,
+                  left: pct(selectedBounds.x + (liveOffset?.dx ?? 0)),
+                  top: pct(selectedBounds.y + (liveOffset?.dy ?? 0)),
+                  width: pct(selectedBounds.w),
+                  height: pct(selectedBounds.h),
                   outline: '2px dashed var(--color-workshop)',
                   outlineOffset: 3,
                   pointerEvents: 'none',
@@ -339,8 +490,8 @@ export default function PageCanvas({
                 aria-label="Delete selected annotation"
                 className="absolute flex h-6 w-6 items-center justify-center rounded-full border border-line bg-elevated text-warn shadow hover:bg-warn-dim"
                 style={{
-                  left: `calc(${(selectedBounds.x + selectedBounds.w + (liveOffset?.dx ?? 0)) * 100}% + 4px)`,
-                  top: `calc(${(selectedBounds.y + (liveOffset?.dy ?? 0)) * 100}% - 10px)`,
+                  left: `calc(${pct(selectedBounds.x + selectedBounds.w + (liveOffset?.dx ?? 0))} + 4px)`,
+                  top: `calc(${pct(selectedBounds.y + (liveOffset?.dy ?? 0))} - 10px)`,
                 }}
               >
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13" strokeLinecap="round" strokeLinejoin="round" /></svg>
@@ -351,31 +502,71 @@ export default function PageCanvas({
           {dragBox && (activeTool === 'highlight' || activeTool === 'redact' || activeTool === 'signature') && (
             <div
               style={{
-                position: 'absolute', left: `${dragBox.x * 100}%`, top: `${dragBox.y * 100}%`, width: `${dragBox.w * 100}%`, height: `${dragBox.h * 100}%`,
+                position: 'absolute', left: pct(dragBox.x), top: pct(dragBox.y), width: pct(dragBox.w), height: pct(dragBox.h),
                 background: activeTool === 'redact' ? '#000' : color, opacity: activeTool === 'redact' ? 1 : 0.35,
                 border: '1px dashed var(--color-workshop)',
               }}
             />
           )}
-          {drawPoints && dragStart.current && (
-            <svg viewBox="0 0 100 100" preserveAspectRatio="none" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', overflow: 'visible' }}>
-              <polyline
-                points={drawPoints.map((p) => `${(dragStart.current!.x + p.x) * 100},${(dragStart.current!.y + p.y) * 100}`).join(' ')}
-                fill="none" stroke={color} strokeWidth={3} strokeLinecap="round" strokeLinejoin="round" vectorEffect="non-scaling-stroke"
-              />
-            </svg>
+          {dragBox && activeTool === 'image' && imageAsset && dragBox.w > 0.02 && (
+            <img
+              src={imageAsset.dataUrl}
+              alt=""
+              style={{ position: 'absolute', left: pct(dragBox.x), top: pct(dragBox.y), width: pct(dragBox.w), height: pct(imageHeightFor(dragBox.w, imageAsset)), opacity: 0.6, outline: '1px dashed var(--color-workshop)' }}
+            />
           )}
 
-          {textEditor && (
+          {textEditor && textEditor.kind === 'text' && (
             <input
               autoFocus
+              aria-label="Annotation text"
+              dir="auto"
               value={textValue}
               onChange={(e) => setTextValue(e.target.value)}
               onBlur={commitText}
-              onKeyDown={(e) => e.key === 'Enter' && commitText()}
-              style={{ position: 'absolute', left: `${textEditor.x * 100}%`, top: `${textEditor.y * 100}%`, color, fontSize: 0.025 * (pageImg.h * effectiveZoom) }}
-              className="bg-paper/90 outline-none"
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') commitText();
+                if (e.key === 'Escape') {
+                  setTextEditor(null);
+                  setEditingId(null);
+                }
+              }}
+              onPointerDown={(e) => e.stopPropagation()}
+              style={{
+                position: 'absolute', left: pct(textEditor.x), top: pct(textEditor.y), color, fontSize: 0.025 * pxH, lineHeight: 1,
+                fontFamily: EDITOR_FONT_STACK, minWidth: 120,
+              }}
+              className="bg-paper/90 outline outline-1 outline-workshop"
             />
+          )}
+          {textEditor && textEditor.kind === 'note' && (
+            <div
+              onPointerDown={(e) => e.stopPropagation()}
+              style={{ position: 'absolute', left: pct(textEditor.x), top: pct(textEditor.y), width: 240, zIndex: 5 }}
+              className="rounded-md border border-line bg-[#fff8c5] p-2 text-[#2a2200] shadow-lg"
+            >
+              <textarea
+                autoFocus
+                aria-label="Note text"
+                dir="auto"
+                rows={4}
+                value={textValue}
+                onChange={(e) => setTextValue(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) commitText();
+                  if (e.key === 'Escape') {
+                    setTextEditor(null);
+                    setEditingId(null);
+                  }
+                }}
+                placeholder="Write a note…"
+                className="w-full resize-none bg-transparent text-sm outline-none placeholder:text-[#2a2200]/50"
+              />
+              <div className="mt-1 flex justify-end gap-2 text-xs">
+                <button onClick={() => { setTextEditor(null); setEditingId(null); }} className="rounded px-2 py-1 hover:bg-black/5">Cancel</button>
+                <button onClick={commitText} className="rounded bg-[#2a2200] px-2 py-1 font-medium text-[#fff8c5]">Save note</button>
+              </div>
+            </div>
           )}
         </div>
       )}

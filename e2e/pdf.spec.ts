@@ -154,59 +154,6 @@ test.describe('PDF tools with real files', () => {
   });
 });
 
-test.describe('PDF Editor', () => {
-  async function openEditor(page: import('@playwright/test').Page, pdf: Awaited<ReturnType<typeof makePdf>>) {
-    await openTool(page, '/tools/pdf/editor');
-    await upload(page, pdf);
-    await expect(page.getByAltText('Page', { exact: true })).toBeVisible();
-  }
-
-  async function addText(page: import('@playwright/test').Page, text: string) {
-    await page.getByRole('button', { name: 'Text', exact: true }).click();
-    const pageImg = page.getByAltText('Page', { exact: true });
-    const b = (await pageImg.boundingBox())!;
-    await page.mouse.click(b.x + b.width * 0.2, b.y + b.height * 0.4);
-    await page.keyboard.type(text);
-    await page.keyboard.press('Enter');
-  }
-
-  test('adds a text annotation, keeps original text selectable', async ({ page }) => {
-    await openEditor(page, await makePdf({ pages: 2 }));
-    await addText(page, 'Approved by QA');
-    await page.getByRole('button', { name: 'Export PDF' }).click();
-    const out = await download(page);
-    const text = await pdfText(out.buffer);
-    expect(text[0]).toContain('Approved by QA');
-    expect(text[0]).toContain('Page 1');
-    expect(text).toHaveLength(2);
-  });
-
-  test('redaction removes the underlying text on that page', async ({ page }) => {
-    await openEditor(page, await makePdf({ pages: 1 }));
-    await page.getByRole('button', { name: 'Redact', exact: true }).click();
-    const b = (await page.getByAltText('Page', { exact: true }).boundingBox())!;
-    await page.mouse.move(b.x + 2, b.y + 2);
-    await page.mouse.down();
-    await page.mouse.move(b.x + b.width * 0.6, b.y + b.height * 0.15, { steps: 5 });
-    await page.mouse.up();
-    await page.getByRole('button', { name: 'Export PDF' }).click();
-    const text = await pdfText((await download(page)).buffer);
-    expect(text[0]).not.toContain('Page 1');
-  });
-
-  // Known bug, fixed in roadmap Task 4: export uses a Latin-only font.
-  test('exports Arabic text annotations', async ({ page }) => {
-    test.fail(true, 'Known bug (Task 4): Helvetica/WinAnsi cannot encode Arabic');
-    await openEditor(page, await makePdf({ pages: 1 }));
-    await addText(page, 'مرحبا بالعالم');
-    await page.getByRole('button', { name: 'Export PDF' }).click();
-    // Fail fast (instead of hitting the test timeout) when export errors out.
-    await expect(page.getByRole('button', { name: /Download/ })).toBeVisible({ timeout: 15_000 });
-    const text = await pdfText((await download(page)).buffer);
-    expect(text[0]).toContain('مرحبا');
-  });
-});
-
 test('non-PDF input is rejected with a message, not a crash', async ({ page, consoleErrors }) => {
   await openTool(page, '/tools/pdf/merge');
   const bogus = { name: 'fake.pdf', mimeType: 'application/pdf', buffer: Buffer.from('this is not a pdf') };

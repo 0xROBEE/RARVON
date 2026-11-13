@@ -8,17 +8,19 @@ export default function LazyThumb({
   srcId,
   originalIndex,
   rotation,
+  blank,
 }: {
   srcBytes: ArrayBuffer;
   srcId: string;
   originalIndex: number;
   rotation: number;
+  blank?: { width: number; height: number };
 }) {
   const [dataUrl, setDataUrl] = useState<string | null>(thumbCache.get(`${srcId}:${originalIndex}`) ?? null);
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (dataUrl) return;
+    if (dataUrl || blank) return;
     const el = ref.current;
     if (!el) return;
     const observer = new IntersectionObserver(
@@ -38,11 +40,17 @@ export default function LazyThumb({
     );
     observer.observe(el);
     return () => observer.disconnect();
-  }, [dataUrl, srcBytes, srcId, originalIndex]);
+  }, [dataUrl, blank, srcBytes, srcId, originalIndex]);
 
   return (
     <div ref={ref} className="flex aspect-[3/4] w-full items-center justify-center overflow-hidden rounded bg-paper">
-      {dataUrl ? (
+      {blank ? (
+        <div
+          aria-label="Blank page"
+          className="border border-line bg-white"
+          style={{ aspectRatio: `${blank.width} / ${blank.height}`, height: blank.height >= blank.width ? '100%' : undefined, width: blank.width > blank.height ? '100%' : undefined, transform: `rotate(${rotation}deg)` }}
+        />
+      ) : dataUrl ? (
         <img
           src={dataUrl}
           alt={`Page ${originalIndex + 1}`}

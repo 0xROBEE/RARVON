@@ -13,11 +13,12 @@ interface Props {
   onDelete: (id: string) => void;
   onDuplicate: (id: string) => void;
   onRotate: (id: string) => void;
+  onInsertBlank: (afterId: string) => void;
 }
 
 const CLICK_THRESHOLD_PX = 6;
 
-export default function ThumbnailSidebar({ srcBytes, srcId, pages, currentPageId, onSelect, onReorder, onDelete, onDuplicate, onRotate }: Props) {
+export default function ThumbnailSidebar({ srcBytes, srcId, pages, currentPageId, onSelect, onReorder, onDelete, onDuplicate, onRotate, onInsertBlank }: Props) {
   // Reordering is Pointer-Events-based rather than native HTML5 drag-and-drop,
   // since iOS Safari doesn't support HTML5 DnD at all and Android support is
   // inconsistent. This works the same way for mouse, touch, and pen.
@@ -83,7 +84,7 @@ export default function ThumbnailSidebar({ srcBytes, srcId, pages, currentPageId
             dragOverIndex === i && draggingIndex !== i ? 'border-workshop' : p.id === currentPageId ? 'border-workshop bg-workshop-dim' : 'border-transparent hover:border-line'
           }`}
         >
-          <LazyThumb srcBytes={srcBytes} srcId={srcId} originalIndex={p.originalIndex} rotation={p.extraRotation} />
+          <LazyThumb srcBytes={srcBytes} srcId={srcId} originalIndex={p.originalIndex} rotation={p.extraRotation} blank={p.blank} />
           <p className={`mt-1.5 text-center text-xs font-medium ${p.id === currentPageId ? 'text-workshop' : 'text-ink/50'}`}>{i + 1}</p>
           <div className="absolute right-1.5 top-1.5 flex gap-1 opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100">
             <button
@@ -93,6 +94,14 @@ export default function ThumbnailSidebar({ srcBytes, srcId, pages, currentPageId
               className="flex h-6 w-6 items-center justify-center rounded bg-elevated text-ink/60 shadow hover:text-ink"
             >
               <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M4 4v6h6M4 10a8 8 0 1015.5-3" strokeLinecap="round" strokeLinejoin="round" /></svg>
+            </button>
+            <button
+              onPointerDown={(e) => e.stopPropagation()}
+              onClick={() => onInsertBlank(p.id)}
+              title="Insert blank page after" aria-label="Insert blank page after this page"
+              className="flex h-6 w-6 items-center justify-center rounded bg-elevated text-ink/60 shadow hover:text-ink"
+            >
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M6 3h9l4 4v14H6zM12 10v7M8.5 13.5h7" strokeLinecap="round" strokeLinejoin="round" /></svg>
             </button>
             <button
               onPointerDown={(e) => e.stopPropagation()}

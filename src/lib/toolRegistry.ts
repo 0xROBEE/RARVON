@@ -52,13 +52,15 @@ export const tools: ToolMeta[] = [
   // PDF
   {
     slug: 'editor', category: 'pdf', name: 'PDF Editor',
-    shortDescription: 'Open a PDF and edit pages, annotate, sign or redact it directly.',
-    description: 'PDF Editor is a lightweight document editor: navigate and reorder pages, rotate, duplicate or delete them, add text, freehand drawing, highlights and a signature, and redact sensitive areas \u2014 all in one place, entirely in your browser.',
-    status: 'available', keywords: ['edit pdf', 'annotate pdf', 'pdf redaction', 'sign pdf online', 'pdf whiteout'],
+    shortDescription: 'Annotate, sign, redact and rearrange a PDF — text in any direction, shapes, images and notes.',
+    description: 'PDF Editor is a lightweight document editor: reorder, rotate, duplicate, delete or insert blank pages, and add text (including Arabic and other right-to-left scripts), freehand drawing, highlights, underlines, shapes and arrows, images, sticky-note comments and a signature, or redact sensitive areas — all in one place, entirely in your browser.',
+    status: 'available', keywords: ['edit pdf', 'annotate pdf', 'pdf redaction', 'sign pdf online', 'pdf whiteout', 'add image to pdf', 'pdf comments', 'insert blank page', 'arabic pdf text'],
     actions: ['edit'],
     layout: 'wide',
     faq: [
       { q: 'Does this edit the original PDF text?', a: 'No. This adds new content \u2014 text boxes, drawings, highlights, a signature \u2014 on top of your PDF, the same way a sticky note or a printed annotation would. Rewriting the PDF\u2019s own existing text isn\u2019t supported yet; that\u2019s a much harder problem this tool doesn\u2019t pretend to solve.' },
+      { q: 'Can I add Arabic or other non-Latin text?', a: 'Yes. Latin, Cyrillic and Greek text is embedded as real, selectable text. Arabic, Persian and Urdu are shaped exactly as your browser shows them — joined letters, right-to-left order, mixed with English words and numbers — and embedded as vector outlines, so they print sharply but can’t be selected as text. Scripts without a bundled font (Chinese, Japanese, Korean, Hindi…) are embedded as a high-resolution image of the text.' },
+      { q: 'What happens to sticky notes?', a: 'They are saved as standard PDF comments, so Acrobat, browser PDF viewers and most other readers show them as a note icon that opens to your text.' },
       { q: 'Is redaction actually secure?', a: 'Yes, for any page you redact: that page is flattened into an image on export, so the blacked-out content can\u2019t be recovered by selecting or extracting text from it. The trade-off is that the whole page\u2019s text stops being selectable, not just the redacted part \u2014 other pages are unaffected.' },
     ],
   },
