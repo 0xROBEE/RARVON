@@ -199,8 +199,7 @@ test.describe('Image to Text (OCR)', () => {
     await chooseLanguage(page, 'fas', true);
     await upload(page, await textImage(page, { lines: ['این یک متن آزمایشی برای تشخیص نوشتار فارسی است.'] }));
     expect(await extracted(page)).toContain('فارسی');
-    // Google Fonts in index.html is the only known third-party request (self-hosting is roadmap Task 8).
-    expect(external.filter((u) => !/fonts\.(googleapis|gstatic)\.com/.test(u))).toEqual([]);
+    expect(external).toEqual([]);
   });
 
   test('a non-image file is rejected with a message', async ({ page }) => {

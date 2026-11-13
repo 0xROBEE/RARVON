@@ -23,6 +23,7 @@ export default function Footer() {
             <Link to="/privacy" className="hover:text-ink">Privacy</Link>
             <Link to="/about" className="hover:text-ink">About</Link>
             <Link to="/support" className="hover:text-ink">Support</Link>
+            <a href="/licenses/third-party.txt" className="hover:text-ink">Open-source licenses</a>
             <SupportButton variant="footer" />
           </div>
         </div>

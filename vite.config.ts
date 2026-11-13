@@ -1,9 +1,11 @@
-import { defineConfig } from 'vite'
+import { defineConfig, loadEnv } from 'vite'
 import type { Plugin } from 'vite'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 import { createReadStream, existsSync, readdirSync, readFileSync } from 'node:fs'
 import { join, resolve } from 'node:path'
+import { createHash } from 'node:crypto'
+import { licenseReport } from './scripts/licensePlugin.ts'
 
 /**
  * Self-hosts everything the Image → Text (OCR) tool needs under /ocr/, so OCR
@@ -13,6 +15,9 @@ import { join, resolve } from 'node:path'
  * when someone runs OCR, then cached by the browser (and by tesseract.js in
  * IndexedDB).
  */
+/** Packages whose files ocrAssets() copies into the build (for the license report). */
+const ocrPackages: string[] = ['tesseract.js', 'tesseract.js-core']
+
 function ocrAssets(): Plugin {
   const nm = resolve(import.meta.dirname, 'node_modules')
   const files = new Map<string, string>() // public path (no leading slash) -> absolute source path
@@ -24,7 +29,10 @@ function ocrAssets(): Plugin {
   if (existsSync(dataDir)) {
     for (const lang of readdirSync(dataDir)) {
       const src = join(dataDir, lang, '4.0.0_best_int', `${lang}.traineddata.gz`)
-      if (existsSync(src)) files.set(`ocr/lang/${lang}.traineddata.gz`, src)
+      if (existsSync(src)) {
+        files.set(`ocr/lang/${lang}.traineddata.gz`, src)
+        ocrPackages.push(`@tesseract.js-data/${lang}`)
+      }
     }
   }
 
@@ -45,9 +53,65 @@ function ocrAssets(): Plugin {
   }
 }
 
-export default defineConfig({
-  plugins: [react(), tailwindcss(), ocrAssets()],
+/**
+ * Offline support: emits /sw.js (from src/sw-template.js) with the list of
+ * every hashed JS/CSS/font/WASM asset of this build to precache, so any tool
+ * works offline after the first visit. The large /ocr/ files are excluded
+ * (cached on first use instead). Only the production build gets a worker.
+ */
+function benchPwa(): Plugin {
+  return {
+    name: 'bench-pwa',
+    apply: 'build',
+    generateBundle(_options, bundle) {
+      // .woff duplicates of .woff2 fonts are skipped (cached on first use if ever needed).
+      const files = Object.keys(bundle).filter((f) => f.startsWith('assets/') && !f.endsWith('.map') && !f.endsWith('.woff')).sort()
+      const ocr = Object.keys(bundle).filter((f) => f.startsWith('ocr/')).sort()
+      const hash = (list: string[]) => createHash('sha256').update(list.join('|')).digest('hex').slice(0, 12)
+      const template = readFileSync(resolve(import.meta.dirname, 'src/sw-template.js'), 'utf8')
+      const source = template
+        .replace("'__VERSION__'", JSON.stringify(hash(files)))
+        .replace('__PRECACHE__', JSON.stringify(files.map((f) => `/${f}`)))
+        .replace('__OCR_VERSION__', hash(ocr.map((f) => `${f}:${(bundle[f] as { source?: { length: number } }).source?.length ?? 0}`)))
+      this.emitFile({ type: 'asset', fileName: 'sw.js', source })
+    },
+  }
+}
+
+/**
+ * robots.txt always; sitemap.xml when VITE_SITE_URL (the public origin) is
+ * set at build time, listing the home, category, action and every available
+ * tool page from the registry.
+ */
+function seoFiles(siteUrl: string): Plugin {
+  return {
+    name: 'bench-seo',
+    apply: 'build',
+    async generateBundle() {
+      const origin = siteUrl.replace(/\/$/, '')
+      const robots = ['User-agent: *', 'Allow: /', ...(origin ? [`Sitemap: ${origin}/sitemap.xml`] : [])].join('\n') + '\n'
+      this.emitFile({ type: 'asset', fileName: 'robots.txt', source: robots })
+      if (!origin) return
+      const { tools, categories, actionMeta } = await import('./src/lib/toolRegistry.ts')
+      const paths = [
+        '/', '/about', '/privacy',
+        ...categories.map((c) => `/tools/${c.slug}`),
+        ...actionMeta.map((a) => `/${a.value}`),
+        ...tools.filter((t) => t.status !== 'coming-soon').map((t) => `/tools/${t.category}/${t.slug}`),
+      ]
+      const xml = `<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+${paths.map((p) => `  <url><loc>${origin}${p}</loc></url>`).join('\n')}
+</urlset>
+`
+      this.emitFile({ type: 'asset', fileName: 'sitemap.xml', source: xml })
+    },
+  }
+}
+
+export default defineConfig(({ mode }) => ({
+  plugins: [react(), tailwindcss(), ocrAssets(), benchPwa(), licenseReport(() => ocrPackages), seoFiles(loadEnv(mode, process.cwd(), 'VITE_').VITE_SITE_URL ?? '')],
   worker: {
     format: 'es',
   },
-})
+}))

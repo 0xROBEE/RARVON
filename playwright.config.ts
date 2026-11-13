@@ -14,6 +14,8 @@ export default defineConfig({
   use: {
     baseURL: `http://localhost:${PORT}`,
     acceptDownloads: true,
+    // The offline spec opts back in; elsewhere the service worker's precache would only add load.
+    serviceWorkers: 'block',
     trace: 'retain-on-failure',
   },
   projects: [

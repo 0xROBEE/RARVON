@@ -1,16 +1,18 @@
 import { Suspense } from 'react';
 import { useParams, Navigate } from 'react-router-dom';
-import { getTool, EXPERIMENTAL_NOTE } from '../lib/toolRegistry';
+import { getTool, getCategory, EXPERIMENTAL_NOTE } from '../lib/toolRegistry';
 import { toolComponents } from '../lib/toolComponents';
 import ToolPageShell from '../components/ToolPageShell';
 import ComingSoonNotice from '../components/ComingSoonNotice';
 import ExperimentalNotice from '../components/ExperimentalNotice';
-import { usePageMeta } from '../lib/usePageMeta';
+import { usePageMeta, toolJsonLd } from '../lib/usePageMeta';
 
 export default function ToolPage() {
   const { category, slug } = useParams<{ category: string; slug: string }>();
   const tool = getTool(category ?? '', slug ?? '');
-  usePageMeta(tool ? tool.name : 'Bench', tool ? tool.shortDescription : '');
+  usePageMeta(tool ? tool.name : 'Bench', tool ? tool.shortDescription : '', {
+    jsonLd: tool ? toolJsonLd(tool, getCategory(tool.category)?.name ?? '') : null,
+  });
   if (!tool) return <Navigate to="/" replace />;
 
   const Component = toolComponents[`${tool.category}/${tool.slug}`];
