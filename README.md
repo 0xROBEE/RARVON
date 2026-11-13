@@ -89,6 +89,18 @@ npm install
 npm run dev
 ```
 
+## Tests
+
+```
+npm test            # unit tests (Vitest): registry integrity, chaining, page ranges, helpers
+npm run test:e2e    # browser tests (Playwright, Chromium) against the production build
+```
+
+The e2e suite opens every route and fails on any console error, then drives each file tool through its real UI
+with generated files (PDFs, JPEG/PNG with EXIF, WebM video with audio, WAV) and checks the downloaded output —
+page counts, text, dimensions, durations, ZIP contents. Known open bugs are marked `test.fail` with the roadmap
+task that fixes them, so they flip to failures (and get noticed) once fixed. First run: `npx playwright install chromium`.
+
 ## Checks and production build
 
 ```

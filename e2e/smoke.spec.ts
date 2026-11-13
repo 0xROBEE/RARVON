@@ -37,3 +37,19 @@ test.describe('every page renders without errors', () => {
     await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
   });
 });
+
+test.describe('mobile layout', () => {
+  test.use({ viewport: { width: 375, height: 812 }, hasTouch: true, isMobile: true });
+  const paths = ['/', '/tools/pdf', ...tools.filter((t) => t.status !== 'coming-soon').map((t) => `/tools/${t.category}/${t.slug}`)];
+  test('no page scrolls horizontally at phone width', async ({ page }) => {
+    const overflowing: string[] = [];
+    for (const path of paths) {
+      await page.goto(path);
+      await expect(page.locator('h1').first()).toBeVisible();
+      await expect(page.getByText('Loading tool…')).toHaveCount(0);
+      const extra = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
+      if (extra > 1) overflowing.push(`${path} (+${extra}px)`);
+    }
+    expect(overflowing).toEqual([]);
+  });
+});

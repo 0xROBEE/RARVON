@@ -320,7 +320,7 @@ export default function ImageResize() {
             )}
           </div>
 
-          <Button onClick={download} disabled={busy || !format}>{busy ? 'Preparing…' : 'Download resized image'}</Button>
+          <Button onClick={download} disabled={busy || !format}>{busy ? 'Preparing…' : 'Resize image'}</Button>
         </>
       )}
 

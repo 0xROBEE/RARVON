@@ -82,7 +82,7 @@ export default function RemoveMetadataTool() {
       )}
 
       {file && (
-        <Button onClick={clean} disabled={busy}>{busy ? 'Cleaning…' : 'Remove metadata & download'}</Button>
+        <Button onClick={clean} disabled={busy}>{busy ? 'Cleaning…' : 'Remove metadata'}</Button>
       )}
       {error && <ErrorMessage>{error}</ErrorMessage>}
       {result && (
