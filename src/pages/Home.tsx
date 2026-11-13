@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import type { DragEvent } from 'react';
+import type { DragEvent, ReactNode } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import clsx from 'clsx';
 import { categories, tools, toolsForCategory, getTool } from '../lib/toolRegistry';
@@ -13,7 +13,7 @@ import type { FileKind } from '../lib/fileKinds';
 import { getRecentTools } from '../lib/recentTools';
 import { HOME_TOP_TOOLS } from '../lib/homeTools';
 import { formatBytes } from '../lib/imageUtils';
-import SupportButton from '../components/SupportButton';
+import { useInstallPrompt } from '../lib/installPrompt';
 
 const toolCount = tools.filter((t) => t.status !== 'coming-soon').length;
 const MAX_SUGGESTIONS = 6;
@@ -155,6 +155,7 @@ export default function Home() {
     'Free, ad-free, account-free tools for PDFs, images, video, audio, text and data — processed on your device.',
   );
   const { openSearch } = useToolSearch();
+  const { canInstall, installed, install } = useInstallPrompt();
   const [recent] = useState(() =>
     getRecentTools()
       .map((k) => getTool(k.split('/')[0], k.split('/')[1]))
@@ -246,15 +247,45 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="border-t border-line bg-paper-dim">
-        <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-4 px-4 py-10 sm:px-6">
-          <div className="max-w-md">
-            <h2 className="font-display text-base font-semibold">Enjoying Bench?</h2>
-            <p className="mt-1 text-sm text-ink-2">It stays free, ad-free and account-free for everyone either way. Support is completely optional.</p>
-          </div>
-          <SupportButton />
+      <section className="mx-auto max-w-6xl px-4 pb-4 sm:px-6" aria-labelledby="tips-heading">
+        <h2 id="tips-heading" className="font-display text-lg font-semibold">Get more out of Bench</h2>
+        <div className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <Tip icon="M12 3v12m0 0l-4-4m4 4l4-4M5 21h14" title="Works offline">
+            {installed
+              ? 'Bench is installed on this device. Every tool works without an internet connection.'
+              : 'After your first visit every tool works without a connection. Install Bench to open it like an app.'}
+            {canInstall && (
+              <button onClick={() => void install()} className="mt-3 inline-flex items-center gap-1.5 rounded-md border border-line bg-paper px-3 py-1.5 text-xs font-medium text-ink hover:border-ink">
+                Install app
+              </button>
+            )}
+          </Tip>
+          <Tip icon="M8 4h8l2 3h2v13H4V7h2zM12 11v5m-2.5-2.5h5" title="Drop or paste anything">
+            Drop a file at the top of this page, or paste a screenshot with Ctrl+V, and Bench suggests the right tool.
+          </Tip>
+          <Tip icon="M4 12h12m0 0l-4-4m4 4l-4 4M20 5v14" title="Keep going with a result">
+            Every result has “Continue with” buttons that open the next tool with your file already loaded.
+          </Tip>
+          <Tip icon="M11 4a7 7 0 100 14 7 7 0 000-14zM21 21l-4.5-4.5" title="Find any tool fast">
+            Press <kbd className="rounded border border-line px-1 font-mono text-[11px]">Ctrl</kbd>{' '}
+            <kbd className="rounded border border-line px-1 font-mono text-[11px]">K</kbd> on any page and type what you want to do, like “compress video”.
+          </Tip>
         </div>
       </section>
     </>
+  );
+}
+
+function Tip({ icon, title, children }: { icon: string; title: string; children: ReactNode }) {
+  return (
+    <div className="flex flex-col rounded-xl border border-line p-4">
+      <span className="grid h-9 w-9 place-items-center rounded-lg bg-workshop-dim text-workshop" aria-hidden="true">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d={icon} />
+        </svg>
+      </span>
+      <h3 className="mt-3 font-display text-sm font-semibold">{title}</h3>
+      <div className="mt-1 text-sm text-ink-2">{children}</div>
+    </div>
   );
 }
