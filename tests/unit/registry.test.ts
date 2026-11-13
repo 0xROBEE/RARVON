@@ -76,3 +76,17 @@ describe('file-kind routing', async () => {
     expect(kindOfFile('data.bin')).toBe('other');
   });
 });
+
+describe('home page top tools', async () => {
+  const { HOME_TOP_TOOLS } = await import('../../src/lib/homeTools');
+  it('lists exactly 4 existing, available tools per category', () => {
+    for (const c of categories) {
+      const slugs = HOME_TOP_TOOLS[c.slug];
+      expect(slugs, c.slug).toHaveLength(4);
+      for (const s of slugs) {
+        const t = tools.find((x) => x.category === c.slug && x.slug === s);
+        expect(t && t.status !== 'coming-soon', `${c.slug}/${s}`).toBe(true);
+      }
+    }
+  });
+});

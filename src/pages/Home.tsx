@@ -11,11 +11,13 @@ import { CategoryIcon } from '../lib/categoryIcons';
 import { KIND_LABEL, kindOfFile, toolsForKind } from '../lib/fileKinds';
 import type { FileKind } from '../lib/fileKinds';
 import { getRecentTools } from '../lib/recentTools';
+import { HOME_TOP_TOOLS } from '../lib/homeTools';
 import { formatBytes } from '../lib/imageUtils';
 import SupportButton from '../components/SupportButton';
 
 const toolCount = tools.filter((t) => t.status !== 'coming-soon').length;
 const MAX_SUGGESTIONS = 6;
+
 
 function imageFromPaste(e: ClipboardEvent): File | null {
   for (const item of Array.from(e.clipboardData?.items ?? [])) {
@@ -204,15 +206,20 @@ export default function Home() {
         <div className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {categories.map((c) => {
             const list = toolsForCategory(c.slug).filter((t) => t.status !== 'coming-soon');
+            const top = (HOME_TOP_TOOLS[c.slug] ?? [])
+              .map((slug) => list.find((t) => t.slug === slug))
+              .filter((t): t is ToolMeta => Boolean(t));
+            const shown = top.length ? top : list.slice(0, 4);
+            const more = list.length - shown.length;
             return (
-              <div key={c.slug} className="rounded-xl border border-line bg-elevated p-4">
+              <div key={c.slug} className="flex flex-col rounded-xl border border-line bg-elevated p-4">
                 <Link to={`/tools/${c.slug}`} className="flex items-center gap-2 font-display text-sm font-semibold hover:text-workshop">
                   <CategoryIcon category={c.slug} size={30} />
                   {c.name}
                   <span className="ms-auto font-mono text-xs font-normal text-ink-3">{list.length}</span>
                 </Link>
                 <ul className="mt-3 grid gap-0.5">
-                  {list.map((t) => (
+                  {shown.map((t) => (
                     <li key={t.slug}>
                       <Link to={`/tools/${t.category}/${t.slug}`} className="flex items-center justify-between gap-2 rounded-md px-2 py-1.5 text-sm text-ink-2 hover:bg-paper-dim hover:text-ink">
                         <span className="truncate">{t.name}</span>
@@ -221,9 +228,21 @@ export default function Home() {
                     </li>
                   ))}
                 </ul>
+                {more > 0 && (
+                  <Link to={`/tools/${c.slug}`} className="mt-2 px-2 text-sm font-medium text-workshop hover:underline">
+                    +{more} more {c.name} tool{more === 1 ? '' : 's'}
+                  </Link>
+                )}
               </div>
             );
           })}
+          <Link
+            to="/tools"
+            className="flex flex-col justify-center rounded-xl border border-dashed border-line p-4 text-center hover:border-ink"
+          >
+            <span className="font-display text-sm font-semibold">See all {toolCount} tools</span>
+            <span className="mt-1 text-xs text-ink-3">Every tool on one page</span>
+          </Link>
         </div>
       </section>
 
