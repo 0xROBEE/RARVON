@@ -182,8 +182,8 @@ function PdfEditorInner() {
 
   if (!file || !srcBytes) {
     return (
-      <div className="flex min-h-[60vh] items-center justify-center">
-        <div className="w-full max-w-xl space-y-4">
+      <div className="flex justify-center">
+        <div className="w-full max-w-3xl space-y-4">
           <FileDropzone accept="application/pdf" onFiles={handleFile} hint="Opens entirely in your browser — nothing is uploaded" />
           {loadError && <ErrorMessage>{loadError}</ErrorMessage>}
         </div>
@@ -197,7 +197,7 @@ function PdfEditorInner() {
   const currentSize = currentPage ? pageSizes[currentPage.originalIndex] : undefined;
 
   return (
-    <div className="space-y-2">
+    <div data-workspace className="space-y-2">
       <div className="flex items-center justify-between text-xs text-ink/50">
         <span className="truncate">{file.name} · {pages.length} page{pages.length !== 1 ? 's' : ''} · processed locally, not uploaded</span>
         <div className="flex gap-2 md:hidden">

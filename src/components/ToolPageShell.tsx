@@ -7,24 +7,23 @@ export default function ToolPageShell({ tool, children }: { tool: ToolMeta; chil
   const category = getCategory(tool.category);
   const wide = tool.layout === 'wide';
   return (
-    <div className={wide ? 'mx-auto max-w-[1680px] px-3 py-4 sm:px-4' : 'mx-auto max-w-3xl px-4 py-10 sm:px-6'}>
-      <nav aria-label="Breadcrumb" className="mb-2 flex flex-wrap items-center gap-1 text-xs text-ink/50">
-        <Link to="/" className="hover:text-ink">Home</Link>
-        <span aria-hidden="true">/</span>
-        <Link to={`/tools/${tool.category}`} className="hover:text-ink">{category?.name}</Link>
-        <span aria-hidden="true">/</span>
-        <span className="text-ink">{tool.name}</span>
-      </nav>
-      {wide ? (
-        <h1 className="font-display text-lg font-semibold tracking-tight sm:text-xl">{tool.name}</h1>
-      ) : (
-        <>
-          <h1 className="font-display text-2xl font-semibold tracking-tight sm:text-3xl">{tool.name}</h1>
-          <p className="mt-2 max-w-xl text-sm text-ink/60">{tool.description}</p>
-        </>
-      )}
+    <div className={wide ? 'group/shell mx-auto max-w-[1680px] px-3 py-4 sm:px-4' : 'mx-auto max-w-3xl px-4 py-10 sm:px-6'}>
+      {/* Wide tools (e.g. the PDF Editor) look like any other tool until they
+          open a workspace (an element with data-workspace), then the header
+          collapses to a compact full-width bar above it. */}
+      <div className={wide ? 'mx-auto max-w-3xl pt-6 group-has-[[data-workspace]]/shell:max-w-none group-has-[[data-workspace]]/shell:pt-0' : undefined}>
+        <nav aria-label="Breadcrumb" className="mb-2 flex flex-wrap items-center gap-1 text-xs text-ink/50">
+          <Link to="/" className="hover:text-ink">Home</Link>
+          <span aria-hidden="true">/</span>
+          <Link to={`/tools/${tool.category}`} className="hover:text-ink">{category?.name}</Link>
+          <span aria-hidden="true">/</span>
+          <span className="text-ink">{tool.name}</span>
+        </nav>
+        <h1 className={`font-display text-2xl font-semibold tracking-tight sm:text-3xl ${wide ? 'group-has-[[data-workspace]]/shell:text-lg sm:group-has-[[data-workspace]]/shell:text-xl' : ''}`}>{tool.name}</h1>
+        <p className={`mt-2 max-w-xl text-sm text-ink/60 ${wide ? 'group-has-[[data-workspace]]/shell:hidden' : ''}`}>{tool.description}</p>
+      </div>
 
-      <div className={wide ? 'mt-3' : 'mt-8'}>{children}</div>
+      <div className={wide ? 'mt-8 group-has-[[data-workspace]]/shell:mt-3' : 'mt-8'}>{children}</div>
 
       {tool.status !== 'coming-soon' && !wide && (
         <p className="mt-8 flex items-center gap-1.5 text-xs text-ink/40">
@@ -36,7 +35,7 @@ export default function ToolPageShell({ tool, children }: { tool: ToolMeta; chil
       )}
 
       {tool.status !== 'coming-soon' && relatedTools(tool).length > 0 && (
-        <section className={`mt-10 border-t border-line pt-6 ${wide ? 'max-w-3xl' : ''}`}>
+        <section className={`mt-10 border-t border-line pt-6 ${wide ? 'mx-auto max-w-3xl' : ''}`}>
           <h2 className="font-display text-sm font-semibold">Need to do something else with this file?</h2>
           <div className="mt-3 flex flex-wrap gap-2">
             {relatedTools(tool).map((t) => (
@@ -53,7 +52,7 @@ export default function ToolPageShell({ tool, children }: { tool: ToolMeta; chil
       )}
 
       {tool.faq && tool.faq.length > 0 && (
-        <section className={`mt-12 border-t border-line pt-6 ${wide ? 'max-w-3xl' : ''}`} aria-labelledby="faq-heading">
+        <section className={`mt-12 border-t border-line pt-6 ${wide ? 'mx-auto max-w-3xl' : ''}`} aria-labelledby="faq-heading">
           <h2 id="faq-heading" className="font-display text-sm font-semibold">Frequently asked questions</h2>
           <dl className="mt-3 space-y-4">
             {tool.faq.map((f) => (
