@@ -7,9 +7,9 @@ export default function WordCounter() {
     const words = text.trim() ? text.trim().split(/\s+/).length : 0;
     const characters = text.length;
     const charactersNoSpaces = text.replace(/\s/g, '').length;
-    const sentences = text.trim() ? (text.match(/[.!?]+(\s|$)/g)?.length ?? (text.trim() ? 1 : 0)) : 0;
+    const sentences = text.trim() ? (text.match(/[.!?؟。！？]+(\s|$)/g)?.length ?? (text.trim() ? 1 : 0)) : 0;
     const paragraphs = text.trim() ? text.split(/\n\s*\n/).filter((p) => p.trim()).length : 0;
-    const readingMinutes = Math.max(1, Math.round(words / 200));
+    const readingMinutes = words ? Math.max(1, Math.round(words / 200)) : 0;
     return { words, characters, charactersNoSpaces, sentences, paragraphs, readingMinutes };
   }, [text]);
 

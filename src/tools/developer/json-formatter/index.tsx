@@ -11,7 +11,7 @@ export default function JsonFormatter() {
   function format() {
     try {
       const parsed = JSON.parse(input);
-      setOutput(JSON.stringify(parsed, null, indent));
+      setOutput(JSON.stringify(parsed, null, indent === 0 ? '\t' : indent));
       setError(null);
     } catch (e) {
       setOutput('');

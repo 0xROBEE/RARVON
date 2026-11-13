@@ -14,6 +14,29 @@ const MIN_DIM = 8;
 const MAX_DIM = 10000;
 const DEBOUNCE_MS = 300;
 
+type Fit = 'cover' | 'contain' | 'stretch';
+
+/** Draws `img` into a w×h canvas: crop to fill, fit inside (letterbox), or stretch. */
+function drawFitted(ctx: CanvasRenderingContext2D, img: HTMLImageElement, w: number, h: number, fit: Fit) {
+  const iw = img.naturalWidth;
+  const ih = img.naturalHeight;
+  if (fit === 'stretch' || Math.abs(iw / ih - w / h) < 0.01) {
+    ctx.drawImage(img, 0, 0, w, h);
+    return;
+  }
+  if (fit === 'cover') {
+    const s = Math.max(w / iw, h / ih);
+    const sw = w / s;
+    const sh = h / s;
+    ctx.drawImage(img, (iw - sw) / 2, (ih - sh) / 2, sw, sh, 0, 0, w, h);
+    return;
+  }
+  const s = Math.min(w / iw, h / ih);
+  const dw = iw * s;
+  const dh = ih * s;
+  ctx.drawImage(img, (w - dw) / 2, (h - dh) / 2, dw, dh);
+}
+
 export default function ImageResize() {
   const [file, setFile] = useState<File | null>(null);
   const [img, setImg] = useState<HTMLImageElement | null>(null);
@@ -22,6 +45,7 @@ export default function ImageResize() {
   const [width, setWidth] = useState(800);
   const [height, setHeight] = useState(600);
   const [lockRatio, setLockRatio] = useState(true);
+  const [fit, setFit] = useState<Fit>('cover');
 
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [format, setFormat] = useState<ImageFormatOption | null>(null);
@@ -99,7 +123,7 @@ export default function ImageResize() {
           ctx.fillStyle = '#ffffff';
           ctx.fillRect(0, 0, width, height);
         }
-        ctx.drawImage(img, 0, 0, width, height);
+        drawFitted(ctx, img, width, height, fit);
         const supportsQuality = format.mime === 'image/jpeg' || format.mime === 'image/webp' || format.mime === 'image/avif';
         const blob = await canvasToBlob(canvas, format.mime, supportsQuality ? quality : undefined);
         setCachedBlob(blob);
@@ -113,7 +137,7 @@ export default function ImageResize() {
     return () => {
       if (debounceRef.current) clearTimeout(debounceRef.current);
     };
-  }, [img, width, height, format, quality]);
+  }, [img, width, height, format, quality, fit]);
 
   function onHandlePointerDown(e: ReactPointerEvent) {
     try {
@@ -147,7 +171,7 @@ export default function ImageResize() {
     setError(null);
     try {
       let blob = cachedBlob;
-      if (!blob) {
+      if (!blob || estimating) {
         const canvas = document.createElement('canvas');
         canvas.width = width;
         canvas.height = height;
@@ -157,7 +181,7 @@ export default function ImageResize() {
           ctx.fillStyle = '#ffffff';
           ctx.fillRect(0, 0, width, height);
         }
-        ctx.drawImage(img, 0, 0, width, height);
+        drawFitted(ctx, img, width, height, fit);
         const supportsQuality = format.mime === 'image/jpeg' || format.mime === 'image/webp' || format.mime === 'image/avif';
         blob = await canvasToBlob(canvas, format.mime, supportsQuality ? quality : undefined);
       }
@@ -200,7 +224,7 @@ export default function ImageResize() {
               style={{ width: MAX_PREVIEW_DIM, height: MAX_PREVIEW_DIM, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
             >
               <div className="relative" style={{ width: previewW, height: previewH }}>
-                <img src={img.src} alt="Preview" className="block h-full w-full rounded-sm object-fill shadow-sm" draggable={false} />
+                <img src={img.src} alt="Preview" className={`block h-full w-full rounded-sm shadow-sm ${fit === 'cover' ? 'object-cover' : fit === 'contain' ? 'object-contain' : 'object-fill'}`} draggable={false} />
                 <div
                   onPointerDown={onHandlePointerDown}
                   onPointerMove={onHandlePointerMove}
@@ -320,6 +344,16 @@ export default function ImageResize() {
             )}
           </div>
 
+          {original && Math.abs(original.w / original.h - width / height) > 0.01 && (
+            <label className="flex flex-wrap items-center gap-2 text-xs text-ink/60">
+              The new shape differs from the original —
+              <select value={fit} onChange={(e) => setFit(e.target.value as Fit)} className="rounded-md border border-line bg-paper px-2 py-1 text-xs text-ink" aria-label="Fit">
+                <option value="cover">Crop to fill</option>
+                <option value="contain">Fit inside (add borders)</option>
+                <option value="stretch">Stretch</option>
+              </select>
+            </label>
+          )}
           <Button onClick={download} disabled={busy || !format}>{busy ? 'Preparing…' : 'Resize image'}</Button>
         </>
       )}

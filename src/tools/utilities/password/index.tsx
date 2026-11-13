@@ -8,12 +8,28 @@ const SETS = {
   symbols: '!@#$%^&*()_+-=[]{}|;:,.<>?',
 };
 
+/** Unbiased random integer in [0, n) from the CSPRNG (rejection sampling). */
+function randomIndex(n: number): number {
+  const limit = Math.floor(0x100000000 / n) * n;
+  const buf = new Uint32Array(1);
+  do crypto.getRandomValues(buf);
+  while (buf[0] >= limit);
+  return buf[0] % n;
+}
+
 function generate(length: number, sets: (keyof typeof SETS)[]): string {
   const pool = sets.map((s) => SETS[s]).join('');
   if (!pool) return '';
-  const bytes = new Uint32Array(length);
-  crypto.getRandomValues(bytes);
-  return Array.from(bytes, (b) => pool[b % pool.length]).join('');
+  const chars = Array.from({ length }, () => pool[randomIndex(pool.length)]);
+  // Guarantee at least one character from every selected set, at random positions.
+  const positions = Array.from({ length }, (_, i) => i);
+  sets.forEach((s, k) => {
+    if (k >= length) return;
+    const j = k + randomIndex(length - k);
+    [positions[k], positions[j]] = [positions[j], positions[k]];
+    chars[positions[k]] = SETS[s][randomIndex(SETS[s].length)];
+  });
+  return chars.join('');
 }
 
 function estimateStrength(length: number, sets: (keyof typeof SETS)[]) {
@@ -32,7 +48,14 @@ export default function PasswordTool() {
   const strength = useMemo(() => estimateStrength(length, sets), [length, sets]);
 
   function toggle(set: keyof typeof SETS) {
-    setSets((s) => (s.includes(set) ? s.filter((x) => x !== set) : [...s, set]));
+    const next = sets.includes(set) ? sets.filter((x) => x !== set) : [...sets, set];
+    setSets(next);
+    // Keep the shown password in sync with the settings (and strength label).
+    setPassword(generate(length, next.length ? next : ['lower']));
+  }
+  function changeLength(n: number) {
+    setLength(n);
+    setPassword(generate(n, sets.length ? sets : ['lower']));
   }
 
   function regenerate() {
@@ -53,7 +76,7 @@ export default function PasswordTool() {
 
       <label className="flex items-center gap-3 text-xs text-ink/60">
         Length
-        <input type="range" min={6} max={64} value={length} onChange={(e) => setLength(Number(e.target.value))} className="flex-1" />
+        <input type="range" min={6} max={64} value={length} onChange={(e) => changeLength(Number(e.target.value))} className="flex-1" />
         <span className="w-6 text-right font-mono">{length}</span>
       </label>
 

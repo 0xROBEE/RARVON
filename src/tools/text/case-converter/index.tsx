@@ -3,18 +3,21 @@ import { useState } from 'react';
 const converters: Record<string, (s: string) => string> = {
   UPPERCASE: (s) => s.toUpperCase(),
   lowercase: (s) => s.toLowerCase(),
-  'Title Case': (s) => s.replace(/\w\S*/g, (w) => w[0].toUpperCase() + w.slice(1).toLowerCase()),
+  // Unicode-aware (\p{L}/\p{N}) so accented and non-Latin letters are words too.
+  'Title Case': (s) => s.toLowerCase().replace(/(^|[\s\-–—/(["“])(\p{L})/gu, (_, sep, c) => sep + c.toUpperCase()),
   'Sentence case': (s) =>
-    s.toLowerCase().replace(/(^\s*\w|[.!?]\s*\w)/g, (m) => m.toUpperCase()),
+    s.toLowerCase().replace(/(^\s*|[.!?؟。]\s+)(\p{L})/gu, (_, sep, c) => sep + c.toUpperCase()),
   camelCase: (s) =>
     s
+      .trim()
       .toLowerCase()
-      .replace(/[^a-zA-Z0-9]+(.)/g, (_, c) => c.toUpperCase()),
+      .replace(/[^\p{L}\p{N}]+(\p{L}|\p{N})/gu, (_, c) => c.toUpperCase())
+      .replace(/[^\p{L}\p{N}]+/gu, ''),
   'snake_case': (s) =>
     s
       .trim()
       .toLowerCase()
-      .replace(/[^a-zA-Z0-9]+/g, '_')
+      .replace(/[^\p{L}\p{N}]+/gu, '_')
       .replace(/^_+|_+$/g, ''),
 };
 

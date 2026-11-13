@@ -10,6 +10,7 @@ export default function Base64Tool() {
   const [output, setOutput] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [fileResult, setFileResult] = useState<{ url: string; name: string } | null>(null);
+  const [binary, setBinary] = useState<{ url: string; size: number } | null>(null);
 
   function encode() {
     try {
@@ -21,12 +22,26 @@ export default function Base64Tool() {
   }
 
   function decode() {
+    setBinary(null);
+    let bytes: Uint8Array;
     try {
-      setOutput(decodeURIComponent(escape(atob(input.trim()))));
-      setError(null);
+      // Accept URL-safe Base64 (-, _) and missing padding as well.
+      const clean = input.replace(/\s+/g, '').replace(/-/g, '+').replace(/_/g, '/');
+      const padded = clean + '='.repeat((4 - (clean.length % 4)) % 4);
+      bytes = Uint8Array.from(atob(padded), (c) => c.charCodeAt(0));
     } catch {
       setOutput('');
       setError("That doesn't look like valid Base64.");
+      return;
+    }
+    try {
+      setOutput(new TextDecoder('utf-8', { fatal: true }).decode(bytes));
+      setError(null);
+    } catch {
+      // Valid Base64, but the data isn't text (an image, a PDF…): offer it as a file.
+      setOutput('');
+      setError(null);
+      setBinary({ url: URL.createObjectURL(new Blob([bytes as BlobPart])), size: bytes.length });
     }
   }
 
@@ -73,6 +88,12 @@ export default function Base64Tool() {
             <Button variant="secondary" onClick={decode} disabled={!input}>Decode</Button>
           </div>
           {error && <ErrorMessage>{error}</ErrorMessage>}
+          {binary && (
+            <div className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-line bg-paper-dim p-3 text-sm">
+              <span>Decoded {binary.size.toLocaleString()} bytes of binary data (not text).</span>
+              <DownloadButton url={binary.url} filename="decoded.bin" label="Download decoded file" />
+            </div>
+          )}
           {output && (
             <div>
               <div className="mb-1.5 flex items-center justify-between">

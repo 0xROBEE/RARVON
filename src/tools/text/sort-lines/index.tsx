@@ -10,14 +10,15 @@ export default function SortLinesTool() {
   const [output, setOutput] = useState('');
 
   function run() {
+    const collator = new Intl.Collator(undefined, { numeric: true, sensitivity: 'base' });
     let lines = text.split('\n');
     if (removeEmpty) lines = lines.filter((l) => l.trim() !== '');
     switch (mode) {
       case 'alpha':
-        lines.sort((a, b) => a.localeCompare(b));
+        lines.sort(collator.compare);
         break;
       case 'alpha-desc':
-        lines.sort((a, b) => b.localeCompare(a));
+        lines.sort((a, b) => collator.compare(b, a));
         break;
       case 'numeric':
         lines.sort((a, b) => (parseFloat(a) || 0) - (parseFloat(b) || 0));
