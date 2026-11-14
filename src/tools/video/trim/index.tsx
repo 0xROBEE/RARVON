@@ -8,9 +8,12 @@ import { formatBytes } from '../../../lib/imageUtils';
 import { VideoCancelledError, probeVideo, runVideoConversion, checkFileSize } from '../../../lib/videoEngine';
 import type { VideoInfo } from '../../../lib/videoEngine';
 import { ResultCard, ActionBar } from '../../../components/tool';
+import { Link, useNavigate } from 'react-router-dom';
+import { handoff } from '../editor/openLock';
 
 export default function TrimVideoTool() {
   const [file, setFile] = useState<File | null>(null);
+  const navigate = useNavigate();
   const [info, setInfo] = useState<VideoInfo | null>(null);
   const [start, setStart] = useState(0);
   const [end, setEnd] = useState(0);
@@ -106,6 +109,23 @@ export default function TrimVideoTool() {
           {busy && <ProgressBar value={progress * 100} label="Processing" />}
         </>
       )}
+
+      <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-line px-4 py-3 text-sm" data-testid="editor-link">
+        <span className="text-ink-2">Need to cut out a middle part, join clips or add text and music?</span>
+        {file ? (
+          <button
+            onClick={() => {
+              handoff.files = [file];
+              navigate('/tools/video/editor', { state: { startWithHandoff: true } });
+            }}
+            className="font-medium text-workshop hover:underline"
+          >
+            Open this video in Video Editor →
+          </button>
+        ) : (
+          <Link to="/tools/video/editor" className="font-medium text-workshop hover:underline">Open Video Editor →</Link>
+        )}
+      </div>
 
       {error && <ErrorMessage>{error}</ErrorMessage>}
       {result && (

@@ -1,5 +1,5 @@
 import type { Page } from '@playwright/test';
-import { test, expect, download, makeMp4, makeWav, makeImage, mediaInfo } from './helpers';
+import { test, expect, download, makeMp4, makeWav, makeImage, makeWebm, mediaInfo } from './helpers';
 
 async function newProject(page: Page, name = 'Test edit') {
   await page.goto('/tools/video/editor');
@@ -141,5 +141,22 @@ test.describe('Video Editor', () => {
     await expect(page.getByTestId('video-editor')).toBeVisible();
     await expect(page.getByRole('heading', { name: 'Portable' })).toBeVisible();
     await expect(page.locator('[data-clip=video]')).toHaveCount(1);
+  });
+
+  test('Trim Video hands its video to the editor, and the editor links back to Trim', async ({ page }) => {
+    const clip = await makeWebm(page, 3);
+    await page.goto('/tools/video/trim');
+    await page.locator('input[type=file]').first().setInputFiles(clip);
+    await page.getByRole('button', { name: 'Open this video in Video Editor →' }).click();
+    const dialog = page.getByRole('dialog', { name: 'New video project' });
+    await expect(dialog).toContainText('Starting with clip.webm');
+    await expect(dialog.getByLabel('Project name')).toHaveValue('clip');
+    await dialog.getByRole('button', { name: 'Create project' }).click();
+    await expect(page.getByTestId('media-item')).toHaveCount(1);
+    await expect(page.locator('[data-clip=video]')).toHaveCount(1);
+
+    await page.goto('/tools/video/editor');
+    await page.getByRole('link', { name: 'Quick trim →' }).click();
+    await expect(page).toHaveURL(/\/tools\/video\/trim$/);
   });
 });

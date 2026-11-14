@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import clsx from 'clsx';
 import type { Project } from '../../../lib/videoEditor/types';
 import { ASPECTS, emptyProject, formatTime, hasEdits, totalDuration } from '../../../lib/videoEditor/types';
@@ -50,7 +50,14 @@ export default function VideoEditorProjects() {
 
   // Arrived with a video from another tool or the home page drop zone.
   useEffect(() => {
-    const state = location.state as { useResult?: boolean } | null;
+    const state = location.state as { useResult?: boolean; startWithHandoff?: boolean } | null;
+    if (state?.startWithHandoff && handoff.files.length) {
+      setStartFile(handoff.files[0]);
+      handoff.files = [];
+      setNewOpen(true);
+      navigate(location.pathname, { replace: true, state: null });
+      return;
+    }
     if (!state?.useResult || !pending) return;
     void (async () => {
       const blob = await (await fetch(pending.url)).blob();
@@ -179,6 +186,12 @@ export default function VideoEditorProjects() {
           />
         </div>
       </div>
+
+      <p className="-mt-4 text-sm text-ink-2">
+        Just need to cut the start or end off a video?{' '}
+        <Link to="/tools/video/trim" className="font-medium text-workshop hover:underline">Quick trim →</Link>{' '}
+        <span className="text-ink-3">It’s instant and keeps the original quality.</span>
+      </p>
 
       {error && <p className="rounded-md bg-warn-dim p-3 text-sm text-warn" role="alert">{error}</p>}
       {busy && <p className="text-sm text-ink-2" role="status">{busy}</p>}
