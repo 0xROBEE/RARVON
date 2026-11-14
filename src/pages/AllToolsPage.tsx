@@ -3,6 +3,7 @@ import { categories, toolsForCategory, tools } from '../lib/toolRegistry';
 import { CategoryIcon } from '../lib/categoryIcons';
 import ToolCard from '../components/ToolCard';
 import { usePageMeta } from '../lib/usePageMeta';
+import { ActionIcon } from '../lib/actionIcons';
 
 export default function AllToolsPage() {
   const count = tools.filter((t) => t.status !== 'coming-soon').length;
@@ -20,6 +21,12 @@ export default function AllToolsPage() {
             <CategoryIcon category={c.slug} size={24} />
             {c.name}
           </a>
+        ))}
+        {(['convert', 'compress'] as const).map((a) => (
+          <Link key={a} to={`/${a}`} className="flex items-center gap-2 rounded-full border border-line py-1 pe-3 ps-1.5 text-sm font-medium hover:border-ink">
+            <span className="grid h-6 w-6 place-items-center rounded-full bg-workshop-dim text-workshop"><ActionIcon action={a} className="h-3.5 w-3.5" /></span>
+            {a === 'convert' ? 'All Convert tools' : 'All Compress tools'}
+          </Link>
         ))}
       </nav>
       <div className="mt-10 grid gap-12">

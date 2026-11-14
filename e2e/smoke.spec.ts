@@ -9,6 +9,20 @@ test.describe('every page renders without errors', () => {
     }
   });
 
+  test('home has Convert and Compress shortcuts that open their pages', async ({ page }) => {
+    await page.goto('/');
+    await page.getByTestId('home-convert').getByRole('link', { name: /more Convert tools/ }).click();
+    await expect(page).toHaveURL(/\/convert$/);
+    await expect(page.locator('h1')).toHaveText('Convert');
+    await expect(page.getByRole('link', { name: /Video Converter/ })).toBeVisible();
+    await page.goto('/');
+    await page.getByTestId('home-compress').getByRole('link', { name: /more Compress tools/ }).click();
+    await expect(page).toHaveURL(/\/compress$/);
+    await expect(page.locator('h1')).toHaveText('Compress');
+    await page.getByRole('link', { name: /Compress PDF/ }).first().click();
+    await expect(page).toHaveURL(/\/tools\/pdf\/compress/);
+  });
+
   for (const tool of tools) {
     test(`tool page: ${tool.category}/${tool.slug}`, async ({ page }) => {
       await page.goto(`/tools/${tool.category}/${tool.slug}`);

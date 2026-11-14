@@ -4,7 +4,8 @@ import ToolCard from '../components/ToolCard';
 import { ActionIcon } from '../lib/actionIcons';
 import { usePageMeta } from '../lib/usePageMeta';
 import NotFound from './NotFound';
-import CompressHub from './CompressHub';
+import CollectionPage from './CollectionPage';
+import { COLLECTIONS } from '../lib/collections';
 
 export default function ActionPage() {
   const { action } = useParams<{ action: string }>();
@@ -18,6 +19,7 @@ export default function ActionPage() {
   );
 
   if (!meta) return <NotFound />;
+  if (meta.value === 'convert' || meta.value === 'compress') return <CollectionPage collection={COLLECTIONS[meta.value]} />;
 
   const matches = tools.filter((t) => t.actions.includes(meta.value));
   const available = matches.filter((t) => t.status !== 'coming-soon');
@@ -40,11 +42,7 @@ export default function ActionPage() {
         server.
       </p>
 
-      {meta.value === 'compress' ? (
-        <div className="mt-8">
-          <CompressHub />
-        </div>
-      ) : (
+      {(
         <>
           {available.length > 0 && (
             <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">

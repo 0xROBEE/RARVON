@@ -11,9 +11,12 @@ import { CategoryIcon } from '../lib/categoryIcons';
 import { KIND_LABEL, kindOfFile, toolsForKind } from '../lib/fileKinds';
 import type { FileKind } from '../lib/fileKinds';
 import { getRecentTools } from '../lib/recentTools';
-import { HOME_TOP_TOOLS } from '../lib/homeTools';
+import { HOME_TOP_TOOLS, HOME_TOP_COLLECTION } from '../lib/homeTools';
 import { formatBytes } from '../lib/imageUtils';
 import { useInstallPrompt } from '../lib/installPrompt';
+import { COLLECTIONS, resolveCollection, collectionSize } from '../lib/collections';
+import type { Collection } from '../lib/collections';
+import { ActionIcon } from '../lib/actionIcons';
 
 const toolCount = tools.filter((t) => t.status !== 'coming-soon').length;
 const MAX_SUGGESTIONS = 6;
@@ -237,9 +240,11 @@ export default function Home() {
               </div>
             );
           })}
+          <CollectionCard collection={COLLECTIONS.convert} />
+          <CollectionCard collection={COLLECTIONS.compress} />
           <Link
             to="/tools"
-            className="flex flex-col justify-center rounded-xl border border-dashed border-line p-4 text-center hover:border-ink"
+            className="flex flex-col justify-center rounded-xl border border-dashed border-line p-4 text-center hover:border-ink lg:col-span-3"
           >
             <span className="font-display text-sm font-semibold">See all {toolCount} tools</span>
             <span className="mt-1 text-xs text-ink-3">Every tool on one page</span>
@@ -286,6 +291,39 @@ function Tip({ icon, title, children }: { icon: string; title: string; children:
       </span>
       <h3 className="mt-3 font-display text-sm font-semibold">{title}</h3>
       <div className="mt-1 text-sm text-ink-2">{children}</div>
+    </div>
+  );
+}
+
+function CollectionCard({ collection }: { collection: Collection }) {
+  const all = resolveCollection(collection).flatMap((g) => g.entries.map((e) => e.tool));
+  const top = HOME_TOP_COLLECTION[collection.slug]
+    .map((key) => all.find((t) => `${t.category}/${t.slug}` === key))
+    .filter((t): t is ToolMeta => Boolean(t));
+  const shown = top.length ? top : all.slice(0, 4);
+  const more = collectionSize(collection) - shown.length;
+  return (
+    <div className="flex flex-col rounded-xl border border-line bg-elevated p-4" data-testid={`home-${collection.slug}`}>
+      <Link to={`/${collection.slug}`} className="flex items-center gap-2 font-display text-sm font-semibold hover:text-workshop">
+        <span className="grid h-[30px] w-[30px] place-items-center rounded-lg bg-workshop-dim text-workshop">
+          <ActionIcon action={collection.slug} className="h-[18px] w-[18px]" />
+        </span>
+        All {collection.title} tools
+        <span className="ms-auto font-mono text-xs font-normal text-ink-3">{collectionSize(collection)}</span>
+      </Link>
+      <ul className="mt-3 grid gap-0.5">
+        {shown.map((t) => (
+          <li key={t.category + t.slug}>
+            <Link to={`/tools/${t.category}/${t.slug}`} className="flex items-center justify-between gap-2 rounded-md px-2 py-1.5 text-sm text-ink-2 hover:bg-paper-dim hover:text-ink">
+              <span className="truncate">{t.name}</span>
+              {t.status === 'experimental' && <span className="shrink-0 font-mono text-[10px] uppercase tracking-wide text-warn">Beta</span>}
+            </Link>
+          </li>
+        ))}
+      </ul>
+      <Link to={`/${collection.slug}`} className="mt-2 px-2 text-sm font-medium text-workshop hover:underline">
+        {more > 0 ? `+${more} more ${collection.title} tools` : `Open ${collection.title}`}
+      </Link>
     </div>
   );
 }
