@@ -11,7 +11,7 @@ import { CategoryIcon } from '../lib/categoryIcons';
 import { KIND_LABEL, kindOfFile, toolsForKind } from '../lib/fileKinds';
 import type { FileKind } from '../lib/fileKinds';
 import { getRecentTools } from '../lib/recentTools';
-import { HOME_TOP_TOOLS, HOME_TOP_COLLECTION } from '../lib/homeTools';
+import { HOME_TOP_TOOLS, HOME_TOP_COLLECTION, HOME_HIDDEN_CATEGORIES } from '../lib/homeTools';
 import { formatBytes } from '../lib/imageUtils';
 import { useInstallPrompt } from '../lib/installPrompt';
 import { COLLECTIONS, resolveCollection, collectionSize } from '../lib/collections';
@@ -208,7 +208,7 @@ export default function Home() {
           <Link to="/tools" className="text-sm font-medium text-workshop hover:underline">Browse all tools →</Link>
         </div>
         <div className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {categories.map((c) => {
+          {categories.filter((c) => !HOME_HIDDEN_CATEGORIES.includes(c.slug)).map((c) => {
             const list = toolsForCategory(c.slug).filter((t) => t.status !== 'coming-soon');
             const top = (HOME_TOP_TOOLS[c.slug] ?? [])
               .map((slug) => list.find((t) => t.slug === slug))
@@ -244,10 +244,22 @@ export default function Home() {
           <CollectionCard collection={COLLECTIONS.compress} />
           <Link
             to="/tools"
-            className="flex flex-col justify-center rounded-xl border border-dashed border-line p-4 text-center hover:border-ink lg:col-span-3"
+            className="group relative flex flex-col items-center justify-center overflow-hidden rounded-xl border border-dashed border-line p-4 text-center transition-all duration-200 hover:-translate-y-0.5 hover:border-solid hover:border-workshop hover:bg-workshop-dim hover:shadow-[2px_2px_0_0_var(--color-workshop)]"
           >
-            <span className="font-display text-sm font-semibold">See all {toolCount} tools</span>
-            <span className="mt-1 text-xs text-ink-3">Every tool on one page</span>
+            <span className="flex -space-x-2" aria-hidden="true">
+              {HOME_HIDDEN_CATEGORIES.map((slug, i) => (
+                <span key={slug} className="rounded-lg ring-2 ring-paper transition-transform duration-200 group-hover:translate-y-[-2px]" style={{ transitionDelay: `${i * 40}ms` }}>
+                  <CategoryIcon category={slug} size={30} />
+                </span>
+              ))}
+            </span>
+            <span className="mt-3 flex items-center gap-1.5 font-display text-sm font-semibold group-hover:text-workshop">
+              See all {toolCount} tools
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="transition-transform duration-200 group-hover:translate-x-1" aria-hidden="true">
+                <path d="M5 12h14M13 6l6 6-6 6" />
+              </svg>
+            </span>
+            <span className="mt-1 text-xs text-ink-3">Including Developer and Utilities tools</span>
           </Link>
         </div>
       </section>

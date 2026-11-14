@@ -14,3 +14,6 @@ export const HOME_TOP_COLLECTION: Record<'convert' | 'compress', string[]> = {
   convert: ['image/convert', 'pdf/to-images', 'video/convert', 'audio/convert'],
   compress: ['pdf/compress', 'image/compress', 'video/compress', 'audio/compress'],
 };
+
+/** Categories left off the home grid to keep it to two rows; they're on the All tools page. */
+export const HOME_HIDDEN_CATEGORIES: string[] = ['developer', 'utilities'];
