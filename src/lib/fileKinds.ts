@@ -41,7 +41,7 @@ export const TOOLS_FOR_KIND: Record<FileKind, string[]> = {
     'image/to-text', 'image/compress', 'image/convert', 'image/resize', 'image/crop', 'image/rotate',
     'pdf/from-images', 'image/remove-metadata', 'image/metadata', 'utilities/archive', 'developer/base64',
   ],
-  video: ['video/compress', 'video/trim', 'video/convert', 'video/resolution', 'audio/extract', 'utilities/archive'],
+  video: ['video/editor', 'video/compress', 'video/trim', 'video/convert', 'video/resolution', 'audio/extract', 'utilities/archive'],
   audio: ['audio/convert', 'audio/compress', 'audio/trim', 'utilities/archive'],
   zip: ['utilities/unzip', 'developer/hash'],
   text: ['utilities/archive', 'developer/hash', 'developer/base64'],

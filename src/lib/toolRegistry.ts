@@ -254,6 +254,18 @@ export const tools: ToolMeta[] = [
     faq: [{ q: 'Which formats work?', a: 'MP4, MOV, WebM and MKV files with the codecs your browser can decode \u2014 in practice H.264, VP8, VP9 and AV1 video almost everywhere, HEVC mostly on Apple devices. This uses WebCodecs, the browser\u2019s own hardware-accelerated encoders, instead of a 30 MB FFmpeg download; the trade-off is that a few exotic codecs (and very large files over 250 MB) aren\u2019t supported.' }],
   },
   {
+    slug: 'editor', category: 'video', name: 'Video Editor',
+    shortDescription: 'Cut, join and caption videos on a simple timeline.',
+    description: 'Video Editor is a simple timeline editor: put videos and pictures in order, trim and split clips, remove or lower a clip’s sound, add music and text, change speed, fade in and out, pick 16:9, 9:16 or 1:1, and export an MP4. Projects auto-save in your browser or to a folder, and can be downloaded as a project file.',
+    status: 'experimental', keywords: ['video editor', 'edit video', 'cut video', 'join videos', 'merge videos', 'remove audio from video', 'mute video', 'add music to video', 'add text to video', 'timeline'],
+    actions: ['edit'],
+    faq: [
+      { q: 'Where are my projects saved?', a: 'With auto-save on, in a private storage area this browser keeps for Bench on your device, until you delete the project or clear the browser’s site data. In Chrome and Edge you can also save to a folder on your computer, and in any browser you can download a .benchvideo project file to open later.' },
+      { q: 'What happens if I close the tab?', a: 'If you changed the project, the browser asks before closing. If you leave anyway, Bench keeps a recovery copy and asks what to do with it the next time you open the Video Editor.' },
+      { q: 'Which files can I use?', a: 'MP4, MOV, WebM and MKV videos with codecs your browser can decode, common picture formats, and MP3, M4A, WAV, FLAC or OGG audio. Exports are MP4 (H.264 and AAC) at 720p or 1080p, 30 frames per second.' },
+    ],
+  },
+  {
     slug: 'resolution', category: 'video', name: 'Change Video Resolution',
     shortDescription: 'Scale a video up or down.',
     description: 'Change Video Resolution re-encodes an MP4, MOV, WebM or MKV video at a new width and height using WebCodecs, with common presets or exact dimensions.',

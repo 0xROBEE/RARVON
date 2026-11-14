@@ -47,6 +47,7 @@ export const toolComponents: Record<string, ReturnType<typeof lazy>> = {
   'text/sort-lines': lazy(() => import('../tools/text/sort-lines')),
 
   'audio/trim': lazy(() => import('../tools/audio/trim')),
+  'video/editor': lazy(() => import('../tools/video/editor')),
   'video/trim': lazy(() => import('../tools/video/trim')),
   'video/resolution': lazy(() => import('../tools/video/resolution')),
   'video/convert': lazy(() => import('../tools/video/convert')),
