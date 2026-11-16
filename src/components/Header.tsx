@@ -36,6 +36,17 @@ export default function Header() {
           <kbd className="ms-auto hidden shrink-0 rounded border border-line px-1.5 font-mono text-[10px] sm:inline">⌘K</kbd>
         </button>
         <span className="hidden flex-1 md:block" aria-hidden="true" />
+        <Link
+          to="/support"
+          className="heart-beat inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full border border-heart/50 bg-heart-dim px-2.5 text-sm font-semibold text-heart transition-colors hover:border-heart sm:px-3.5"
+          aria-label={tr('Support Bench')}
+          data-testid="support-button"
+        >
+          <svg className="heart" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+            <path d="M12 21s-7.5-4.6-9.6-9.3C1 8.3 3.1 4.5 6.9 4.5c2.1 0 3.6 1.1 5.1 2.9 1.5-1.8 3-2.9 5.1-2.9 3.8 0 5.9 3.8 4.5 7.2C19.5 16.4 12 21 12 21z" />
+          </svg>
+          <span className="hidden lg:inline">{tr('Support Bench')}</span>
+        </Link>
         <LanguageToggle compact />
         <ThemeToggle />
       </div>

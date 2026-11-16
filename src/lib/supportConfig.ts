@@ -13,6 +13,8 @@
 // This intentionally does not hard-code any specific provider (Ko-fi,
 // Buy Me a Coffee, GitHub Sponsors, Patreon, PayPal...) — any URL works.
 export const supportLinks = {
+  /** Your Ko-fi page, e.g. https://ko-fi.com/yourname (VITE_SUPPORT_KOFI_URL). */
+  kofi: import.meta.env.VITE_SUPPORT_KOFI_URL ?? '',
   donation: import.meta.env.VITE_SUPPORT_DONATION_URL ?? '',
   sponsorship: import.meta.env.VITE_SUPPORT_SPONSORSHIP_URL ?? '',
   other: import.meta.env.VITE_SUPPORT_OTHER_URL ?? '',
@@ -21,3 +23,10 @@ export const supportLinks = {
 export function hasAnySupportLink(): boolean {
   return Object.values(supportLinks).some((v) => v.trim() !== '');
 }
+
+/**
+ * The project's public code repository (VITE_PROJECT_REPO_URL), e.g.
+ * https://github.com/you/bench. When set, the Support page offers
+ * "Report a bug or ask for a tool" and "Star it on GitHub".
+ */
+export const projectRepo: string = (import.meta.env.VITE_PROJECT_REPO_URL ?? '').replace(/\/+$/, '');

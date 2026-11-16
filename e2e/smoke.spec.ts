@@ -3,10 +3,21 @@ import { tools, categories } from '../src/lib/toolRegistry';
 
 test.describe('every page renders without errors', () => {
   test('home, static pages, categories and action pages', async ({ page }) => {
-    for (const path of ['/', '/about', '/privacy', '/compress', '/convert', ...categories.map((c) => `/tools/${c.slug}`)]) {
+    for (const path of ['/', '/about', '/privacy', '/support', '/compress', '/convert', ...categories.map((c) => `/tools/${c.slug}`)]) {
       await page.goto(path);
       await expect(page.locator('h1').first(), path).toBeVisible();
     }
+  });
+
+  test('the Support Bench button in the top bar opens the Support page', async ({ page }) => {
+    await page.goto('/tools/text/word-counter');
+    await page.getByTestId('support-button').click();
+    await expect(page).toHaveURL(/\/support$/);
+    await expect(page.getByRole('heading', { level: 1 })).toContainText('If it helped you, you can help it');
+    // Without a configured Ko-fi link there is no dead button, only a calm note.
+    await expect(page.getByTestId('kofi-button')).toHaveCount(0);
+    await expect(page.getByText('The donation link is coming soon.')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Share Bench with a friend' })).toBeVisible();
   });
 
   test('home has Convert and Compress shortcuts that open their pages', async ({ page }) => {

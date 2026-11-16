@@ -7,7 +7,7 @@ interface SupportButtonProps {
 
 export default function SupportButton({ variant = 'inline' }: SupportButtonProps) {
   if (!hasAnySupportLink()) return null;
-  const href = supportLinks.donation || supportLinks.sponsorship || supportLinks.other;
+  const href = supportLinks.kofi || supportLinks.donation || supportLinks.sponsorship || supportLinks.other;
 
   return (
     <a
