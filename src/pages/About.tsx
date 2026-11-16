@@ -3,7 +3,8 @@ import type { ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import { usePageMeta } from '../lib/usePageMeta';
 import { tools, categories } from '../lib/toolRegistry';
-import { maker, projectRepo } from '../lib/supportConfig';
+import { maker } from '../lib/supportConfig';
+import FeedbackButton from '../components/FeedbackButton';
 import { tr } from '../lib/i18n';
 
 const toolCount = tools.filter((t) => t.status !== 'coming-soon').length;
@@ -61,7 +62,6 @@ function Section({ title, children, delay = 0 }: { title: string; children: Reac
 
 export default function About() {
   usePageMeta(tr('About'), tr('Why Bench exists: one free toolbox for everyday file jobs that runs in your browser, so your files never leave your device.'));
-  const issues = projectRepo ? `${projectRepo}/issues/new` : maker.url;
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-12 sm:px-6 sm:py-16">
@@ -139,12 +139,12 @@ export default function About() {
       <Section title={tr('Help improve it')} delay={340}>
         <p className="text-sm leading-relaxed text-ink-2">{tr("Found a bug, or want a tool that isn't here yet? I'd like to hear about it.")}</p>
         <div className="mt-4 flex flex-wrap gap-2">
-          <a href={issues} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-10 items-center gap-2 rounded-full border border-line bg-paper px-4 text-sm font-semibold hover:border-ink">
+          <FeedbackButton kind="bug" className="inline-flex min-h-10 items-center gap-2 rounded-full border border-line bg-paper px-4 text-sm font-semibold hover:border-ink">
             <Icon d="M12 8v4M12 16h.01M12 3a9 9 0 100 18 9 9 0 000-18z" size={16} className="text-workshop" />{tr('Report a bug')}
-          </a>
-          <a href={issues} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-10 items-center gap-2 rounded-full border border-line bg-paper px-4 text-sm font-semibold hover:border-ink">
+          </FeedbackButton>
+          <FeedbackButton kind="tool" className="inline-flex min-h-10 items-center gap-2 rounded-full border border-line bg-paper px-4 text-sm font-semibold hover:border-ink">
             <Icon d="M12 5v14M5 12h14" size={16} className="text-workshop" />{tr('Ask for a tool')}
-          </a>
+          </FeedbackButton>
           <Link to="/support" className="heart-beat inline-flex min-h-10 items-center gap-2 rounded-full border border-heart/50 bg-heart-dim px-4 text-sm font-semibold text-heart hover:border-heart">
             <svg className="heart" width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 21s-7.5-4.6-9.6-9.3C1 8.3 3.1 4.5 6.9 4.5c2.1 0 3.6 1.1 5.1 2.9 1.5-1.8 3-2.9 5.1-2.9 3.8 0 5.9 3.8 4.5 7.2C19.5 16.4 12 21 12 21z" /></svg>
             {tr('Support Bench')}

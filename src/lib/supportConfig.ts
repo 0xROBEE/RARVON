@@ -36,3 +36,10 @@ export const maker = {
   name: 'ROBEE',
   url: 'https://github.com/ROBEE404',
 };
+
+/**
+ * Where people can email bug reports and tool requests (VITE_FEEDBACK_EMAIL),
+ * e.g. bench.feedback@example.com. It is shown publicly, so use an address
+ * made for Bench. When empty, the feedback pop-up offers GitHub only.
+ */
+export const feedbackEmail: string = (import.meta.env.VITE_FEEDBACK_EMAIL ?? '').trim();

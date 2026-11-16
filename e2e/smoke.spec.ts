@@ -37,6 +37,24 @@ test.describe('every page renders without errors', () => {
     await expect(page).toHaveURL(/\/privacy$/);
   });
 
+  test('every tool page and the About page open the feedback pop-up', async ({ page }) => {
+    await page.goto('/tools/image/convert');
+    const box = page.getByTestId('tool-feedback');
+    await box.getByRole('button', { name: 'Report a bug' }).click();
+    const dialog = page.locator('dialog[open]');
+    await expect(dialog.getByRole('heading', { name: 'Report a bug' })).toBeVisible();
+    await expect(dialog).toContainText('Image Converter');
+    // No email is configured in tests, so GitHub is the way offered.
+    await expect(dialog.getByTestId('feedback-github')).toBeVisible();
+    await expect(dialog.getByTestId('feedback-email')).toHaveCount(0);
+    await page.keyboard.press('Escape');
+    await expect(page.locator('dialog[open]')).toHaveCount(0);
+
+    await page.goto('/about');
+    await page.getByRole('button', { name: 'Ask for a tool' }).click();
+    await expect(page.locator('dialog[open]').getByRole('heading', { name: 'Ask for a tool' })).toBeVisible();
+  });
+
   test('the Privacy page has a summary, the full sections and a working contents list', async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 860 });
     await page.goto('/privacy');

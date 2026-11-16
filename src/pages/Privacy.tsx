@@ -164,10 +164,13 @@ export default function Privacy() {
       id: 'questions',
       title: tr('Questions'),
       body: (
+        <>
+        <P>{tr('If you report a bug or ask for a tool by email or on GitHub, I see what you send, including your email address or GitHub name. I use it only to reply and to fix or build what you asked for, and I never share it.')}</P>
         <P>
           {tr('If you have a question about privacy, or you think something here isn’t accurate, you can reach me on GitHub:')}{' '}
           <a href={maker.url} target="_blank" rel="noopener noreferrer" className="font-medium text-workshop hover:underline">github.com/{maker.url.split('/').pop()}</a>
         </P>
+        </>
       ),
     },
   ];

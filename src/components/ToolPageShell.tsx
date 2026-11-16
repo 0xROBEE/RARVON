@@ -6,6 +6,7 @@ import { CategoryIcon } from '../lib/categoryIcons';
 import { useWorkspace } from '../lib/workspaceContext';
 import { KIND_LABEL, kindOfFile, toolsForKind } from '../lib/fileKinds';
 import { tr } from '../lib/i18n';
+import FeedbackButton from './FeedbackButton';
 
 /**
  * Next steps under a tool: once it has produced a result, tools that accept
@@ -102,6 +103,13 @@ export default function ToolPageShell({ tool, children }: { tool: ToolMeta; chil
           </dl>
         </section>
       )}
+
+      <div className={`mt-10 flex flex-wrap items-center gap-x-3 gap-y-2 rounded-xl border border-dashed border-line px-4 py-3 text-sm text-ink-2 ${wide ? 'mx-auto max-w-3xl' : ''}`} data-testid="tool-feedback">
+        <span className="me-auto">{tr('Something wrong with this tool, or missing a tool?')}</span>
+        <FeedbackButton kind="bug" toolName={tr(tool.name)} className="font-semibold text-workshop hover:underline">{tr('Report a bug')}</FeedbackButton>
+        <span aria-hidden="true" className="text-ink-3">·</span>
+        <FeedbackButton kind="tool" className="font-semibold text-workshop hover:underline">{tr('Ask for a tool')}</FeedbackButton>
+      </div>
     </div>
   );
 }
