@@ -3,7 +3,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom';
 import clsx from 'clsx';
 import type { MediaItem, TrackKind, VisualClip } from '../../../lib/videoEditor/types';
 import {
-  IMAGE_DEFAULT_DURATION, TEXT_DEFAULT_DURATION, clipAt, formatTime, hasEdits, removeClip, splitAt,
+  audioDuration, clipAt, formatTime, hasEdits, removeClip, splitAt,
   totalDuration, uid, videoStarts, visualDuration,
 } from '../../../lib/videoEditor/types';
 import { deleteProject, projectFileBlob, safeFileName, PROJECT_EXT, requestPersistence } from '../../../lib/videoEditor/storage';
@@ -16,6 +16,10 @@ import Inspector from './Inspector';
 import AudioTab from './AudioTab';
 import ExportTab from './ExportTab';
 import { useExportQueue } from './useExportQueue';
+import SettingsTab from './SettingsTab';
+import type { ActionId } from '../../../lib/videoEditor/shortcuts';
+import { actionForCombo, bindingsOf, comboFromEvent, displayCombo, useEditorSettings } from '../../../lib/videoEditor/shortcuts';
+import { defaultSettings } from '../../../lib/videoEditor/exportSettings';
 import MediaBin from './MediaBin';
 import { ChoiceButton, ICONS, Modal } from './dialogs';
 import { handoff } from './openLock';
@@ -25,13 +29,14 @@ import { tr } from '../../../lib/i18n';
 
 const HOME = '/tools/video/editor';
 
-type Tab = 'edit' | 'audio' | 'export';
-const TABS: Tab[] = ['edit', 'audio', 'export'];
-const TAB_LABELS: Record<Tab, string> = { edit: 'Edit', audio: 'Audio', export: 'Export' };
+type Tab = 'edit' | 'audio' | 'export' | 'settings';
+const TABS: Tab[] = ['edit', 'audio', 'export', 'settings'];
+const TAB_LABELS: Record<Tab, string> = { edit: 'Edit', audio: 'Audio', export: 'Export', settings: 'Settings' };
 const TAB_ICONS: Record<Tab, string> = {
   edit: 'M4 6h11v12H4zM15 10l5-3v10l-5-3',
   audio: 'M3 12h2M7 8v8M11 5v14M15 9v6M19 7v10M21 12h0',
   export: 'M12 15V3m0 0l-4 4m4-4l4 4M5 13v6a2 2 0 002 2h10a2 2 0 002-2v-6',
+  settings: 'M4 7h16M4 12h16M4 17h16M8 5v4M15 10v4M10 15v4',
 };
 
 function downloadBlob(blob: Blob, name: string) {
@@ -61,6 +66,9 @@ export default function Workspace() {
   const [tab, setTab] = useState<Tab>('edit');
   const [tabDir, setTabDir] = useState<'next' | 'prev'>('next');
   const queue = useExportQueue(ed.files);
+  const editorSettings = useEditorSettings();
+  const bindings = bindingsOf(editorSettings);
+  const keyHint = (a: ActionId) => (bindings[a] ? displayCombo(bindings[a]).join('+') : undefined);
   const goTab = (t: Tab) => {
     if (t === tab) return;
     setPlaying(false);
@@ -96,7 +104,7 @@ export default function Workspace() {
     if (target === 'video') {
       if (m.type === 'audio') return;
       const clip: VisualClip = {
-        id: uid(), mediaId: m.id, in: 0, out: m.type === 'image' ? IMAGE_DEFAULT_DURATION : m.duration,
+        id: uid(), mediaId: m.id, in: 0, out: m.type === 'image' ? editorSettings.imageDuration : m.duration,
         speed: 1, volume: 1, muted: false, fit: 'contain', fadeIn: 0, fadeOut: 0,
       };
       let idx = tl.video.length;
@@ -133,7 +141,7 @@ export default function Workspace() {
   const addText = () => {
     const p = ed.current();
     if (!p) return;
-    const clip = { id: uid(), start: time, duration: TEXT_DEFAULT_DURATION, text: 'Your text', size: 0.08, color: '#ffffff', position: 'bottom' as const, box: false, fadeIn: 0, fadeOut: 0 };
+    const clip = { id: uid(), start: time, duration: editorSettings.textDuration, text: tr('Your text'), size: 0.08, color: '#ffffff', position: 'bottom' as const, box: false, fadeIn: 0, fadeOut: 0 };
     ed.setTimeline({ ...p.timeline, text: [...p.timeline.text, clip] });
     setSelection({ kind: 'text', id: clip.id });
   };
@@ -161,44 +169,94 @@ export default function Workspace() {
     setSelection(null);
   }, [ed, selection]);
 
-  // ---- Keyboard shortcuts
+  // ---- Keyboard shortcuts (from the bindings chosen on the Settings tab)
+  const rippleDel = useCallback(() => {
+    const p = ed.current();
+    if (!p || !selection) return;
+    const tl = p.timeline;
+    if (selection.kind === 'audio') {
+      const c = tl.audio.find((x) => x.id === selection.id);
+      if (!c) return;
+      const d = audioDuration(c);
+      ed.setTimeline({ ...tl, audio: tl.audio.filter((x) => x.id !== c.id).map((x) => (x.start > c.start ? { ...x, start: x.start - d } : x)) });
+    } else if (selection.kind === 'text') {
+      const c = tl.text.find((x) => x.id === selection.id);
+      if (!c) return;
+      ed.setTimeline({ ...tl, text: tl.text.filter((x) => x.id !== c.id).map((x) => (x.start > c.start ? { ...x, start: x.start - c.duration } : x)) });
+    } else {
+      ed.setTimeline(removeClip(tl, 'video', selection.id)); // the video track always closes up
+    }
+    setSelection(null);
+  }, [ed, selection]);
+
+  const runAction = (a: ActionId) => {
+    const p = ed.current();
+    const step = (d: number) => {
+      setPlaying(false);
+      setTime((t) => Math.max(0, Math.min(total, t + d)));
+    };
+    const mark = (which: 'from' | 'to') => {
+      if (!p) return;
+      const cur = p.export ?? defaultSettings(p);
+      const r = cur.range ?? { from: 0, to: total };
+      const range = which === 'from' ? { from: Math.min(time, r.to - 0.1), to: r.to } : { from: r.from, to: Math.max(time, r.from + 0.1) };
+      ed.update((x) => ({ ...x, export: { ...cur, range } }), { edit: false });
+    };
+    switch (a) {
+      case 'playPause': setPlaying((v) => !v); break;
+      case 'shuttleBack': step(-2); break;
+      case 'shuttleStop': setPlaying(false); break;
+      case 'shuttleForward': setPlaying(true); break;
+      case 'split': split(); break;
+      case 'delete': del(); break;
+      case 'rippleDelete': rippleDel(); break;
+      case 'undo': ed.undo(); break;
+      case 'redo': ed.redo(); break;
+      case 'addText': addText(); break;
+      case 'toggleAudio': {
+        if (!p || selection?.kind !== 'video') break;
+        const id = selection.id;
+        ed.setTimeline({ ...p.timeline, video: p.timeline.video.map((x) => (x.id === id ? { ...x, muted: !x.muted } : x)) });
+        break;
+      }
+      case 'deselect': setSelection(null); break;
+      case 'frameBack': step(-1 / 30); break;
+      case 'frameForward': step(1 / 30); break;
+      case 'secondBack': step(-1); break;
+      case 'secondForward': step(1); break;
+      case 'goStart': setPlaying(false); setTime(0); break;
+      case 'goEnd': setPlaying(false); setTime(total); break;
+      case 'markIn': mark('from'); break;
+      case 'markOut': mark('to'); break;
+      case 'zoomIn': setPps((v) => Math.min(240, Math.round(v * 1.25))); break;
+      case 'zoomOut': setPps((v) => Math.max(8, Math.round(v / 1.25))); break;
+      case 'zoomFit': setPps(Math.max(8, Math.min(240, Math.floor((window.innerWidth - 140) / Math.max(1, total + 1))))); break;
+      case 'tabEdit': goTab('edit'); break;
+      case 'tabAudio': goTab('audio'); break;
+      case 'tabExport': case 'export': goTab('export'); break;
+      case 'tabSettings': goTab('settings'); break;
+    }
+  };
+  const runActionRef = useRef(runAction);
+  runActionRef.current = runAction;
+
   useEffect(() => {
+    const GLOBAL: ActionId[] = ['undo', 'redo', 'tabEdit', 'tabAudio', 'tabExport', 'tabSettings', 'export'];
     const onKey = (e: KeyboardEvent) => {
       const el = e.target as HTMLElement;
-      if (el.closest('input, textarea, select, [contenteditable=true]') || exitOpen || tab !== 'edit') return;
-      const mod = e.ctrlKey || e.metaKey;
-      if (e.key === ' ') {
-        e.preventDefault();
-        setPlaying((p) => !p);
-      } else if (mod && e.key.toLowerCase() === 'z') {
-        e.preventDefault();
-        if (e.shiftKey) ed.redo();
-        else ed.undo();
-      } else if (mod && e.key.toLowerCase() === 'y') {
-        e.preventDefault();
-        ed.redo();
-      } else if (!mod && e.key.toLowerCase() === 's') {
-        e.preventDefault();
-        split();
-      } else if (e.key === 'Delete' || e.key === 'Backspace') {
-        if (selection) {
-          e.preventDefault();
-          del();
-        }
-      } else if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
-        e.preventDefault();
-        const stepSize = e.shiftKey ? 1 : 1 / 30;
-        setPlaying(false);
-        setTime((t) => Math.max(0, Math.min(total, t + (e.key === 'ArrowLeft' ? -stepSize : stepSize))));
-      } else if (e.key === 'Home') {
-        setTime(0);
-      } else if (e.key === 'Escape') {
-        setSelection(null);
-      }
+      if (el.closest('input, textarea, select, [contenteditable=true]') || exitOpen) return;
+      const combo = comboFromEvent(e);
+      if (!combo) return;
+      const action = actionForCombo(bindings, combo) ?? (combo === 'Ctrl+Y' ? 'redo' : null);
+      if (!action) return;
+      // Outside the Edit tab only undo/redo and tab switching apply; each tab handles its own keys.
+      if (tab !== 'edit' && !GLOBAL.includes(action)) return;
+      e.preventDefault();
+      runActionRef.current(action);
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [ed, split, del, selection, total, exitOpen, tab]);
+  }, [bindings, tab, exitOpen]);
 
   // ---- Leaving
   const leave = useCallback(() => {
@@ -387,11 +445,11 @@ export default function Workspace() {
           {/* Timeline */}
           <div className="order-2 shrink-0 border-t border-line bg-elevated">
             <div className="flex flex-wrap items-center gap-1 border-b border-line px-2 py-1.5" role="toolbar" aria-label={tr("Timeline tools")}>
-              <ToolButton label={tr("Undo")} shortcut="Ctrl+Z" onClick={ed.undo} disabled={!ed.canUndo} icon="M9 14L4 9l5-5M4 9h11a5 5 0 010 10h-3" />
-              <ToolButton label={tr("Redo")} shortcut="Ctrl+Shift+Z" onClick={ed.redo} disabled={!ed.canRedo} icon="M15 14l5-5-5-5M20 9H9a5 5 0 000 10h3" />
+              <ToolButton label={tr("Undo")} shortcut={keyHint('undo')} onClick={ed.undo} disabled={!ed.canUndo} icon="M9 14L4 9l5-5M4 9h11a5 5 0 010 10h-3" />
+              <ToolButton label={tr("Redo")} shortcut={keyHint('redo')} onClick={ed.redo} disabled={!ed.canRedo} icon="M15 14l5-5-5-5M20 9H9a5 5 0 000 10h3" />
               <span className="mx-1 h-5 w-px bg-line" aria-hidden="true" />
-              <ToolButton label={tr("Split")} shortcut="S" onClick={split} disabled={total <= 0} icon="M12 3v18M7 8l-4 4 4 4M17 8l4 4-4 4" text />
-              <ToolButton label={tr("Delete")} shortcut="Del" onClick={del} disabled={!selection} icon={ICONS.trash} text />
+              <ToolButton label={tr("Split")} shortcut={keyHint('split')} onClick={split} disabled={total <= 0} icon="M12 3v18M7 8l-4 4 4 4M17 8l4 4-4 4" text />
+              <ToolButton label={tr("Delete")} shortcut={keyHint('delete')} onClick={del} disabled={!selection} icon={ICONS.trash} text />
               <ToolButton label={tr("Add text")} onClick={addText} icon="M5 6V4h14v2M12 4v16M9 20h6" text />
               {selection?.kind === 'video' && (() => {
                 const c = project.timeline.video.find((x) => x.id === selection.id);
@@ -425,6 +483,7 @@ export default function Workspace() {
                   setTime(Math.min(t, Math.max(total, 0)));
                 }}
                 onChange={(tl, commit) => ed.setTimeline(tl, commit)}
+                snapping={editorSettings.snapping}
                 onDropMedia={(mediaId, kind, at) => {
                   const m = project.media.find((x) => x.id === mediaId);
                   if (m) add(m, kind, at);
@@ -433,6 +492,10 @@ export default function Workspace() {
             </div>
           </div>
           </>
+        ) : tab === 'settings' ? (
+          <div className="min-h-0 flex-1 bg-paper">
+            <SettingsTab />
+          </div>
         ) : tab === 'export' ? (
           <div className="min-h-0 flex-1 bg-paper">
             <ExportTab project={project} urls={ed.urls} queue={queue} onSaveSettings={(settings) => ed.update((p) => ({ ...p, export: settings }), { edit: false })} />

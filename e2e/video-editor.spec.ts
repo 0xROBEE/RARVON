@@ -267,4 +267,56 @@ test.describe('Video Editor', () => {
     await page.getByTestId('tab-button-export').click();
     await expect(page.getByTestId('queue-item')).toHaveCount(2);
   });
+  test('Settings tab: presets change the keys, a key can be re-recorded, and conflicts offer a swap', async ({ page }) => {
+    await newProject(page, 'Keys');
+    await page.getByTestId('editor-import').setInputFiles([await makeImage(page, { width: 640, height: 360, name: 'pic.png' })]);
+    await page.getByRole('button', { name: 'Add pic.png to the timeline' }).click();
+
+    await page.getByTestId('tab-button-settings').click();
+    await expect(page.getByTestId('settings-tab')).toBeVisible();
+    await expect(page.getByTestId('action-split')).toContainText('S');
+
+    // DaVinci Resolve style: split is Ctrl+B.
+    await page.getByTestId('preset-resolve').click();
+    await expect(page.getByTestId('preset-resolve')).toHaveAttribute('aria-checked', 'true');
+    await expect(page.getByTestId('action-split')).toContainText('Ctrl');
+    await expect(page.getByTestId('action-split')).toContainText('B');
+    await page.waitForTimeout(1000); // let the preset slide and key wave finish
+    await page.screenshot({ path: 'test-results/settings-tab.png', fullPage: true });
+
+    // The keys work in the Edit tab: S no longer splits, Ctrl+B does.
+    await page.getByTestId('tab-button-edit').click();
+    await page.locator('[data-clip=video]').first().click({ position: { x: 5, y: 30 } });
+    const ruler = page.getByLabel('Timeline ruler');
+    const box = (await ruler.boundingBox())!;
+    await page.mouse.click(box.x + 1.5 * 40, box.y + box.height / 2);
+    await page.locator('[data-clip=video]').first().click({ position: { x: 5, y: 30 } });
+    await page.keyboard.press('s');
+    await expect(page.locator('[data-clip=video]')).toHaveCount(1);
+    await page.keyboard.press('Control+b');
+    await expect(page.locator('[data-clip=video]')).toHaveCount(2);
+
+    // Record a new key for Split: Ctrl+K. The preset becomes Custom.
+    await page.getByTestId('tab-button-settings').click();
+    await page.getByTestId('action-split').click();
+    await expect(page.getByTestId('action-split')).toContainText('Press keys');
+    await page.keyboard.press('Control+k');
+    await expect(page.getByTestId('action-split')).toContainText('K');
+    await expect(page.getByTestId('preset-custom')).toHaveAttribute('aria-checked', 'true');
+
+    // Taking Undo's key asks first; swapping gives Undo the old Ctrl+K.
+    await page.getByTestId('action-split').click();
+    await page.keyboard.press('Control+z');
+    const alert = page.getByRole('alert');
+    await expect(alert).toContainText('Undo');
+    await alert.getByRole('button', { name: 'Swap them' }).click();
+    await expect(page.getByTestId('action-split')).toContainText('Z');
+    await expect(page.getByTestId('action-undo')).toContainText('K');
+
+    // Saved on this device.
+    await page.reload();
+    await page.getByTestId('tab-button-settings').click();
+    await expect(page.getByTestId('preset-custom')).toHaveAttribute('aria-checked', 'true');
+    await expect(page.getByTestId('action-undo')).toContainText('K');
+  });
 });

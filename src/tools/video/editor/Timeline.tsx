@@ -19,6 +19,7 @@ interface Props {
   onSeek: (t: number) => void;
   onChange: (tl: TL, commit: boolean) => void;
   onDropMedia: (mediaId: string, kind: TrackKind, time: number) => void;
+  snapping?: boolean;
 }
 
 export const MEDIA_DRAG_TYPE = 'application/x-bench-media';
@@ -31,7 +32,7 @@ const ROWS: { kind: TrackKind; label: string; h: number }[] = [
 
 type DragMode = 'move' | 'trim-l' | 'trim-r';
 
-export default function Timeline({ project, time, pps, selection, onSelect, onSeek, onChange, onDropMedia }: Props) {
+export default function Timeline({ project, time, pps, selection, onSelect, onSeek, onChange, onDropMedia, snapping = true }: Props) {
   const tl = project.timeline;
   const media = new Map(project.media.map((m) => [m.id, m]));
   const scroller = useRef<HTMLDivElement>(null);
@@ -47,6 +48,7 @@ export default function Timeline({ project, time, pps, selection, onSelect, onSe
 
   // Snap a time to the playhead or a clip edge when close (8px).
   const snap = (t: number, ignoreId: string) => {
+    if (!snapping) return t;
     const points = [0, time, ...starts, ...tl.video.map((c, i) => starts[i] + visualDuration(c))];
     for (const c of tl.audio) if (c.id !== ignoreId) points.push(c.start, c.start + audioDuration(c));
     for (const c of tl.text) if (c.id !== ignoreId) points.push(c.start, c.start + c.duration);
