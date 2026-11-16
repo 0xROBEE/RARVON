@@ -20,6 +20,17 @@ test.describe('every page renders without errors', () => {
     await expect(page.getByRole('button', { name: 'Share Bench with a friend' })).toBeVisible();
   });
 
+  test('the Privacy page has a summary, the full sections and a working contents list', async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 860 });
+    await page.goto('/privacy');
+    await expect(page.locator('#summary')).toContainText('Your files never leave your device');
+    await expect(page.getByText('Bench does not use cookies.')).toBeVisible();
+    const toc = page.getByRole('navigation', { name: 'On this page' });
+    await toc.getByRole('link', { name: '6. The website host' }).click();
+    await expect(toc.getByRole('link', { name: '6. The website host' })).toHaveAttribute('aria-current', 'location');
+    await expect(page.locator('#host')).toBeInViewport();
+  });
+
   test('home has Convert and Compress shortcuts that open their pages', async ({ page }) => {
     await page.goto('/');
     await page.getByTestId('home-convert').getByRole('link', { name: /more Convert tools/ }).click();
