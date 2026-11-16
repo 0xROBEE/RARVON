@@ -81,6 +81,13 @@ test.describe('PDF tools with real files', () => {
     const zip = await JSZip.loadAsync(out.buffer);
     const images = Object.keys(zip.files).filter((n) => /\.(png|jpe?g)$/.test(n));
     expect(images).toHaveLength(2);
+
+    // Unpick page 1: only page 2 is saved, as a single JPG.
+    await page.getByRole('button', { name: 'Page 1' }).click();
+    await page.getByRole('radio', { name: 'JPG' }).click();
+    await page.getByRole('button', { name: 'Convert to images' }).click();
+    const one = await download(page);
+    expect(one.name).toBe('page-page-2.jpg');
     const size = await imageSize(page, Buffer.from(await zip.file(images[0])!.async('uint8array')), 'image/png');
     expect(size.width / size.height).toBeCloseTo(595 / 842, 2);
   });
@@ -96,6 +103,13 @@ test.describe('PDF tools with real files', () => {
     expect(info.pageCount).toBe(2);
     expect(info.pages[0].w / info.pages[0].h).toBeCloseTo(1.5, 1);
     expect(info.pages[1].w / info.pages[1].h).toBeCloseTo(600 / 900, 1);
+
+    // Move the first picture later: the pages swap.
+    await page.getByTestId('page-grid').getByRole('button', { name: 'Move later' }).first().click();
+    await page.getByRole('button', { name: 'Create PDF' }).click();
+    const swapped = await pdfInfo((await download(page)).buffer);
+    expect(swapped.pages[0].w / swapped.pages[0].h).toBeCloseTo(600 / 900, 1);
+    expect(swapped.pages[1].w / swapped.pages[1].h).toBeCloseTo(1.5, 1);
   });
 
   test('metadata: edit title and author', async ({ page }) => {

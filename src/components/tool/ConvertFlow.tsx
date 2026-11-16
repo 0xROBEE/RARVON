@@ -117,14 +117,17 @@ export function FormatPills<T extends string>({
   value,
   onChange,
   disabled,
+  label = 'Convert to',
 }: {
   options: { value: T; label: string; hint?: string }[];
   value: T | null;
   onChange: (v: T) => void;
   disabled?: boolean;
+  /** The group's name for screen readers. */
+  label?: string;
 }) {
   return (
-    <div role="radiogroup" aria-label={tr('Convert to')} className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
+    <div role="radiogroup" aria-label={tr(label)} className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
       {options.map((o) => {
         const on = o.value === value;
         return (
