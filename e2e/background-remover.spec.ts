@@ -4,6 +4,8 @@ import type { UploadFile } from './helpers';
 
 // The first run downloads the AI engine and model (~39 MB) from the preview server and runs on the CPU.
 test.describe.configure({ timeout: 240_000 });
+// Tall enough that the whole picture is on screen for real mouse clicks.
+test.use({ viewport: { width: 1280, height: 1400 } });
 
 /** A 1200×900 picture: an orange bottle with a white label on a blue gradient and a green floor. */
 async function bottlePicture(page: Page): Promise<UploadFile> {
@@ -102,3 +104,61 @@ test('one click on an object selects the whole object, and the brush and undo fi
   await page.getByRole('button', { name: 'Undo' }).click();
   expect(await alphaAt(page, 600, 620)).toBe(255);
 });
+
+test('manual outline: draw with the Pen, reshape a point, and cut out exactly along it', async ({ page }) => {
+  await page.goto('/tools/image/remove-background');
+  await page.locator('input[type=file]').first().setInputFiles(await bottlePicture(page));
+  const canvas = page.getByTestId('bg-canvas');
+  await page.getByRole('button', { name: 'Draw an outline' }).click();
+  const box = (await canvas.boundingBox())!;
+  const at = (x: number, y: number) => ({ x: box.x + (x / 1200) * box.width, y: box.y + (y / 900) * box.height });
+
+  // A rectangle around the bottle's body only (not the neck), point by point.
+  for (const [x, y] of [[480, 260], [720, 260], [720, 760], [480, 760]] as const) {
+    const p = at(x, y);
+    await page.mouse.click(p.x, p.y);
+  }
+  // Clicking the first point closes the shape.
+  const first = at(480, 260);
+  await page.mouse.click(first.x, first.y);
+  await expect(page.getByTestId('outline-cut')).toBeVisible();
+
+  // Reshape: drag the top-left point up to include the neck area.
+  const tl = at(480, 260);
+  const to = at(560, 120);
+  await page.mouse.move(tl.x, tl.y);
+  await page.mouse.down();
+  await page.mouse.move(to.x, to.y, { steps: 6 });
+  await page.mouse.up();
+  await page.screenshot({ path: 'test-results/outline-editing.png' });
+
+  await page.getByTestId('outline-cut').click();
+  expect(await alphaAt(page, 600, 600), 'inside the outline is kept').toBe(255);
+  expect(await alphaAt(page, 300, 600), 'outside is removed').toBe(0);
+  expect(await alphaAt(page, 575, 175), 'the dragged point took in the neck').toBe(255);
+  expect(await alphaAt(page, 700, 175), 'the other top corner stayed').toBe(0);
+
+  // Undo brings back the editing state step by step; the export follows the outline.
+  await page.getByLabel('Crop to the object').check();
+  await page.getByRole('button', { name: 'Make PNG' }).click();
+  const out = await download(page, /Download/);
+  const size = await imageSize(page, out.buffer, 'image/png');
+  expect(size.width).toBeGreaterThan(240);
+  expect(size.width).toBeLessThan(300);
+});
+
+test('outline from the AI selection becomes editable points', async ({ page }) => {
+  await page.goto('/tools/image/remove-background');
+  await page.locator('input[type=file]').first().setInputFiles(await bottlePicture(page));
+  await page.getByRole('button', { name: 'Remove background' }).click();
+  await waitIdle(page);
+  await page.getByRole('button', { name: 'Draw an outline' }).click();
+  await page.getByTestId('outline-from-selection').click();
+  const points = page.getByTestId('outline-layer').locator('circle[data-point]');
+  expect(await points.count()).toBeGreaterThan(5);
+  expect(await points.count()).toBeLessThan(120);
+  await page.getByTestId('outline-cut').click();
+  expect(await alphaAt(page, 20, 20)).toBe(0);
+  expect(await alphaAt(page, 600, 620)).toBe(255);
+});
+

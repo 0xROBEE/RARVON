@@ -7,11 +7,24 @@ import { ResultCard } from '../../../components/tool';
 import { formatBytes } from '../../../lib/imageUtils';
 import { BackgroundRemover, WORK_SIZE, downloadStatus } from '../../../lib/backgroundRemoval';
 import { tr } from '../../../lib/i18n';
+import type { Outline, Vec } from '../../../lib/outline';
+import { drawOutlineBand, drawOutlineMask, hasClosedOutline, insertPoint, nearestOnOutline, newId, simplify, toggleCurve, traceMask } from '../../../lib/outline';
+import OutlineLayer from './OutlineLayer';
 
-type Tool = 'select' | 'brush-add' | 'brush-erase';
+type Tool = 'select' | 'brush-add' | 'brush-erase' | 'outline';
 interface Point { x: number; y: number; positive: boolean }
 interface Stroke { erase: boolean; size: number; pts: [number, number][] }
-interface Snapshot { base: Uint8Array | null; points: Point[]; strokes: Stroke[] }
+interface Snapshot {
+  base: Uint8Array | null;
+  points: Point[];
+  strokes: Stroke[];
+  /** Manual outlines (Pen / Lasso). When one is closed, it decides the cut-out. */
+  outlines: Outline[];
+  /** False while the outline is being edited (the picture shows dimmed outside it). */
+  outlineCut: boolean;
+}
+const EMPTY: Snapshot = { base: null, points: [], strokes: [], outlines: [], outlineCut: false };
+const dist = (a: Vec, b: Vec) => Math.hypot(a.x - b.x, a.y - b.y);
 
 const COLOURS = ['#ffffff', '#000000', '#f3f4f6', '#fde047', '#f87171', '#60a5fa', '#4ade80'];
 const ZOOMS = [1, 1.5, 2, 3, 4];
@@ -31,7 +44,7 @@ export default function RemoveBackground() {
   const [file, setFile] = useState<File | null>(null);
   const [img, setImg] = useState<ImageBitmap | null>(null);
   const [work, setWork] = useState<{ w: number; h: number } | null>(null);
-  const [snap, setSnap] = useState<Snapshot>({ base: null, points: [], strokes: [] });
+  const [snap, setSnap] = useState<Snapshot>(EMPTY);
   const past = useRef<Snapshot[]>([]);
   const future = useRef<Snapshot[]>([]);
   const [hist, setHist] = useState({ undo: 0, redo: 0 });
@@ -51,6 +64,13 @@ export default function RemoveBackground() {
   const [sizes, setSizes] = useState<{ standard: number; hq: number } | null>(null);
   const [result, setResult] = useState<{ url: string; name: string; size: number } | null>(null);
   const [cursor, setCursor] = useState<{ x: number; y: number } | null>(null);
+  // Manual outline
+  const [outlineMode, setOutlineMode] = useState<'pen' | 'lasso'>('pen');
+  const [nextHole, setNextHole] = useState(false);
+  const [selPt, setSelPt] = useState<{ id: string; i: number } | null>(null);
+  const [refine, setRefine] = useState({ smooth: 0, offset: 0, hair: false, hairWidth: 12 });
+  const [viewScale, setViewScale] = useState(1);
+  const [workCursor, setWorkCursor] = useState<Vec | null>(null);
 
   const remover = useRef<BackgroundRemover | null>(null);
   const imageSent = useRef(false);
@@ -94,7 +114,8 @@ export default function RemoveBackground() {
       past.current = [];
       future.current = [];
       setHist({ undo: 0, redo: 0 });
-      setSnap({ base: null, points: [], strokes: [] });
+      setSnap(EMPTY);
+      setSelPt(null);
       setImg(bmp);
       setWork({ w, h });
       setFile(f);
@@ -112,7 +133,7 @@ export default function RemoveBackground() {
     setFile(null);
     setWork(null);
     setResult(null);
-    setSnap({ base: null, points: [], strokes: [] });
+    setSnap(EMPTY);
   };
 
   // ---- History
@@ -127,6 +148,26 @@ export default function RemoveBackground() {
     setHist({ undo: past.current.length, redo: 0 });
     setResult(null);
   }, []);
+  // Live edits while dragging, recorded as one undo step when the drag ends.
+  const dragBase = useRef<Snapshot | null>(null);
+  const liveSet = (next: Snapshot) => {
+    dragBase.current ??= snapRef.current;
+    snapRef.current = next;
+    setSnap(next);
+  };
+  const endLive = () => {
+    const base = dragBase.current;
+    dragBase.current = null;
+    if (!base || base === snapRef.current) return;
+    past.current = [...past.current.slice(-50), base];
+    future.current = [];
+    setHist({ undo: past.current.length, redo: 0 });
+    setResult(null);
+  };
+  const withOutline = (s: Snapshot, o: Outline): Snapshot => {
+    const exists = s.outlines.some((x) => x.id === o.id);
+    return { ...s, outlines: exists ? s.outlines.map((x) => (x.id === o.id ? o : x)) : [...s.outlines, o] };
+  };
   const undo = () => {
     const prev = past.current.pop();
     if (!prev) return;
@@ -173,51 +214,97 @@ export default function RemoveBackground() {
     }
   };
 
-  const autoQuick = () => run('Finding the main object…', (r) => r.auto(), (mask) => ({ base: mask, points: [], strokes: [] }));
-  const autoHq = () => run('Removing the background in high quality…', (r) => r.autoHq(), (mask) => ({ base: mask, points: [], strokes: [] }));
+  const autoQuick = () => run('Finding the main object…', (r) => r.auto(), (mask) => ({ ...EMPTY, base: mask }));
+  const autoHq = () => run('Removing the background in high quality…', (r) => r.autoHq(), (mask) => ({ ...EMPTY, base: mask }));
 
   const addPoint = (p: Point) => {
     const points = [...snap.points, p];
-    void run('Selecting…', (r) => r.select(points), (mask) => ({ base: mask, points, strokes: snap.strokes }));
+    void run('Selecting…', (r) => r.select(points), (mask) => ({ ...snapRef.current, base: mask, points }));
   };
 
   // ---- Mask and drawing
-  const renderMask = useCallback(() => {
-    const mc = maskRef.current;
-    if (!mc || !work) return;
-    const ctx = mc.getContext('2d')!;
+  // The AI mask as a canvas (work size), rebuilt only when it changes.
+  const baseCanvas = useRef<{ base: Uint8Array; canvas: HTMLCanvasElement } | null>(null);
+  const baseToCanvas = (base: Uint8Array) => {
+    if (baseCanvas.current?.base === base) return baseCanvas.current.canvas;
+    const c = document.createElement('canvas');
+    c.width = work!.w;
+    c.height = work!.h;
+    const data = new ImageData(c.width, c.height);
+    for (let i = 0; i < base.length; i++) {
+      data.data[i * 4] = 255;
+      data.data[i * 4 + 1] = 255;
+      data.data[i * 4 + 2] = 255;
+      data.data[i * 4 + 3] = base[i];
+    }
+    c.getContext('2d')!.putImageData(data, 0, 0);
+    baseCanvas.current = { base, canvas: c };
+    return c;
+  };
+
+  /** Draws the final keep-mask into `target` at `scale` × work size (1 for the preview, full size for export). */
+  const renderMaskTo = useCallback((target: HTMLCanvasElement, scale: number, s: Snapshot, extraStroke: Stroke | null) => {
+    const ctx = target.getContext('2d')!;
+    const W = target.width;
+    const H = target.height;
+    ctx.save();
     ctx.globalCompositeOperation = 'source-over';
-    ctx.clearRect(0, 0, mc.width, mc.height);
-    if (snap.base) {
-      const data = new ImageData(mc.width, mc.height);
-      for (let i = 0; i < snap.base.length; i++) {
-        data.data[i * 4] = 255;
-        data.data[i * 4 + 1] = 255;
-        data.data[i * 4 + 2] = 255;
-        data.data[i * 4 + 3] = snap.base[i];
+    ctx.clearRect(0, 0, W, H);
+    if (hasClosedOutline(s.outlines)) {
+      drawOutlineMask(ctx, s.outlines, refine, scale);
+      // Refine hair: inside a thin band along the line, use the AI's soft edge instead.
+      if (refine.hair && s.base) {
+        const band = document.createElement('canvas');
+        band.width = W;
+        band.height = H;
+        drawOutlineBand(band.getContext('2d')!, s.outlines, refine.smooth, refine.hairWidth, scale);
+        const soft = document.createElement('canvas');
+        soft.width = W;
+        soft.height = H;
+        const sc = soft.getContext('2d')!;
+        sc.imageSmoothingQuality = 'high';
+        sc.drawImage(baseToCanvas(s.base), 0, 0, W, H);
+        sc.globalCompositeOperation = 'destination-in';
+        sc.drawImage(band, 0, 0);
+        ctx.globalCompositeOperation = 'destination-out';
+        ctx.drawImage(band, 0, 0);
+        ctx.globalCompositeOperation = 'source-over';
+        ctx.drawImage(soft, 0, 0);
       }
-      ctx.putImageData(data, 0, 0);
+    } else if (s.base) {
+      ctx.imageSmoothingQuality = 'high';
+      ctx.drawImage(baseToCanvas(s.base), 0, 0, W, H);
     } else {
       ctx.fillStyle = '#fff';
-      ctx.fillRect(0, 0, mc.width, mc.height);
+      ctx.fillRect(0, 0, W, H);
     }
-    const strokes = drawing.current ? [...snap.strokes, drawing.current] : snap.strokes;
-    for (const s of strokes) {
-      ctx.globalCompositeOperation = s.erase ? 'destination-out' : 'source-over';
+    const strokes = extraStroke ? [...s.strokes, extraStroke] : s.strokes;
+    ctx.scale(scale, scale);
+    for (const st of strokes) {
+      ctx.globalCompositeOperation = st.erase ? 'destination-out' : 'source-over';
       ctx.strokeStyle = '#fff';
       ctx.fillStyle = '#fff';
-      ctx.lineWidth = s.size;
+      ctx.lineWidth = st.size;
       ctx.lineCap = 'round';
       ctx.lineJoin = 'round';
       ctx.beginPath();
-      s.pts.forEach(([x, y], i) => (i ? ctx.lineTo(x, y) : ctx.moveTo(x, y)));
-      if (s.pts.length === 1) {
-        ctx.arc(s.pts[0][0], s.pts[0][1], s.size / 2, 0, Math.PI * 2);
+      st.pts.forEach(([x, y], i) => (i ? ctx.lineTo(x, y) : ctx.moveTo(x, y)));
+      if (st.pts.length === 1) {
+        ctx.arc(st.pts[0][0], st.pts[0][1], st.size / 2, 0, Math.PI * 2);
         ctx.fill();
       } else ctx.stroke();
     }
-    ctx.globalCompositeOperation = 'source-over';
-  }, [snap, work]);
+    ctx.restore();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [refine, work]);
+
+  const renderMask = useCallback(() => {
+    const mc = maskRef.current;
+    if (!mc || !work) return;
+    renderMaskTo(mc, 1, snap, drawing.current);
+  }, [snap, work, renderMaskTo]);
+
+  const editingOutline = tool === 'outline' && !snap.outlineCut;
 
   const draw = useCallback(() => {
     const view = viewRef.current;
@@ -230,23 +317,222 @@ export default function RemoveBackground() {
       ctx.drawImage(wc, 0, 0);
       return;
     }
+    if (editingOutline) {
+      // While outlining: the whole picture, dimmed outside the outline.
+      ctx.drawImage(wc, 0, 0);
+      if (hasClosedOutline(snapRef.current.outlines)) {
+        const dim = document.createElement('canvas');
+        dim.width = view.width;
+        dim.height = view.height;
+        const dc = dim.getContext('2d')!;
+        dc.fillStyle = 'rgba(0,0,0,0.5)';
+        dc.fillRect(0, 0, dim.width, dim.height);
+        dc.globalCompositeOperation = 'destination-out';
+        dc.drawImage(mc, 0, 0);
+        ctx.drawImage(dim, 0, 0);
+      }
+      return;
+    }
     composite(ctx, view.width, view.height, wc, mc, softness, background);
-  }, [showBefore, softness, background]);
+  }, [showBefore, softness, background, editingOutline]);
 
   useEffect(() => {
     renderMask();
     draw();
   }, [renderMask, draw]);
 
-  const hasCutout = Boolean(snap.base) || snap.strokes.length > 0;
+  const hasCutout = Boolean(snap.base) || snap.strokes.length > 0 || hasClosedOutline(snap.outlines);
+  const openOutline = snap.outlines.find((o) => !o.closed) ?? null;
+
+  // Points keep the same on-screen size at any zoom.
+  useEffect(() => {
+    const c = viewRef.current;
+    if (!c || !work) return;
+    const ro = new ResizeObserver(() => setViewScale(work.w / Math.max(1, c.getBoundingClientRect().width)));
+    ro.observe(c);
+    return () => ro.disconnect();
+  }, [work, zoom]);
 
   const toWork = (e: { clientX: number; clientY: number }) => {
     const rect = viewRef.current!.getBoundingClientRect();
     return { x: ((e.clientX - rect.left) / rect.width) * work!.w, y: ((e.clientY - rect.top) / rect.height) * work!.h, scale: work!.w / rect.width };
   };
 
+  // ---- Manual outline: drawing and reshaping
+  const track = (onMove: (p: Vec, ev: PointerEvent) => void, onUp?: () => void) => {
+    const move = (ev: PointerEvent) => onMove(toWork(ev), ev);
+    const up = () => {
+      window.removeEventListener('pointermove', move);
+      window.removeEventListener('pointerup', up);
+      onUp?.();
+      endLive();
+    };
+    window.addEventListener('pointermove', move);
+    window.addEventListener('pointerup', up);
+  };
+
+  const dragPoint = (id: string, i: number, start: Vec) => {
+    track((p) => {
+      const o = snapRef.current.outlines.find((x) => x.id === id);
+      if (!o) return;
+      const dx = p.x - start.x;
+      const dy = p.y - start.y;
+      start = p;
+      const pts = o.points.map((q, k) => (k === i ? {
+        ...q, x: q.x + dx, y: q.y + dy,
+        hin: q.hin && { x: q.hin.x + dx, y: q.hin.y + dy },
+        hout: q.hout && { x: q.hout.x + dx, y: q.hout.y + dy },
+      } : q));
+      liveSet(withOutline(snapRef.current, { ...o, points: pts }));
+    });
+  };
+
+  // Pen: dragging while placing a point pulls out curve handles.
+  const dragNewHandles = (id: string, i: number, start: Vec) => {
+    track((p) => {
+      if (dist(p, start) < 3 * viewScale) return;
+      const o = snapRef.current.outlines.find((x) => x.id === id);
+      if (!o) return;
+      const pt = o.points[i];
+      const pts = o.points.map((q, k) => (k === i ? { ...q, hout: p, hin: { x: 2 * pt.x - p.x, y: 2 * pt.y - p.y } } : q));
+      liveSet(withOutline(snapRef.current, { ...o, points: pts }));
+    });
+  };
+
+  const onOutlineCanvasDown = (e: ReactPointerEvent<HTMLCanvasElement>) => {
+    const p = toWork(e);
+    const tol = 10 * viewScale;
+    const s = snapRef.current;
+    if (s.outlineCut) return;
+    const open = s.outlines.find((o) => !o.closed);
+    if (open) {
+      if (open.points.length >= 3 && dist(p, open.points[0]) < tol) {
+        commit(withOutline(s, { ...open, closed: true }));
+        setSelPt(null);
+        return;
+      }
+      const o = { ...open, points: [...open.points, { x: p.x, y: p.y }] };
+      liveSet(withOutline(s, o));
+      setSelPt({ id: o.id, i: o.points.length - 1 });
+      dragNewHandles(o.id, o.points.length - 1, p);
+      return;
+    }
+    // Click on a line: add a point there and drag it.
+    for (const o of s.outlines) {
+      const near = nearestOnOutline(o, p, refine.smooth);
+      if (near.dist < tol * 0.8) {
+        const o2 = insertPoint(o, near.seg, near.t, refine.smooth);
+        liveSet(withOutline(s, o2));
+        setSelPt({ id: o.id, i: near.seg + 1 });
+        dragPoint(o.id, near.seg + 1, p);
+        return;
+      }
+    }
+    setSelPt(null);
+    if (outlineMode === 'lasso') {
+      const id = newId();
+      const pts: Vec[] = [{ x: p.x, y: p.y }];
+      liveSet(withOutline(s, { id, points: pts, closed: false, hole: nextHole }));
+      track(
+        (q) => {
+          if (dist(q, pts[pts.length - 1]) < 2 * viewScale) return;
+          pts.push({ x: q.x, y: q.y });
+          liveSet(withOutline(snapRef.current, { id, points: [...pts], closed: false, hole: nextHole }));
+        },
+        () => {
+          const simple = simplify(pts, 1.2 * viewScale);
+          const next = simple.length >= 3
+            ? withOutline(snapRef.current, { id, points: simple.map((q) => ({ x: q.x, y: q.y })), closed: true, hole: nextHole })
+            : { ...snapRef.current, outlines: snapRef.current.outlines.filter((o) => o.id !== id) };
+          snapRef.current = next;
+          setSnap(next);
+          setNextHole(false);
+        },
+      );
+      return;
+    }
+    // Pen: start a new outline.
+    const o: Outline = { id: newId(), points: [{ x: p.x, y: p.y }], closed: false, hole: nextHole };
+    liveSet(withOutline(s, o));
+    setSelPt({ id: o.id, i: 0 });
+    setNextHole(false);
+    dragNewHandles(o.id, 0, p);
+  };
+
+  const onOutlinePointDown = (e: ReactPointerEvent, id: string, i: number) => {
+    e.stopPropagation();
+    e.preventDefault();
+    const s = snapRef.current;
+    const o = s.outlines.find((x) => x.id === id);
+    if (!o || s.outlineCut) return;
+    if (!o.closed && i === 0 && o.points.length >= 3) {
+      commit(withOutline(s, { ...o, closed: true }));
+      setSelPt(null);
+      return;
+    }
+    if (e.altKey || e.detail === 2) {
+      commit(withOutline(s, toggleCurve(o, i)));
+      setSelPt({ id, i });
+      return;
+    }
+    setSelPt({ id, i });
+    dragPoint(id, i, toWork(e as unknown as PointerEvent));
+  };
+
+  const onOutlineHandleDown = (e: ReactPointerEvent, id: string, i: number, which: 'hin' | 'hout') => {
+    e.stopPropagation();
+    e.preventDefault();
+    track((p, ev) => {
+      const o = snapRef.current.outlines.find((x) => x.id === id);
+      if (!o) return;
+      const pt = o.points[i];
+      const other = which === 'hin' ? 'hout' : 'hin';
+      // Handles stay mirrored (smooth) unless Alt is held (sharp bend).
+      const mirrored = ev.altKey ? pt[other] : { x: 2 * pt.x - p.x, y: 2 * pt.y - p.y };
+      const pts = o.points.map((q, k) => (k === i ? { ...q, [which]: p, [other]: mirrored } : q));
+      liveSet(withOutline(snapRef.current, { ...o, points: pts }));
+    });
+  };
+
+  const outlineFromSelection = () => {
+    const mc = maskRef.current;
+    if (!mc || !work) return;
+    // Trace what is selected now (AI selection plus brush), ignoring any old outline.
+    const tmp = document.createElement('canvas');
+    tmp.width = work.w;
+    tmp.height = work.h;
+    renderMaskTo(tmp, 1, { ...snapRef.current, outlines: [] }, null);
+    const data = tmp.getContext('2d')!.getImageData(0, 0, work.w, work.h).data;
+    const alpha = new Uint8Array(work.w * work.h);
+    for (let i = 0; i < alpha.length; i++) alpha[i] = data[i * 4 + 3];
+    const outlines = traceMask(alpha, work.w, work.h);
+    if (!outlines.length) {
+      setError(tr('Nothing is selected yet. Use “Remove background” or click the object first.'));
+      return;
+    }
+    commit({ ...snapRef.current, outlines, strokes: [], outlineCut: false });
+    setSelPt(null);
+  };
+
+  const deleteSelectedPoint = () => {
+    if (!selPt) return;
+    const s = snapRef.current;
+    const o = s.outlines.find((x) => x.id === selPt.id);
+    if (!o) return;
+    const pts = o.points.filter((_, k) => k !== selPt.i);
+    const next = pts.length < (o.closed ? 3 : 1)
+      ? { ...s, outlines: s.outlines.filter((x) => x.id !== o.id) }
+      : withOutline(s, { ...o, points: pts });
+    commit(next);
+    setSelPt(null);
+  };
+
   const onPointerDown = (e: ReactPointerEvent<HTMLCanvasElement>) => {
     if (!work || busy || showBefore) return;
+    if (tool === 'outline') {
+      if (e.button === 0) onOutlineCanvasDown(e);
+      return;
+    }
     const { x, y, scale } = toWork(e);
     if (tool === 'select') {
       if (e.button === 2) return; // handled by onContextMenu
@@ -262,6 +548,7 @@ export default function RemoveBackground() {
   const onPointerMove = (e: ReactPointerEvent<HTMLCanvasElement>) => {
     const rect = viewRef.current!.getBoundingClientRect();
     setCursor({ x: e.clientX - rect.left, y: e.clientY - rect.top });
+    if (tool === 'outline') setWorkCursor(toWork(e));
     if (!drawing.current) return;
     const { x, y } = toWork(e);
     drawing.current.pts.push([x, y]);
@@ -280,6 +567,24 @@ export default function RemoveBackground() {
     const onKey = (e: KeyboardEvent) => {
       if ((e.target as HTMLElement).closest('input, textarea, select')) return;
       const mod = e.ctrlKey || e.metaKey;
+      if (tool === 'outline' && !mod) {
+        if ((e.key === 'Delete' || e.key === 'Backspace') && selPt) {
+          e.preventDefault();
+          deleteSelectedPoint();
+          return;
+        }
+        if (e.key === 'Enter' && openOutline && openOutline.points.length >= 3) {
+          e.preventDefault();
+          commit(withOutline(snapRef.current, { ...openOutline, closed: true }));
+          setSelPt(null);
+          return;
+        }
+        if (e.key === 'Escape') {
+          if (openOutline) commit({ ...snapRef.current, outlines: snapRef.current.outlines.filter((o) => o.id !== openOutline.id) });
+          setSelPt(null);
+          return;
+        }
+      }
       if (mod && e.key.toLowerCase() === 'z') {
         e.preventDefault();
         if (e.shiftKey) redo();
@@ -303,7 +608,12 @@ export default function RemoveBackground() {
       const full = document.createElement('canvas');
       full.width = W;
       full.height = H;
-      composite(full.getContext('2d')!, W, H, img, maskRef.current, softness * (W / work.w), background);
+      // The keep-mask is rendered at full size, so outline edges stay sharp.
+      const fullMask = document.createElement('canvas');
+      fullMask.width = W;
+      fullMask.height = H;
+      renderMaskTo(fullMask, W / work.w, snapRef.current, null);
+      composite(full.getContext('2d')!, W, H, img, fullMask, softness * (W / work.w), background);
       let out = full;
       if (crop) {
         const box = maskBounds(maskRef.current);
@@ -347,7 +657,7 @@ export default function RemoveBackground() {
   }
 
   const pending = busy !== null;
-  const brushCursor = tool !== 'select' && cursor && !showBefore ? brush : null;
+  const brushCursor = (tool === 'brush-add' || tool === 'brush-erase') && cursor && !showBefore ? brush : null;
 
   return (
     <div className="space-y-4" data-testid="bg-remover">
@@ -397,6 +707,68 @@ export default function RemoveBackground() {
             )}
           </Section>
 
+          <Section title={tr('Manual outline')}>
+            <ToolButton active={tool === 'outline'} onClick={() => { setTool('outline'); if (snap.outlineCut) liveSet({ ...snapRef.current, outlineCut: false }); endLive(); }} icon="M3 21l3-1 11-11-2-2L4 18zM14 6l2-2 4 4-2 2">{tr('Draw an outline')}</ToolButton>
+            {tool === 'outline' && (
+              <div className="grid gap-2 outline-panel-in">
+                <div className="grid grid-cols-2 gap-1">
+                  <Seg active={outlineMode === 'pen'} onClick={() => setOutlineMode('pen')}>{tr('Pen')}</Seg>
+                  <Seg active={outlineMode === 'lasso'} onClick={() => setOutlineMode('lasso')}>{tr('Lasso')}</Seg>
+                </div>
+                <button
+                  onClick={outlineFromSelection}
+                  disabled={pending || (!snap.base && !snap.strokes.length)}
+                  className="w-full rounded-md border border-workshop/50 bg-workshop-dim px-2.5 py-1.5 text-xs font-semibold text-workshop hover:opacity-90 disabled:opacity-40"
+                  data-testid="outline-from-selection"
+                >
+                  {tr('Outline from selection')}
+                </button>
+                <label className="flex cursor-pointer items-center gap-2 text-xs text-ink-2">
+                  <input type="checkbox" checked={nextHole} onChange={(e) => setNextHole(e.target.checked)} className="accent-[var(--color-workshop)]" />
+                  {tr('Next shape is a hole')}
+                </label>
+                {openOutline && openOutline.points.length >= 3 && (
+                  <button onClick={() => { commit(withOutline(snapRef.current, { ...openOutline, closed: true })); setSelPt(null); }} className="text-start text-xs font-medium text-workshop hover:underline">{tr('Close the shape')}</button>
+                )}
+                {selPt && (
+                  <button onClick={deleteSelectedPoint} className="text-start text-xs text-ink-3 hover:text-warn">{tr('Delete selected point')}</button>
+                )}
+                {snap.outlines.length > 0 && (
+                  <button onClick={() => { commit({ ...snapRef.current, outlines: [], outlineCut: false }); setSelPt(null); }} className="text-start text-xs text-ink-3 hover:text-warn">{tr('Clear outline')}</button>
+                )}
+                <p className="text-[11px] leading-snug text-ink-3">
+                  {outlineMode === 'pen'
+                    ? tr('Click to place points around the object; drag while clicking to curve. Click the first point to close. Click a line to add a point, drag points to reshape, double-click a point to curve it, Delete removes it.')
+                    : tr('Drag around the object to draw its shape freely. Then drag points to fix it.')}
+                </p>
+              </div>
+            )}
+          </Section>
+
+          {hasClosedOutline(snap.outlines) && (
+            <Section title={tr('Refine edges')}>
+              <Range label={tr('Smooth')} value={refine.smooth} min={0} max={1} step={0.05} onChange={(v) => setRefine((r) => ({ ...r, smooth: v }))} format={(v) => `${Math.round(v * 100)}%`} />
+              <Range label={tr('Move edge')} value={refine.offset} min={-10} max={10} step={0.5} onChange={(v) => setRefine((r) => ({ ...r, offset: v }))} format={(v) => (v > 0 ? `+${v}px` : `${v}px`)} />
+              <label className={clsx('flex items-center gap-2 text-xs', snap.base ? 'cursor-pointer text-ink-2' : 'text-ink-3')}>
+                <input type="checkbox" checked={refine.hair && Boolean(snap.base)} disabled={!snap.base} onChange={(e) => setRefine((r) => ({ ...r, hair: e.target.checked }))} className="accent-[var(--color-workshop)]" />
+                {tr('Refine hair and fine edges')}
+              </label>
+              {refine.hair && snap.base && (
+                <Range label={tr('Edge band')} value={refine.hairWidth} min={4} max={60} step={1} onChange={(v) => setRefine((r) => ({ ...r, hairWidth: v }))} format={(v) => `${v}px`} />
+              )}
+              {!snap.base && <p className="text-[11px] text-ink-3">{tr('Hair refinement uses the AI selection. Run “Remove background” or click the object first.')}</p>}
+              {editingOutline ? (
+                <button onClick={() => { commit({ ...snapRef.current, outlineCut: true }); setSelPt(null); }} className="w-full rounded-md bg-workshop px-3 py-2 text-sm font-semibold text-white hover:opacity-90" data-testid="outline-cut">
+                  {tr('Cut out')}
+                </button>
+              ) : (
+                <button onClick={() => { setTool('outline'); liveSet({ ...snapRef.current, outlineCut: false }); endLive(); }} className="w-full rounded-md border border-line px-3 py-2 text-sm font-medium hover:border-ink">
+                  {tr('Edit outline')}
+                </button>
+              )}
+            </Section>
+          )}
+
           <Section title={tr("Fix by hand")}>
             <ToolButton active={tool === 'brush-add'} onClick={() => setTool('brush-add')} icon="M12 5v14M5 12h14">{tr("Brush: keep")}</ToolButton>
             <ToolButton active={tool === 'brush-erase'} onClick={() => setTool('brush-erase')} icon="M5 12h14">{tr("Brush: erase")}</ToolButton>
@@ -421,7 +793,7 @@ export default function RemoveBackground() {
                 height={viewSize.h}
                 data-testid="bg-canvas"
                 aria-label={showBefore ? tr("Original picture") : tr("Picture with the background removed")}
-                className={clsx('block h-auto w-full touch-none', tool === 'select' ? 'cursor-crosshair' : 'cursor-none')}
+                className={clsx('block h-auto w-full touch-none', tool === 'select' || tool === 'outline' ? 'cursor-crosshair' : 'cursor-none')}
                 onPointerDown={onPointerDown}
                 onPointerMove={onPointerMove}
                 onPointerUp={onPointerUp}
@@ -443,6 +815,19 @@ export default function RemoveBackground() {
                   {p.positive ? '+' : '−'}
                 </span>
               ))}
+              {editingOutline && !showBefore && (
+                <OutlineLayer
+                  outlines={snap.outlines}
+                  w={work.w}
+                  h={work.h}
+                  scale={viewScale}
+                  smooth={refine.smooth}
+                  selected={selPt}
+                  cursor={workCursor}
+                  onPointDown={onOutlinePointDown}
+                  onHandleDown={onOutlineHandleDown}
+                />
+              )}
               {brushCursor && cursor && (
                 <span
                   className="pointer-events-none absolute rounded-full border-2 border-white shadow-[0_0_0_1px_rgba(0,0,0,0.6)]"
@@ -481,7 +866,7 @@ export default function RemoveBackground() {
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true"><path d="M12 3v18M4 6h5v12H4zM15 6h5v12h-5" /></svg>
               {showBefore ? tr("Show after") : tr("Show before")}
             </button>
-            <span className="text-xs text-ink-3">{showBefore ? tr("Showing the original") : hasCutout ? tr("Showing the result") : ''}</span>
+            <span className="text-xs text-ink-3">{showBefore ? tr("Showing the original") : editingOutline ? tr("Editing the outline: the dimmed part will be removed") : hasCutout ? tr("Showing the result") : ''}</span>
             <div className="ms-auto flex items-center gap-1">
               <IconBtn label={tr("Zoom out")} onClick={() => setZoom(ZOOMS[Math.max(0, ZOOMS.indexOf(zoom) - 1)])} disabled={zoom === ZOOMS[0]} icon="M5 12h14" />
               <button onClick={() => setZoom(1)} className="min-w-[48px] rounded-md px-2 py-1 font-mono text-xs text-ink-2 hover:bg-paper-dim" title={tr("Fit")}>{Math.round(zoom * 100)}%</button>
@@ -491,7 +876,9 @@ export default function RemoveBackground() {
           <p className="mt-2 text-xs text-ink-3">
             {tool === 'select'
               ? tr("Click the object to keep it. Click more parts to add them. Right-click (or choose “− Remove”) to take parts away.")
-              : tr("Paint over the picture to keep or erase parts. Zoom in for small details.")}
+              : tool === 'outline'
+                ? tr("Zoom in for precise points. Enter closes the shape, Esc cancels it, Delete removes the selected point.")
+                : tr("Paint over the picture to keep or erase parts. Zoom in for small details.")}
           </p>
         </div>
 
