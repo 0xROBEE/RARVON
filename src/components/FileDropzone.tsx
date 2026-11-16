@@ -3,6 +3,7 @@ import type { DragEvent } from 'react';
 import clsx from 'clsx';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useWorkspace, isLikelyCompatible, pendingResultToFile } from '../lib/workspaceContext';
+import { tr } from '../lib/i18n';
 
 interface FileDropzoneProps {
   accept?: string;
@@ -65,14 +66,14 @@ export default function FileDropzone({ accept, multiple = false, label, hint, on
       {showChainBanner && (
         <div className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-workshop/30 bg-workshop-dim px-3 py-2 text-xs">
           <span className="text-ink-2">
-            Continue with <span className="font-medium text-ink">{pending!.filename}</span>, your last result?
+            {tr('Continue with')} <span className="font-medium text-ink">{pending!.filename}</span>{tr(', your last result?')}
           </span>
           <div className="flex shrink-0 gap-2">
             <button onClick={loadChainedFile} disabled={loadingPending} className="rounded-md bg-ink px-2.5 py-1 font-medium text-paper hover:bg-workshop disabled:opacity-50">
-              {loadingPending ? 'Loading…' : 'Use this file'}
+              {loadingPending ? tr('Loading…') : tr('Use this file')}
             </button>
             <button onClick={clearPending} className="rounded-md px-2 py-1 font-medium text-ink-3 hover:text-ink">
-              Dismiss
+              {tr('Dismiss')}
             </button>
           </div>
         </div>
@@ -95,9 +96,9 @@ export default function FileDropzone({ accept, multiple = false, label, hint, on
           <path d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2" strokeLinecap="round" strokeLinejoin="round" />
         </svg>
         <span className="font-display text-sm font-medium">
-          {label ?? (multiple ? 'Drop files here, or click to browse' : 'Drop a file here, or click to browse')}
+          {label ? tr(label) : tr(multiple ? 'Drop files here, or click to browse' : 'Drop a file here, or click to browse')}
         </span>
-        {hint && <span className="text-xs text-ink-3">{hint}</span>}
+        {hint && <span className="text-xs text-ink-3">{tr(hint)}</span>}
         <input
           type="file"
           accept={accept}

@@ -3,6 +3,7 @@ import clsx from 'clsx';
 import type { Aspect, AudioClip, Project, TextClip, Timeline, VisualClip } from '../../../lib/videoEditor/types';
 import { ASPECTS, audioDuration, formatTime, visualDuration } from '../../../lib/videoEditor/types';
 import type { Selection } from './Timeline';
+import { tr } from '../../../lib/i18n';
 
 interface Props {
   project: Project;
@@ -19,16 +20,16 @@ export default function Inspector({ project, selection, onTimeline, onProject, o
 
   if (!selection) {
     return (
-      <Panel title="Project">
-        <Field label="Name">
+      <Panel title={tr("Project")}>
+        <Field label={tr("Name")}>
           <input
             value={project.name}
             onChange={(e) => onProject({ name: e.target.value })}
             className="w-full rounded-md border border-line bg-paper px-2 py-1.5 text-sm"
-            aria-label="Project name"
+            aria-label={tr("Project name")}
           />
         </Field>
-        <Field label="Frame shape">
+        <Field label={tr("Frame shape")}>
           <div className="grid gap-1.5">
             {(Object.keys(ASPECTS) as Aspect[]).map((a) => (
               <label key={a} className={clsx('flex cursor-pointer items-center gap-2 rounded-md border px-2 py-1.5 text-sm', project.aspect === a ? 'border-workshop bg-workshop-dim' : 'border-line hover:border-ink')}>
@@ -39,7 +40,7 @@ export default function Inspector({ project, selection, onTimeline, onProject, o
             ))}
           </div>
         </Field>
-        <p className="text-xs text-ink-3">Select a clip on the timeline to change it.</p>
+        <p className="text-xs text-ink-3">{tr("Select a clip on the timeline to change it.")}</p>
       </Panel>
     );
   }
@@ -55,21 +56,21 @@ export default function Inspector({ project, selection, onTimeline, onProject, o
     const upd = (patch: Partial<VisualClip>, commit = true) => onTimeline({ ...tl, video: set(tl.video, patch) }, commit);
     const d = visualDuration(c);
     return (
-      <Panel title={isImage ? 'Picture' : 'Video clip'} subtitle={m?.name} onDelete={onDelete}>
+      <Panel title={isImage ? tr("Picture") : tr("Video clip")} subtitle={m?.name} onDelete={onDelete}>
         {isImage ? (
-          <Field label="Duration (seconds)">
-            <NumberInput value={c.out} min={0.1} max={600} step={0.1} onChange={(v) => upd({ out: v })} label="Picture duration" />
+          <Field label={tr("Duration (seconds)")}>
+            <NumberInput value={c.out} min={0.1} max={600} step={0.1} onChange={(v) => upd({ out: v })} label={tr("Picture duration")} />
           </Field>
         ) : (
           <>
-            <Field label="Trim (seconds in the original)">
+            <Field label={tr("Trim (seconds in the original)")}>
               <div className="grid grid-cols-2 gap-2">
-                <NumberInput value={c.in} min={0} max={c.out - 0.1} step={0.1} onChange={(v) => upd({ in: v })} label="Start" prefix="Start" />
-                <NumberInput value={c.out} min={c.in + 0.1} max={m?.duration ?? c.out} step={0.1} onChange={(v) => upd({ out: v })} label="End" prefix="End" />
+                <NumberInput value={c.in} min={0} max={c.out - 0.1} step={0.1} onChange={(v) => upd({ in: v })} label={tr("Start")} prefix={tr("Start")} />
+                <NumberInput value={c.out} min={c.in + 0.1} max={m?.duration ?? c.out} step={0.1} onChange={(v) => upd({ out: v })} label={tr("End")} prefix={tr("End")} />
               </div>
-              <p className="mt-1 text-xs text-ink-3">Plays for {formatTime(d)}</p>
+              <p className="mt-1 text-xs text-ink-3">{tr("Plays for")}{' '}{formatTime(d)}</p>
             </Field>
-            <Field label="Speed">
+            <Field label={tr("Speed")}>
               <div className="flex flex-wrap gap-1">
                 {SPEEDS.map((s) => (
                   <button key={s} onClick={() => upd({ speed: s })} className={clsx('rounded-md border px-2 py-1 font-mono text-xs', c.speed === s ? 'border-workshop bg-workshop-dim text-workshop' : 'border-line hover:border-ink')}>
@@ -78,28 +79,28 @@ export default function Inspector({ project, selection, onTimeline, onProject, o
                 ))}
               </div>
             </Field>
-            <Field label="Sound">
+            <Field label={tr("Sound")}>
               {m?.hasAudio ? (
                 <>
                   <label className="flex cursor-pointer items-center gap-2 text-sm">
                     <input type="checkbox" checked={c.muted} onChange={(e) => upd({ muted: e.target.checked })} className="accent-[var(--color-workshop)]" />
-                    Remove audio from this clip
+                    {tr("Remove audio from this clip")}
                   </label>
                   {!c.muted && (
-                    <Slider label="Volume" value={c.volume} min={0} max={2} step={0.05} format={(v) => `${Math.round(v * 100)}%`} onChange={(v, commit) => upd({ volume: v }, commit)} />
+                    <Slider label={tr("Volume")} value={c.volume} min={0} max={2} step={0.05} format={(v) => `${Math.round(v * 100)}%`} onChange={(v, commit) => upd({ volume: v }, commit)} />
                   )}
                 </>
               ) : (
-                <p className="text-xs text-ink-3">This video has no sound.</p>
+                <p className="text-xs text-ink-3">{tr("This video has no sound.")}</p>
               )}
             </Field>
           </>
         )}
-        <Field label="Fill the frame">
+        <Field label={tr("Fill the frame")}>
           <div className="grid grid-cols-2 gap-1.5">
             {(['contain', 'cover'] as const).map((f) => (
               <button key={f} onClick={() => upd({ fit: f })} className={clsx('rounded-md border px-2 py-1.5 text-xs', c.fit === f ? 'border-workshop bg-workshop-dim text-workshop' : 'border-line hover:border-ink')}>
-                {f === 'contain' ? 'Show all (bars)' : 'Fill (crop edges)'}
+                {f === 'contain' ? tr("Show all (bars)") : tr("Fill (crop edges)")}
               </button>
             ))}
           </div>
@@ -116,18 +117,18 @@ export default function Inspector({ project, selection, onTimeline, onProject, o
     const upd = (patch: Partial<AudioClip>, commit = true) => onTimeline({ ...tl, audio: set(tl.audio, patch) }, commit);
     const d = audioDuration(c);
     return (
-      <Panel title="Music or sound" subtitle={m?.name} onDelete={onDelete}>
-        <Field label="Starts at (seconds)">
-          <NumberInput value={c.start} min={0} max={36000} step={0.1} onChange={(v) => upd({ start: v })} label="Starts at" />
+      <Panel title={tr("Music or sound")} subtitle={m?.name} onDelete={onDelete}>
+        <Field label={tr("Starts at (seconds)")}>
+          <NumberInput value={c.start} min={0} max={36000} step={0.1} onChange={(v) => upd({ start: v })} label={tr("Starts at")} />
         </Field>
-        <Field label="Trim (seconds in the original)">
+        <Field label={tr("Trim (seconds in the original)")}>
           <div className="grid grid-cols-2 gap-2">
-            <NumberInput value={c.in} min={0} max={c.out - 0.1} step={0.1} onChange={(v) => upd({ in: v })} label="Start" prefix="Start" />
-            <NumberInput value={c.out} min={c.in + 0.1} max={m?.duration ?? c.out} step={0.1} onChange={(v) => upd({ out: v })} label="End" prefix="End" />
+            <NumberInput value={c.in} min={0} max={c.out - 0.1} step={0.1} onChange={(v) => upd({ in: v })} label={tr("Start")} prefix={tr("Start")} />
+            <NumberInput value={c.out} min={c.in + 0.1} max={m?.duration ?? c.out} step={0.1} onChange={(v) => upd({ out: v })} label={tr("End")} prefix={tr("End")} />
           </div>
-          <p className="mt-1 text-xs text-ink-3">Plays for {formatTime(d)}</p>
+          <p className="mt-1 text-xs text-ink-3">{tr("Plays for")}{' '}{formatTime(d)}</p>
         </Field>
-        <Slider label="Volume" value={c.volume} min={0} max={2} step={0.05} format={(v) => `${Math.round(v * 100)}%`} onChange={(v, commit) => upd({ volume: v }, commit)} />
+        <Slider label={tr("Volume")} value={c.volume} min={0} max={2} step={0.05} format={(v) => `${Math.round(v * 100)}%`} onChange={(v, commit) => upd({ volume: v }, commit)} />
         <Fades fadeIn={c.fadeIn} fadeOut={c.fadeOut} max={d / 2} onChange={(p, commit) => upd(p, commit)} />
       </Panel>
     );
@@ -137,8 +138,8 @@ export default function Inspector({ project, selection, onTimeline, onProject, o
   if (!c) return null;
   const upd = (patch: Partial<TextClip>, commit = true) => onTimeline({ ...tl, text: set(tl.text, patch) }, commit);
   return (
-    <Panel title="Text" onDelete={onDelete}>
-      <Field label="Text">
+    <Panel title={tr("Text")} onDelete={onDelete}>
+      <Field label={tr("Text")}>
         <textarea
           value={c.text}
           onChange={(e) => upd({ text: e.target.value }, false)}
@@ -146,38 +147,38 @@ export default function Inspector({ project, selection, onTimeline, onProject, o
           rows={3}
           dir="auto"
           className="w-full resize-y rounded-md border border-line bg-paper px-2 py-1.5 text-sm"
-          aria-label="Text"
+          aria-label={tr("Text")}
         />
       </Field>
       <div className="grid grid-cols-2 gap-2">
-        <Field label="Starts at">
-          <NumberInput value={c.start} min={0} max={36000} step={0.1} onChange={(v) => upd({ start: v })} label="Text starts at" />
+        <Field label={tr("Starts at")}>
+          <NumberInput value={c.start} min={0} max={36000} step={0.1} onChange={(v) => upd({ start: v })} label={tr("Text starts at")} />
         </Field>
-        <Field label="Duration">
-          <NumberInput value={c.duration} min={0.1} max={36000} step={0.1} onChange={(v) => upd({ duration: v })} label="Text duration" />
+        <Field label={tr("Duration")}>
+          <NumberInput value={c.duration} min={0.1} max={36000} step={0.1} onChange={(v) => upd({ duration: v })} label={tr("Text duration")} />
         </Field>
       </div>
-      <Field label="Position">
+      <Field label={tr("Position")}>
         <div className="grid grid-cols-3 gap-1.5">
           {(['top', 'center', 'bottom'] as const).map((p) => (
             <button key={p} onClick={() => upd({ position: p })} className={clsx('rounded-md border px-2 py-1.5 text-xs capitalize', c.position === p ? 'border-workshop bg-workshop-dim text-workshop' : 'border-line hover:border-ink')}>
-              {p === 'center' ? 'Middle' : p}
+              {p === 'center' ? tr("Middle") : p}
             </button>
           ))}
         </div>
       </Field>
-      <Slider label="Size" value={c.size} min={0.03} max={0.2} step={0.005} format={(v) => `${Math.round(v * 100)}`} onChange={(v, commit) => upd({ size: v }, commit)} />
-      <Field label="Colour">
+      <Slider label={tr("Size")} value={c.size} min={0.03} max={0.2} step={0.005} format={(v) => `${Math.round(v * 100)}`} onChange={(v, commit) => upd({ size: v }, commit)} />
+      <Field label={tr("Colour")}>
         <div className="flex items-center gap-2">
           {['#ffffff', '#111111', '#facc15', '#f87171', '#60a5fa', '#4ade80'].map((col) => (
-            <button key={col} onClick={() => upd({ color: col })} aria-label={`Colour ${col}`} className={clsx('h-6 w-6 rounded-full border', c.color === col ? 'ring-2 ring-workshop ring-offset-1 ring-offset-paper' : 'border-line')} style={{ background: col }} />
+            <button key={col} onClick={() => upd({ color: col })} aria-label={tr("Colour {0}", { 0: col })} className={clsx('h-6 w-6 rounded-full border', c.color === col ? 'ring-2 ring-workshop ring-offset-1 ring-offset-paper' : 'border-line')} style={{ background: col }} />
           ))}
-          <input type="color" value={c.color} onChange={(e) => upd({ color: e.target.value })} className="h-6 w-8 cursor-pointer rounded border border-line bg-transparent" aria-label="Custom colour" />
+          <input type="color" value={c.color} onChange={(e) => upd({ color: e.target.value })} className="h-6 w-8 cursor-pointer rounded border border-line bg-transparent" aria-label={tr("Custom colour")} />
         </div>
       </Field>
       <label className="flex cursor-pointer items-center gap-2 text-sm">
         <input type="checkbox" checked={c.box} onChange={(e) => upd({ box: e.target.checked })} className="accent-[var(--color-workshop)]" />
-        Dark box behind the text
+        {tr("Dark box behind the text")}
       </label>
       <Fades fadeIn={c.fadeIn} fadeOut={c.fadeOut} max={c.duration / 2} onChange={(p, commit) => upd(p, commit)} />
     </Panel>
@@ -194,7 +195,7 @@ function Panel({ title, subtitle, onDelete, children }: { title: string; subtitl
         </div>
         {onDelete && (
           <button onClick={onDelete} className="shrink-0 rounded-md border border-line px-2 py-1 text-xs text-ink-2 hover:border-warn hover:text-warn">
-            Delete
+            {tr("Delete")}
           </button>
         )}
       </div>
@@ -261,8 +262,8 @@ function Fades({ fadeIn, fadeOut, max, onChange }: { fadeIn: number; fadeOut: nu
   if (m <= 0) return null;
   return (
     <div className="grid gap-2">
-      <Slider label="Fade in" value={Math.min(fadeIn, m)} min={0} max={m} step={0.1} format={(v) => `${v.toFixed(1)}s`} onChange={(v, c) => onChange({ fadeIn: v }, c)} />
-      <Slider label="Fade out" value={Math.min(fadeOut, m)} min={0} max={m} step={0.1} format={(v) => `${v.toFixed(1)}s`} onChange={(v, c) => onChange({ fadeOut: v }, c)} />
+      <Slider label={tr("Fade in")} value={Math.min(fadeIn, m)} min={0} max={m} step={0.1} format={(v) => `${v.toFixed(1)}s`} onChange={(v, c) => onChange({ fadeIn: v }, c)} />
+      <Slider label={tr("Fade out")} value={Math.min(fadeOut, m)} min={0} max={m} step={0.1} format={(v) => `${v.toFixed(1)}s`} onChange={(v, c) => onChange({ fadeOut: v }, c)} />
     </div>
   );
 }

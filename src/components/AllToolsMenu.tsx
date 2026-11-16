@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { actionMeta, categories, toolsForCategory } from '../lib/toolRegistry';
 import { ActionIcon } from '../lib/actionIcons';
 import { CategoryIcon } from '../lib/categoryIcons';
+import { tr } from '../lib/i18n';
 
 /**
  * The header's single navigation entry: every category with its tools, the
@@ -34,13 +35,13 @@ export default function AllToolsMenu() {
         onClick={() => setOpen((o) => !o)}
         aria-haspopup="true"
         aria-expanded={open}
-        aria-label="All tools"
+        aria-label={tr('All tools')}
         className={`flex h-9 items-center gap-1.5 rounded-md border px-2.5 text-sm font-medium transition-colors sm:px-3 ${open ? 'border-line bg-paper-dim text-ink' : 'border-transparent text-ink-2 hover:bg-paper-dim hover:text-ink'}`}
       >
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true" className="sm:hidden">
           <path d="M4 7h16M4 12h16M4 17h16" />
         </svg>
-        <span className="hidden sm:inline">All tools</span>
+        <span className="hidden sm:inline">{tr('All tools')}</span>
         <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" aria-hidden="true" className={`hidden transition-transform sm:block ${open ? 'rotate-180' : ''}`}>
           <path d="M6 9l6 6 6-6" />
         </svg>
@@ -49,7 +50,7 @@ export default function AllToolsMenu() {
       {open && (
         <div
           role="menu"
-          aria-label="All tools"
+          aria-label={tr('All tools')}
           onClick={(e) => {
             if ((e.target as HTMLElement).closest('a')) setOpen(false);
           }}
@@ -62,7 +63,7 @@ export default function AllToolsMenu() {
                 <div key={c.slug} className="min-w-0">
                   <Link role="menuitem" to={`/tools/${c.slug}`} className="flex items-center gap-2 font-display text-sm font-semibold hover:text-workshop">
                     <CategoryIcon category={c.slug} size={26} />
-                    {c.name}
+                    {tr(c.name)}
                     <span className="ms-auto font-mono text-[11px] font-normal text-ink-3">{list.length}</span>
                   </Link>
                   <ul className="mt-2 grid gap-0.5">
@@ -73,7 +74,7 @@ export default function AllToolsMenu() {
                           to={`/tools/${t.category}/${t.slug}`}
                           className="block truncate rounded-md px-2 py-1.5 text-sm text-ink-2 hover:bg-paper-dim hover:text-ink"
                         >
-                          {t.name}
+                          {tr(t.name)}
                         </Link>
                       </li>
                     ))}
@@ -82,13 +83,13 @@ export default function AllToolsMenu() {
               );
             })}
             <div className="min-w-0">
-              <p className="font-display text-sm font-semibold">By action</p>
+              <p className="font-display text-sm font-semibold">{tr('By action')}</p>
               <ul className="mt-2 grid gap-0.5">
                 {actionMeta.map((a) => (
                   <li key={a.value}>
                     <Link role="menuitem" to={`/${a.value}`} className="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm text-ink-2 hover:bg-paper-dim hover:text-ink">
                       <ActionIcon action={a.value} className="shrink-0 text-workshop" />
-                      {a.label}
+                      {tr(a.label)}
                     </Link>
                   </li>
                 ))}
@@ -97,7 +98,7 @@ export default function AllToolsMenu() {
           </div>
           <div className="border-t border-line px-5 py-3">
             <Link role="menuitem" to="/tools" className="text-sm font-medium text-workshop hover:underline">
-              See every tool on one page →
+              {tr('See every tool on one page →')}
             </Link>
           </div>
         </div>

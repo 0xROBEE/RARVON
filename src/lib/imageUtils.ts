@@ -1,9 +1,10 @@
+import { tr } from './i18n';
 export function loadImage(file: File): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {
     const url = URL.createObjectURL(file);
     const img = new Image();
     img.onload = () => resolve(img);
-    img.onerror = () => reject(new Error('Could not read this image.'));
+    img.onerror = () => reject(new Error(tr("Could not read this image.")));
     img.src = url;
   });
 }
@@ -11,7 +12,7 @@ export function loadImage(file: File): Promise<HTMLImageElement> {
 export function canvasToBlob(canvas: HTMLCanvasElement, type: string, quality?: number): Promise<Blob> {
   return new Promise((resolve, reject) => {
     canvas.toBlob(
-      (blob) => (blob ? resolve(blob) : reject(new Error('Could not export this image.'))),
+      (blob) => (blob ? resolve(blob) : reject(new Error(tr("Could not export this image.")))),
       type,
       quality,
     );

@@ -8,6 +8,7 @@ import { formatBytes } from '../../../lib/imageUtils';
 import { probeVideo, runVideoConversion, checkFileSize, compressionBitrates, VideoCancelledError } from '../../../lib/videoEngine';
 import type { VideoInfo } from '../../../lib/videoEngine';
 import { ActionBar, OptionCards, ResultCard, SizeDelta } from '../../../components/tool';
+import { tr } from '../../../lib/i18n';
 
 type Level = 'high' | 'medium' | 'low';
 const LEVELS: { value: Level; label: string; hint: string }[] = [
@@ -93,38 +94,37 @@ export default function VideoCompressTool() {
   return (
     <div className="space-y-4">
       {!file ? (
-        <FileDropzone accept="video/mp4,video/webm,video/quicktime,video/x-matroska,.mkv,.mov" onFiles={handleFile} hint="MP4, MOV, WebM or MKV, up to 250MB" />
+        <FileDropzone accept="video/mp4,video/webm,video/quicktime,video/x-matroska,.mkv,.mov" onFiles={handleFile} hint={tr("MP4, MOV, WebM or MKV, up to 250MB")} />
       ) : (
         <div className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-line bg-paper-dim p-3 text-sm">
           <span className="truncate">
             {file.name} · {formatBytes(file.size)}
             {info && ` · ${info.width}×${info.height} · ${formatDuration(info.durationSec)}`}
           </span>
-          <button onClick={() => { abortRef.current?.abort(); setFile(null); setInfo(null); setResult(null); }} className="text-xs font-medium text-workshop hover:underline">Remove</button>
+          <button onClick={() => { abortRef.current?.abort(); setFile(null); setInfo(null); setResult(null); }} className="text-xs font-medium text-workshop hover:underline">{tr("Remove")}</button>
         </div>
       )}
 
       {info && (
         <>
-          <OptionCards legend="Compression" name="video-quality" disabled={busy} value={level} onChange={setLevel} options={LEVELS.map((l) => ({ value: l.value, label: l.label, hint: l.hint }))} />
+          <OptionCards legend={tr("Compression")} name="video-quality" disabled={busy} value={level} onChange={setLevel} options={LEVELS.map((l) => ({ value: l.value, label: l.label, hint: l.hint }))} />
           <label className="flex flex-wrap items-center gap-2 text-xs text-ink-2">
-            Maximum resolution
+            {tr("Maximum resolution")}
             <select value={maxHeight} disabled={busy} onChange={(e) => setMaxHeight(Number(e.target.value))} className="rounded-md border border-line bg-paper px-2 py-1 text-xs text-ink">
               {MAX_HEIGHTS.filter((h) => h === 0 || h < shortSide).map((h) => (
-                <option key={h} value={h}>{h === 0 ? `Keep ${info.width}×${info.height}` : `${h}p`}</option>
+                <option key={h} value={h}>{h === 0 ? tr("Keep {0}×{1}", { 0: info.width, 1: info.height }) : `${h}p`}</option>
               ))}
             </select>
             {resize && <span>→ {resize.width}×{resize.height}</span>}
           </label>
           <p className="text-xs text-ink-3">
-            Estimated result: about {formatBytes(estimate)} (now {formatBytes(file!.size)}). Re-encoding uses your device’s video
-            encoder and takes a while for long videos.
+            {tr("Estimated result: about")}{' '}{formatBytes(estimate)}{' '}{tr("(now")}{' '}{formatBytes(file!.size)}{tr("). Re-encoding uses your device’s video encoder and takes a while for long videos.")}
           </p>
           <ActionBar>
-            <Button onClick={compress} disabled={busy}>{busy ? 'Compressing…' : 'Compress video'}</Button>
-            {busy && <Button variant="secondary" onClick={() => abortRef.current?.abort()}>Cancel</Button>}
+            <Button onClick={compress} disabled={busy}>{busy ? tr("Compressing…") : tr("Compress video")}</Button>
+            {busy && <Button variant="secondary" onClick={() => abortRef.current?.abort()}>{tr("Cancel")}</Button>}
           </ActionBar>
-          {busy && <ProgressBar value={progress * 100} label={`Re-encoding… ${Math.round(progress * 100)}%`} />}
+          {busy && <ProgressBar value={progress * 100} label={tr("Re-encoding… {0}%", { 0: Math.round(progress * 100) })} />}
         </>
       )}
 
@@ -137,8 +137,7 @@ export default function VideoCompressTool() {
           </ResultCard>
         ) : (
           <ErrorMessage>
-            This video is already efficiently compressed — the re-encoded file came out {formatBytes(result.size)}, not smaller than the
-            original {formatBytes(file.size)}. Keep your original, or try “Strong” compression or a lower maximum resolution.
+            {tr("This video is already efficiently compressed — the re-encoded file came out")}{' '}{formatBytes(result.size)}{tr(", not smaller than the original")}{' '}{formatBytes(file.size)}{tr(". Keep your original, or try “Strong” compression or a lower maximum resolution.")}
           </ErrorMessage>
         )
       )}

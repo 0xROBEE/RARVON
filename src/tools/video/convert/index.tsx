@@ -8,6 +8,7 @@ import { formatBytes } from '../../../lib/imageUtils';
 import { VideoCancelledError, probeVideo, runVideoConversion, checkFileSize, detectVideoCapabilities, videoCodecFor } from '../../../lib/videoEngine';
 import type { VideoInfo, OutputContainer, VideoCapabilities } from '../../../lib/videoEngine';
 import { ResultCard } from '../../../components/tool';
+import { tr } from '../../../lib/i18n';
 
 export default function VideoConvertTool() {
   const [caps, setCaps] = useState<VideoCapabilities | null>(null);
@@ -74,14 +75,14 @@ export default function VideoConvertTool() {
   return (
     <div className="space-y-4">
       {!file ? (
-        <FileDropzone accept="video/mp4,video/webm,video/quicktime,video/x-matroska,.mkv,.mov" onFiles={handleFile} hint="MP4, MOV, WebM or MKV, up to 250MB" />
+        <FileDropzone accept="video/mp4,video/webm,video/quicktime,video/x-matroska,.mkv,.mov" onFiles={handleFile} hint={tr("MP4, MOV, WebM or MKV, up to 250MB")} />
       ) : (
         <div className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-line bg-paper-dim p-3 text-sm">
           <span className="truncate">
             {file.name} · {formatBytes(file.size)}
             {info && ` · ${info.sourceFormat.toUpperCase()} · ${formatDuration(info.durationSec)}`}
           </span>
-          <button onClick={() => { setFile(null); setInfo(null); setResult(null); }} className="text-xs font-medium text-workshop hover:underline">Remove</button>
+          <button onClick={() => { setFile(null); setInfo(null); setResult(null); }} className="text-xs font-medium text-workshop hover:underline">{tr("Remove")}</button>
         </div>
       )}
 
@@ -100,11 +101,11 @@ export default function VideoConvertTool() {
             ))}
           </div>
           {caps && !targetSupported && (
-            <ErrorMessage>This browser can't encode {target === 'mp4' ? 'H.264' : 'VP9'} video, so converting to {target.toUpperCase()} isn't available here. Try a recent version of Chrome, Edge, or Firefox.</ErrorMessage>
+            <ErrorMessage>{tr("This browser can't encode")}{' '}{target === 'mp4' ? 'H.264' : tr("VP9")}{' '}{tr("video, so converting to")}{' '}{target.toUpperCase()}{' '}{tr("isn't available here. Try a recent version of Chrome, Edge, or Firefox.")}</ErrorMessage>
           )}
-          <Button onClick={convert} disabled={busy || !targetSupported}>{busy ? 'Converting…' : `Convert to ${target.toUpperCase()}`}</Button>
-          {busy && <Button variant="secondary" onClick={() => abortRef.current?.abort()}>Cancel</Button>}
-          {busy && <ProgressBar value={progress * 100} label="Converting" />}
+          <Button onClick={convert} disabled={busy || !targetSupported}>{busy ? tr("Converting…") : tr("Convert to {0}", { 0: target.toUpperCase() })}</Button>
+          {busy && <Button variant="secondary" onClick={() => abortRef.current?.abort()}>{tr("Cancel")}</Button>}
+          {busy && <ProgressBar value={progress * 100} label={tr("Converting")} />}
         </>
       )}
 

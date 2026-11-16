@@ -7,6 +7,7 @@ import ErrorMessage from '../../../components/ErrorMessage';
 import { getPdfPageCount } from '../../../lib/pdfjs';
 import { parsePageRange } from '../../../lib/pageRange';
 import { ResultCard, ActionBar } from '../../../components/tool';
+import { tr } from '../../../lib/i18n';
 
 export default function SplitPdf() {
   const [file, setFile] = useState<File | null>(null);
@@ -30,7 +31,7 @@ export default function SplitPdf() {
       setFile(f);
     } catch {
       setFile(null);
-      setError('Could not read this PDF. Make sure it is a valid, unencrypted PDF file.');
+      setError(tr("Could not read this PDF. Make sure it is a valid, unencrypted PDF file."));
     }
   }
 
@@ -46,7 +47,7 @@ export default function SplitPdf() {
 
       if (mode === 'range') {
         const pages = parsePageRange(range, pageCount);
-        if (!pages.length) throw new Error('No valid pages in that range.');
+        if (!pages.length) throw new Error(tr("No valid pages in that range."));
         const outDoc = await PDFDocument.create();
         const copied = await outDoc.copyPages(srcDoc, pages.map((p) => p - 1));
         copied.forEach((p) => outDoc.addPage(p));
@@ -78,8 +79,8 @@ export default function SplitPdf() {
         <FileDropzone accept="application/pdf" onFiles={handleFile} />
       ) : (
         <div className="flex items-center justify-between rounded-md border border-line bg-paper-dim p-3 text-sm">
-          <span className="truncate">{file.name} · {pageCount} page{pageCount !== 1 ? 's' : ''}</span>
-          <button onClick={() => { setFile(null); setResult(null); }} className="text-xs font-medium text-workshop hover:underline">Remove</button>
+          <span className="truncate">{file.name} · {tr(pageCount === 1 ? '{n} page' : '{n} pages', { n: pageCount })}</span>
+          <button onClick={() => { setFile(null); setResult(null); }} className="text-xs font-medium text-workshop hover:underline">{tr("Remove")}</button>
         </div>
       )}
 
@@ -87,19 +88,19 @@ export default function SplitPdf() {
         <>
           <div className="flex gap-1 rounded-md border border-line bg-paper-dim p-1 text-xs font-medium">
             <button onClick={() => setMode('each')} className={`flex-1 rounded px-3 py-1.5 ${mode === 'each' ? 'bg-ink text-paper' : 'text-ink-2'}`}>
-              Every page as its own file
+              {tr("Every page as its own file")}
             </button>
             <button onClick={() => setMode('range')} className={`flex-1 rounded px-3 py-1.5 ${mode === 'range' ? 'bg-ink text-paper' : 'text-ink-2'}`}>
-              A page range
+              {tr("A page range")}
             </button>
           </div>
           {mode === 'range' && (
             <label className="block text-xs text-ink-2">
-              Pages (e.g. 1-3, 5)
+              {tr("Pages (e.g. 1-3, 5)")}
               <input value={range} onChange={(e) => setRange(e.target.value)} className="mt-1 block w-full rounded-md border border-line bg-paper px-3 py-2 text-sm" />
             </label>
           )}
-          <ActionBar><Button onClick={split} disabled={busy}>{busy ? 'Splitting…' : 'Split PDF'}</Button></ActionBar>
+          <ActionBar><Button onClick={split} disabled={busy}>{busy ? tr("Splitting…") : tr("Split PDF")}</Button></ActionBar>
         </>
       )}
       {error && <ErrorMessage>{error}</ErrorMessage>}

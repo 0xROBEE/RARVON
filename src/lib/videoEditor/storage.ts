@@ -1,4 +1,5 @@
 import type { Project } from './types';
+import { tr } from '../i18n';
 
 /**
  * Where Video Editor projects live.
@@ -246,10 +247,10 @@ export async function readProjectFile(file: File): Promise<{ project: Project; f
   try {
     zip = await JSZip.loadAsync(file);
   } catch {
-    throw new Error(`This isn't a Bench project file. Project files end in ${PROJECT_EXT}.`);
+    throw new Error(tr("This isn't a Bench project file. Project files end in {0}.", { 0: PROJECT_EXT }));
   }
   const json = zip.file('project.json');
-  if (!json) throw new Error(`This isn't a Bench project file. Project files end in ${PROJECT_EXT}.`);
+  if (!json) throw new Error(tr("This isn't a Bench project file. Project files end in {0}.", { 0: PROJECT_EXT }));
   const project = JSON.parse(await json.async('string')) as Project;
   validate(project);
   const files = new Map<string, File>();
@@ -262,7 +263,7 @@ export async function readProjectFile(file: File): Promise<{ project: Project; f
 
 function validate(p: Project) {
   if (!p || p.version !== 1 || !p.timeline || !Array.isArray(p.media)) {
-    throw new Error('This project was made with a newer or unknown version of the editor.');
+    throw new Error(tr("This project was made with a newer or unknown version of the editor."));
   }
 }
 

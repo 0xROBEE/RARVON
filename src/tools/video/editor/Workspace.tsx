@@ -19,6 +19,8 @@ import MediaBin from './MediaBin';
 import { ChoiceButton, ICONS, Modal } from './dialogs';
 import { handoff } from './openLock';
 import ThemeToggle from '../../../components/ThemeToggle';
+import LanguageToggle from '../../../components/LanguageToggle';
+import { tr } from '../../../lib/i18n';
 
 const HOME = '/tools/video/editor';
 
@@ -38,7 +40,7 @@ export default function Workspace() {
   const navigate = useNavigate();
   const ed = useEditor(id);
   const { project } = ed;
-  usePageMeta(project ? `${project.name} · Video Editor` : 'Video Editor', 'Simple video editor that runs in your browser.');
+  usePageMeta(project ? `${project.name} · ${tr('Video Editor')}` : tr('Video Editor'), tr('Cut, join and caption videos on a simple timeline.'));
 
   const [time, setTime] = useState(0);
   const [playing, setPlaying] = useState(false);
@@ -201,7 +203,7 @@ export default function Workspace() {
 
   const saveAndLeave = async () => {
     const p = ed.current()!;
-    setBusy('Saving…');
+    setBusy(tr("Saving…"));
     const next = { ...p, browserSave: true, pendingChoice: false };
     ed.update(() => next, { edit: false });
     await ed.flush(next);
@@ -210,7 +212,7 @@ export default function Workspace() {
 
   const keepFolderAndLeave = async () => {
     const p = ed.current()!;
-    setBusy('Saving…');
+    setBusy(tr("Saving…"));
     const next = { ...p, pendingChoice: false };
     await ed.flush(next);
     if (!p.browserSave) await deleteProject(p.id);
@@ -219,9 +221,9 @@ export default function Workspace() {
 
   const downloadProjectFile = async (thenLeave: boolean) => {
     const p = ed.current()!;
-    setBusy('Preparing the project file… 0%');
+    setBusy(tr("Preparing the project file… 0%"));
     try {
-      const blob = await projectFileBlob(p, ed.files, (f) => setBusy(`Preparing the project file… ${Math.round(f * 100)}%`));
+      const blob = await projectFileBlob(p, ed.files, (f) => setBusy(tr("Preparing the project file… {0}%", { 0: Math.round(f * 100) })));
       downloadBlob(blob, safeFileName(p.name) + PROJECT_EXT);
       if (thenLeave) {
         if (p.browserSave) {
@@ -239,7 +241,7 @@ export default function Workspace() {
 
   const discard = async () => {
     const p = ed.current()!;
-    setBusy('Deleting…');
+    setBusy(tr("Deleting…"));
     await deleteProject(p.id);
     leave();
   };
@@ -249,20 +251,23 @@ export default function Workspace() {
       <div className="grid min-h-screen place-items-center bg-paper p-6 text-center">
         <div>
           <p className="text-sm text-ink-2">{ed.loadError}</p>
-          <Link to={HOME} className="mt-4 inline-block rounded-md bg-ink px-4 py-2 text-sm font-medium text-paper">Back to your projects</Link>
+          <Link to={HOME} className="mt-4 inline-block rounded-md bg-ink px-4 py-2 text-sm font-medium text-paper">{tr("Back to your projects")}</Link>
         </div>
       </div>
     );
   }
   if (!project) {
-    return <div className="grid min-h-screen place-items-center bg-paper text-sm text-ink-3">Opening project…</div>;
+    return <div className="grid min-h-screen place-items-center bg-paper text-sm text-ink-3">{tr("Opening project…")}</div>;
   }
 
   const saveLabel = (() => {
-    if (ed.saveStatus === 'saving') return 'Saving…';
-    if (ed.saveStatus === 'error') return 'Couldn’t save';
-    const where = [project.browserSave && 'this browser', project.folderSave && ed.folderStatus === 'ok' && 'your folder'].filter(Boolean);
-    return where.length ? `Saved to ${where.join(' and ')}` : 'Not saved yet';
+    if (ed.saveStatus === 'saving') return tr('Saving…');
+    if (ed.saveStatus === 'error') return tr('Couldn’t save');
+    const inBrowser = project.browserSave;
+    const inFolder = project.folderSave && ed.folderStatus === 'ok';
+    if (inBrowser && inFolder) return tr('Saved to this browser and your folder');
+    if (inBrowser) return tr('Saved to this browser');
+    return inFolder ? tr('Saved to your folder') : tr('Not saved yet');
   })();
 
   return (
@@ -270,8 +275,8 @@ export default function Workspace() {
       {/* Top bar */}
       <header className="flex h-12 shrink-0 items-center gap-2 border-b border-line bg-elevated px-3">
         <button onClick={() => void requestExit()} className="inline-flex items-center gap-1 rounded-md px-2 py-1.5 text-sm font-medium text-ink-2 hover:bg-paper-dim hover:text-ink">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d={ICONS.back} /></svg>
-          Exit
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" className="rtl:-scale-x-100"><path d={ICONS.back} /></svg>
+          {tr("Exit")}
         </button>
         <span className="h-5 w-px bg-line" aria-hidden="true" />
         <h1 className="min-w-0 truncate font-display text-sm font-semibold">{project.name}</h1>
@@ -281,18 +286,19 @@ export default function Workspace() {
         </span>
         {project.folderSave && ed.folderStatus !== 'ok' && (
           <button onClick={() => void ed.connectFolder(false)} className="rounded-md border border-warn/50 px-2 py-1 text-xs text-warn hover:bg-warn-dim">
-            Reconnect folder
+            {tr("Reconnect folder")}
           </button>
         )}
         <div className="ms-auto flex items-center gap-2">
+          <LanguageToggle compact />
           <ThemeToggle />
           <button
             onClick={() => void downloadProjectFile(false)}
             className="hidden items-center gap-1.5 rounded-md border border-line px-2.5 py-1.5 text-xs font-medium hover:border-ink sm:inline-flex"
-            title="Download a project file you can open again later"
+            title={tr("Download a project file you can open again later")}
           >
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d={ICONS.download} /></svg>
-            Project file
+            {tr("Project file")}
           </button>
           <button
             onClick={() => {
@@ -302,14 +308,14 @@ export default function Workspace() {
             disabled={total <= 0}
             className="inline-flex items-center gap-1.5 rounded-md bg-workshop px-3 py-1.5 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-40"
           >
-            Export
+            {tr("Export")}
           </button>
         </div>
       </header>
 
       {/* Media | Preview | Settings */}
       <div className="min-h-0 flex-1 max-lg:contents lg:grid lg:grid-cols-[260px_minmax(0,1fr)_300px]">
-        <aside className="order-3 min-h-0 border-line bg-elevated lg:order-none lg:border-e" aria-label="Media">
+        <aside className="order-3 min-h-0 border-line bg-elevated lg:order-none lg:border-e" aria-label={tr("Media")}>
           <MediaBin
             project={project}
             importing={ed.importing}
@@ -326,19 +332,19 @@ export default function Workspace() {
           />
         </aside>
 
-        <section className="flex min-h-[260px] flex-col bg-paper-dim max-lg:order-1" aria-label="Preview">
+        <section className="flex min-h-[260px] flex-col bg-paper-dim max-lg:order-1" aria-label={tr("Preview")}>
           <div className="relative flex min-h-0 flex-1 items-center justify-center p-4">
             <Preview project={project} urls={ed.urls} time={time} playing={playing} onTime={setTime} onEnded={() => setPlaying(false)} />
           </div>
           <div className="flex items-center justify-center gap-3 border-t border-line bg-elevated px-3 py-2">
-            <button onClick={() => { setPlaying(false); setTime(0); }} className="grid h-8 w-8 place-items-center rounded-md text-ink-2 hover:bg-paper-dim" aria-label="Go to start">
+            <button onClick={() => { setPlaying(false); setTime(0); }} className="grid h-8 w-8 place-items-center rounded-md text-ink-2 hover:bg-paper-dim" aria-label={tr("Go to start")}>
               <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M6 5h2v14H6zM20 5v14L9 12z" /></svg>
             </button>
             <button
               onClick={() => setPlaying((p) => !p)}
               disabled={total <= 0}
               className="grid h-9 w-9 place-items-center rounded-full bg-ink text-paper hover:opacity-90 disabled:opacity-40"
-              aria-label={playing ? 'Pause' : 'Play'}
+              aria-label={playing ? tr("Pause") : tr("Play")}
             >
               {playing
                 ? <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M6 4h4v16H6zM14 4h4v16h-4z" /></svg>
@@ -348,7 +354,7 @@ export default function Workspace() {
           </div>
         </section>
 
-        <aside className="order-4 min-h-0 overflow-y-auto border-line bg-elevated lg:order-none lg:border-s" aria-label="Clip settings">
+        <aside className="order-4 min-h-0 overflow-y-auto border-line bg-elevated lg:order-none lg:border-s" aria-label={tr("Clip settings")}>
           <Inspector
             project={project}
             selection={selection}
@@ -361,20 +367,20 @@ export default function Workspace() {
 
       {/* Timeline */}
       <div className="order-2 shrink-0 border-t border-line bg-elevated">
-        <div className="flex flex-wrap items-center gap-1 border-b border-line px-2 py-1.5" role="toolbar" aria-label="Timeline tools">
-          <ToolButton label="Undo" shortcut="Ctrl+Z" onClick={ed.undo} disabled={!ed.canUndo} icon="M9 14L4 9l5-5M4 9h11a5 5 0 010 10h-3" />
-          <ToolButton label="Redo" shortcut="Ctrl+Shift+Z" onClick={ed.redo} disabled={!ed.canRedo} icon="M15 14l5-5-5-5M20 9H9a5 5 0 000 10h3" />
+        <div className="flex flex-wrap items-center gap-1 border-b border-line px-2 py-1.5" role="toolbar" aria-label={tr("Timeline tools")}>
+          <ToolButton label={tr("Undo")} shortcut="Ctrl+Z" onClick={ed.undo} disabled={!ed.canUndo} icon="M9 14L4 9l5-5M4 9h11a5 5 0 010 10h-3" />
+          <ToolButton label={tr("Redo")} shortcut="Ctrl+Shift+Z" onClick={ed.redo} disabled={!ed.canRedo} icon="M15 14l5-5-5-5M20 9H9a5 5 0 000 10h3" />
           <span className="mx-1 h-5 w-px bg-line" aria-hidden="true" />
-          <ToolButton label="Split" shortcut="S" onClick={split} disabled={total <= 0} icon="M12 3v18M7 8l-4 4 4 4M17 8l4 4-4 4" text />
-          <ToolButton label="Delete" shortcut="Del" onClick={del} disabled={!selection} icon={ICONS.trash} text />
-          <ToolButton label="Add text" onClick={addText} icon="M5 6V4h14v2M12 4v16M9 20h6" text />
+          <ToolButton label={tr("Split")} shortcut="S" onClick={split} disabled={total <= 0} icon="M12 3v18M7 8l-4 4 4 4M17 8l4 4-4 4" text />
+          <ToolButton label={tr("Delete")} shortcut="Del" onClick={del} disabled={!selection} icon={ICONS.trash} text />
+          <ToolButton label={tr("Add text")} onClick={addText} icon="M5 6V4h14v2M12 4v16M9 20h6" text />
           {selection?.kind === 'video' && (() => {
             const c = project.timeline.video.find((x) => x.id === selection.id);
             const m = c && project.media.find((x) => x.id === c.mediaId);
             if (!c || m?.type !== 'video' || !m.hasAudio) return null;
             return (
               <ToolButton
-                label={c.muted ? 'Restore audio' : 'Remove audio'}
+                label={c.muted ? tr("Restore audio") : tr("Remove audio")}
                 onClick={() => ed.setTimeline({ ...project.timeline, video: project.timeline.video.map((x) => (x.id === c.id ? { ...x, muted: !x.muted } : x)) })}
                 icon={c.muted ? 'M11 5L6 9H3v6h3l5 4zM15.5 8.5a5 5 0 010 7M18.5 5.5a9 9 0 010 13' : 'M11 5L6 9H3v6h3l5 4zM22 9l-6 6M16 9l6 6'}
                 text
@@ -383,8 +389,8 @@ export default function Workspace() {
           })()}
           <div className="ms-auto flex items-center gap-2">
             <label className="flex items-center gap-2 text-xs text-ink-3">
-              <span className="hidden sm:inline">Zoom</span>
-              <input type="range" min={8} max={240} value={pps} onChange={(e) => setPps(Number(e.target.value))} className="w-24 accent-[var(--color-workshop)]" aria-label="Timeline zoom" />
+              <span className="hidden sm:inline">{tr("Zoom")}</span>
+              <input type="range" min={8} max={240} value={pps} onChange={(e) => setPps(Number(e.target.value))} className="w-24 accent-[var(--color-workshop)]" aria-label={tr("Timeline zoom")} />
             </label>
           </div>
         </div>
@@ -409,37 +415,37 @@ export default function Workspace() {
       </div>
 
       {exitOpen && (
-        <Modal title="Before you leave" locked labelledBy="exit-title">
+        <Modal title={tr("Before you leave")} locked labelledBy="exit-title">
           {busy ? (
             <p className="py-6 text-center text-sm text-ink-2" role="status">{busy}</p>
           ) : confirmDiscard ? (
             <div className="grid gap-4">
               <p className="text-sm text-ink-2">
-                Delete “{project.name}” and its media from this browser? This can’t be undone.
-                {project.folderSave && ' Files already in your folder stay there.'}
+                {tr("Delete “")}{project.name}{tr("” and its media from this browser? This can’t be undone.")}
+                {project.folderSave && tr(" Files already in your folder stay there.")}
               </p>
               <div className="flex justify-end gap-2">
-                <button onClick={() => setConfirmDiscard(false)} className="rounded-md border border-line px-4 py-2 text-sm hover:border-ink">Go back</button>
-                <button onClick={() => void discard()} className="rounded-md bg-warn px-4 py-2 text-sm font-semibold text-white hover:opacity-90">Discard project</button>
+                <button onClick={() => setConfirmDiscard(false)} className="rounded-md border border-line px-4 py-2 text-sm hover:border-ink">{tr("Go back")}</button>
+                <button onClick={() => void discard()} className="rounded-md bg-warn px-4 py-2 text-sm font-semibold text-white hover:opacity-90">{tr("Discard project")}</button>
               </div>
             </div>
           ) : (
             <div className="grid gap-2">
-              <p className="mb-2 text-sm text-ink-2">You changed this project. What should happen to it?</p>
+              <p className="mb-2 text-sm text-ink-2">{tr("You changed this project. What should happen to it?")}</p>
               <ChoiceButton
                 tone="primary"
                 icon={ICONS.save}
-                title={project.browserSave ? 'Keep it saved' : 'Save project'}
+                title={project.browserSave ? tr("Keep it saved") : tr("Save project")}
                 detail={project.browserSave ? 'It’s already auto-saved in this browser. Open it again from “Your projects”.' : 'Keep it in this browser so you can open it again from “Your projects”.'}
                 onClick={() => void saveAndLeave()}
               />
               {project.folderSave && ed.folderStatus === 'ok' && !project.browserSave && (
-                <ChoiceButton icon={ICONS.folder} title="Keep it in my folder" detail="Every change is already saved to the folder you picked." onClick={() => void keepFolderAndLeave()} />
+                <ChoiceButton icon={ICONS.folder} title={tr("Keep it in my folder")} detail="Every change is already saved to the folder you picked." onClick={() => void keepFolderAndLeave()} />
               )}
-              <ChoiceButton icon={ICONS.download} title="Download project file" detail={`A ${PROJECT_EXT} file with everything in it. Open it later in any browser.`} onClick={() => void downloadProjectFile(true)} />
+              <ChoiceButton icon={ICONS.download} title={tr("Download project file")} detail={`A ${PROJECT_EXT} file with everything in it. Open it later in any browser.`} onClick={() => void downloadProjectFile(true)} />
               <ChoiceButton
                 icon={ICONS.film}
-                title="Export the video"
+                title={tr("Export the video")}
                 detail="Make the MP4 first. You’ll come back here afterwards."
                 onClick={() => {
                   setExitOpen(false);
@@ -447,9 +453,9 @@ export default function Workspace() {
                   exitAfterExport.current = true;
                 }}
               />
-              <ChoiceButton tone="danger" icon={ICONS.trash} title="Discard project" detail="Delete it and everything in it." onClick={() => setConfirmDiscard(true)} />
+              <ChoiceButton tone="danger" icon={ICONS.trash} title={tr("Discard project")} detail="Delete it and everything in it." onClick={() => setConfirmDiscard(true)} />
               <button onClick={() => setExitOpen(false)} className="mt-2 rounded-md px-3 py-2 text-sm text-ink-2 hover:bg-paper-dim hover:text-ink">
-                Stay in the editor
+                {tr("Stay in the editor")}
               </button>
             </div>
           )}
@@ -520,40 +526,40 @@ function ExportDialog({ onClose, run, fileName }: {
   };
 
   return (
-    <Modal title="Export video" onClose={state.kind === 'running' ? undefined : onClose} locked={state.kind === 'running'} labelledBy="export-title" wide>
+    <Modal title={tr("Export video")} onClose={state.kind === 'running' ? undefined : onClose} locked={state.kind === 'running'} labelledBy="export-title" wide>
       {state.kind === 'idle' || state.kind === 'error' ? (
         <div className="grid gap-4">
           <fieldset>
-            <legend className="mb-1.5 text-xs font-medium text-ink-2">Quality</legend>
+            <legend className="mb-1.5 text-xs font-medium text-ink-2">{tr("Quality")}</legend>
             <div className="grid grid-cols-2 gap-2">
               {(['1080p', '720p'] as const).map((q) => (
                 <label key={q} className={clsx('relative cursor-pointer rounded-lg border p-3', quality === q ? 'border-workshop bg-workshop-dim' : 'border-line hover:border-ink')}>
                   <input type="radio" name="export-quality" checked={quality === q} onChange={() => setQuality(q)} className="absolute inset-0 cursor-pointer opacity-0" aria-label={q} />
-                  <span className="block text-sm font-semibold">{q === '1080p' ? 'Full HD (1080p)' : 'HD (720p)'}</span>
-                  <span className="block text-xs text-ink-3">{q === '1080p' ? 'Best quality' : 'Smaller and faster'}</span>
+                  <span className="block text-sm font-semibold">{q === '1080p' ? tr("Full HD (1080p)") : tr("HD (720p)")}</span>
+                  <span className="block text-xs text-ink-3">{q === '1080p' ? tr("Best quality") : tr("Smaller and faster")}</span>
                 </label>
               ))}
             </div>
           </fieldset>
-          <p className="text-xs text-ink-3">MP4 (H.264 and AAC) at 30 frames per second. It plays everywhere.</p>
+          <p className="text-xs text-ink-3">{tr("MP4 (H.264 and AAC) at 30 frames per second. It plays everywhere.")}</p>
           {state.kind === 'error' && <p className="rounded-md bg-warn-dim p-2 text-sm text-warn" role="alert">{state.message}</p>}
           <div className="flex justify-end gap-2">
-            <button onClick={onClose} className="rounded-md border border-line px-4 py-2 text-sm hover:border-ink">Cancel</button>
-            <button onClick={() => void start()} className="rounded-md bg-workshop px-4 py-2 text-sm font-semibold text-white hover:opacity-90">Export MP4</button>
+            <button onClick={onClose} className="rounded-md border border-line px-4 py-2 text-sm hover:border-ink">{tr("Cancel")}</button>
+            <button onClick={() => void start()} className="rounded-md bg-workshop px-4 py-2 text-sm font-semibold text-white hover:opacity-90">{tr("Export MP4")}</button>
           </div>
         </div>
       ) : state.kind === 'running' ? (
         <div className="grid gap-3" role="status">
           <div className="flex justify-between text-sm">
-            <span className="text-ink-2">{state.stage}…</span>
+            <span className="text-ink-2">{tr(state.stage)}…</span>
             <span className="font-mono">{Math.round(state.f * 100)}%</span>
           </div>
           <div className="h-2 overflow-hidden rounded-full bg-paper-dim">
             <div className="h-full rounded-full bg-workshop transition-[width]" style={{ width: `${Math.round(state.f * 100)}%` }} />
           </div>
-          <p className="text-xs text-ink-3">Keep this tab open. Longer videos take a while.</p>
+          <p className="text-xs text-ink-3">{tr("Keep this tab open. Longer videos take a while.")}</p>
           <div className="flex justify-end">
-            <button onClick={() => ctrl.current?.abort()} className="rounded-md border border-line px-4 py-2 text-sm hover:border-warn hover:text-warn">Cancel export</button>
+            <button onClick={() => ctrl.current?.abort()} className="rounded-md border border-line px-4 py-2 text-sm hover:border-warn hover:text-warn">{tr("Cancel export")}</button>
           </div>
         </div>
       ) : (
@@ -562,8 +568,8 @@ function ExportDialog({ onClose, run, fileName }: {
           <div className="flex items-center justify-between gap-3">
             <span className="text-sm text-ink-2">{fileName} · {formatBytes(state.blob.size)}</span>
             <div className="flex gap-2">
-              <button onClick={onClose} className="rounded-md border border-line px-4 py-2 text-sm hover:border-ink">Close</button>
-              <button onClick={() => downloadBlob(state.blob, fileName)} className="rounded-md bg-workshop px-4 py-2 text-sm font-semibold text-white hover:opacity-90">Download MP4</button>
+              <button onClick={onClose} className="rounded-md border border-line px-4 py-2 text-sm hover:border-ink">{tr("Close")}</button>
+              <button onClick={() => downloadBlob(state.blob, fileName)} className="rounded-md bg-workshop px-4 py-2 text-sm font-semibold text-white hover:opacity-90">{tr("Download MP4")}</button>
             </div>
           </div>
         </div>

@@ -6,6 +6,7 @@ import ErrorMessage from '../../../components/ErrorMessage';
 import { ResultCard } from '../../../components/tool';
 import { formatBytes } from '../../../lib/imageUtils';
 import { BackgroundRemover, WORK_SIZE, downloadStatus } from '../../../lib/backgroundRemoval';
+import { tr } from '../../../lib/i18n';
 
 type Tool = 'select' | 'brush-add' | 'brush-erase';
 interface Point { x: number; y: number; positive: boolean }
@@ -101,7 +102,7 @@ export default function RemoveBackground() {
       setShowBefore(false);
       setZoom(1);
     } catch {
-      setError(`“${f.name}” couldn't be opened as a picture.`);
+      setError(tr("“{0}” couldn't be opened as a picture.", { 0: f.name }));
     }
   };
 
@@ -295,7 +296,7 @@ export default function RemoveBackground() {
   // ---- Export at full resolution
   const exportPng = async () => {
     if (!img || !work || !maskRef.current || !workImgRef.current) return;
-    setBusy('Making the PNG…');
+    setBusy(tr("Making the PNG…"));
     try {
       const W = img.width;
       const H = img.height;
@@ -320,7 +321,7 @@ export default function RemoveBackground() {
         }
       }
       const blob = await new Promise<Blob | null>((res) => out.toBlob(res, 'image/png'));
-      if (!blob) throw new Error("The PNG couldn't be created.");
+      if (!blob) throw new Error(tr("The PNG couldn't be created."));
       const name = `${file!.name.replace(/\.[^.]+$/, '')}-no-background.png`;
       setResult({ url: URL.createObjectURL(blob), name, size: blob.size });
     } catch (e) {
@@ -335,11 +336,11 @@ export default function RemoveBackground() {
   if (!file || !img || !work) {
     return (
       <div className="space-y-4">
-        <FileDropzone accept="image/png,image/jpeg,image/webp,image/avif,image/bmp,image/gif" onFiles={(f) => void handleFile(f)} hint="JPG, PNG or WebP" />
+        <FileDropzone accept="image/png,image/jpeg,image/webp,image/avif,image/bmp,image/gif" onFiles={(f) => void handleFile(f)} hint={tr("JPG, PNG or WebP")} />
         {error && <ErrorMessage>{error}</ErrorMessage>}
         <p className="text-sm text-ink-2">
-          Click “Remove background” to cut out the main object automatically, or click the object you want to keep. The first time, Bench downloads its AI model once
-          {sizes ? ` (${formatBytes(sizes.standard)})` : ''}. After that it works offline.
+          {tr("Click “Remove background” to cut out the main object automatically, or click the object you want to keep. The first time, Bench downloads its AI model once")}
+          {sizes ? ` (${formatBytes(sizes.standard)})` : ''}{tr(". After that it works offline.")}
         </p>
       </div>
     );
@@ -352,58 +353,58 @@ export default function RemoveBackground() {
     <div className="space-y-4" data-testid="bg-remover">
       <div className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-line bg-paper-dim px-3 py-2 text-sm">
         <span className="truncate">{file.name} · {img.width}×{img.height} · {formatBytes(file.size)}</span>
-        <button onClick={reset} className="text-xs font-medium text-workshop hover:underline">Remove</button>
+        <button onClick={reset} className="text-xs font-medium text-workshop hover:underline">{tr("Remove")}</button>
       </div>
 
       <div className="grid gap-4 lg:grid-cols-[190px_minmax(0,1fr)_230px]">
         {/* Tools */}
-        <div className="grid content-start gap-3 sm:grid-cols-2 lg:grid-cols-1" role="toolbar" aria-label="Cut-out tools">
-          <Section title="Automatic">
+        <div className="grid content-start gap-3 sm:grid-cols-2 lg:grid-cols-1" role="toolbar" aria-label={tr("Cut-out tools")}>
+          <Section title={tr("Automatic")}>
             <button
               onClick={() => void autoQuick()}
               disabled={pending}
               className="w-full rounded-md bg-workshop px-3 py-2 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-50"
             >
-              Remove background
+              {tr("Remove background")}
             </button>
             <button
               onClick={() => void autoHq()}
               disabled={pending || hqSupported === false}
               className="w-full rounded-md border border-line px-3 py-1.5 text-xs font-medium hover:border-ink disabled:cursor-not-allowed disabled:opacity-50"
-              title={hqSupported === false ? 'Needs a graphics card with WebGPU half-precision support' : undefined}
+              title={hqSupported === false ? tr("Needs a graphics card with WebGPU half-precision support") : undefined}
             >
-              High quality (hair, fine edges)
+              {tr("High quality (hair, fine edges)")}
             </button>
             <p className="text-[11px] leading-snug text-ink-3">
               {hqSupported === false
-                ? 'High quality needs a newer graphics card and browser (WebGPU). Use the brush to fine-tune edges instead.'
+                ? tr("High quality needs a newer graphics card and browser (WebGPU). Use the brush to fine-tune edges instead.")
                 : sizes && sizes.hq > 0
-                  ? `High quality downloads ${formatBytes(sizes.hq)} once.`
-                  : 'Best for hair, fur and detailed edges.'}
+                  ? tr("High quality downloads {0} once.", { 0: formatBytes(sizes.hq) })
+                  : tr("Best for hair, fur and detailed edges.")}
             </p>
           </Section>
 
-          <Section title="Select by clicking">
-            <ToolButton active={tool === 'select'} onClick={() => setTool('select')} icon="M5 3l14 8-6 2-2 6z">Click the object</ToolButton>
+          <Section title={tr("Select by clicking")}>
+            <ToolButton active={tool === 'select'} onClick={() => setTool('select')} icon="M5 3l14 8-6 2-2 6z">{tr("Click the object")}</ToolButton>
             {tool === 'select' && (
               <div className="grid grid-cols-2 gap-1">
-                <Seg active={selectAdd} onClick={() => setSelectAdd(true)}>+ Add</Seg>
-                <Seg active={!selectAdd} onClick={() => setSelectAdd(false)}>− Remove</Seg>
+                <Seg active={selectAdd} onClick={() => setSelectAdd(true)}>{tr("+ Add")}</Seg>
+                <Seg active={!selectAdd} onClick={() => setSelectAdd(false)}>{tr("− Remove")}</Seg>
               </div>
             )}
             {snap.points.length > 0 && (
-              <button onClick={() => commit({ ...snap, points: [], base: null })} className="text-start text-[11px] text-ink-3 hover:text-ink">Clear clicks</button>
+              <button onClick={() => commit({ ...snap, points: [], base: null })} className="text-start text-[11px] text-ink-3 hover:text-ink">{tr("Clear clicks")}</button>
             )}
           </Section>
 
-          <Section title="Fix by hand">
-            <ToolButton active={tool === 'brush-add'} onClick={() => setTool('brush-add')} icon="M12 5v14M5 12h14">Brush: keep</ToolButton>
-            <ToolButton active={tool === 'brush-erase'} onClick={() => setTool('brush-erase')} icon="M5 12h14">Brush: erase</ToolButton>
-            <Range label="Brush size" value={brush} min={4} max={150} onChange={setBrush} format={(v) => `${v}px`} />
+          <Section title={tr("Fix by hand")}>
+            <ToolButton active={tool === 'brush-add'} onClick={() => setTool('brush-add')} icon="M12 5v14M5 12h14">{tr("Brush: keep")}</ToolButton>
+            <ToolButton active={tool === 'brush-erase'} onClick={() => setTool('brush-erase')} icon="M5 12h14">{tr("Brush: erase")}</ToolButton>
+            <Range label={tr("Brush size")} value={brush} min={4} max={150} onChange={setBrush} format={(v) => `${v}px`} />
           </Section>
 
-          <Section title="Edges">
-            <Range label="Softness" value={softness} min={0} max={10} step={0.5} onChange={setSoftness} format={(v) => (v === 0 ? 'Sharp' : `${v}`)} />
+          <Section title={tr("Edges")}>
+            <Range label={tr("Softness")} value={softness} min={0} max={10} step={0.5} onChange={setSoftness} format={(v) => (v === 0 ? 'Sharp' : `${v}`)} />
           </Section>
         </div>
 
@@ -419,7 +420,7 @@ export default function RemoveBackground() {
                 width={viewSize.w}
                 height={viewSize.h}
                 data-testid="bg-canvas"
-                aria-label={showBefore ? 'Original picture' : 'Picture with the background removed'}
+                aria-label={showBefore ? tr("Original picture") : tr("Picture with the background removed")}
                 className={clsx('block h-auto w-full touch-none', tool === 'select' ? 'cursor-crosshair' : 'cursor-none')}
                 onPointerDown={onPointerDown}
                 onPointerMove={onPointerMove}
@@ -457,7 +458,7 @@ export default function RemoveBackground() {
                   {busy}
                   {progress && (
                     <span className="mt-1 block font-mono text-xs text-ink-3">
-                      Downloading the AI model (first time only): {formatBytes(progress.loaded)} / {formatBytes(progress.total)}
+                      {tr("Downloading the AI model (first time only):")}{' '}{formatBytes(progress.loaded)} / {formatBytes(progress.total)}
                     </span>
                   )}
                 </div>
@@ -467,8 +468,8 @@ export default function RemoveBackground() {
 
           {/* Bottom bar */}
           <div className="mt-2 flex flex-wrap items-center gap-2">
-            <IconBtn label="Undo" onClick={undo} disabled={!hist.undo || pending} icon="M9 14L4 9l5-5M4 9h11a5 5 0 010 10h-3" />
-            <IconBtn label="Redo" onClick={redo} disabled={!hist.redo || pending} icon="M15 14l5-5-5-5M20 9H9a5 5 0 000 10h3" />
+            <IconBtn label={tr("Undo")} onClick={undo} disabled={!hist.undo || pending} icon="M9 14L4 9l5-5M4 9h11a5 5 0 010 10h-3" />
+            <IconBtn label={tr("Redo")} onClick={redo} disabled={!hist.redo || pending} icon="M15 14l5-5-5-5M20 9H9a5 5 0 000 10h3" />
             <button
               onClick={() => setShowBefore((v) => !v)}
               aria-pressed={showBefore}
@@ -478,31 +479,31 @@ export default function RemoveBackground() {
               )}
             >
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true"><path d="M12 3v18M4 6h5v12H4zM15 6h5v12h-5" /></svg>
-              {showBefore ? 'Show after' : 'Show before'}
+              {showBefore ? tr("Show after") : tr("Show before")}
             </button>
-            <span className="text-xs text-ink-3">{showBefore ? 'Showing the original' : hasCutout ? 'Showing the result' : ''}</span>
+            <span className="text-xs text-ink-3">{showBefore ? tr("Showing the original") : hasCutout ? tr("Showing the result") : ''}</span>
             <div className="ms-auto flex items-center gap-1">
-              <IconBtn label="Zoom out" onClick={() => setZoom(ZOOMS[Math.max(0, ZOOMS.indexOf(zoom) - 1)])} disabled={zoom === ZOOMS[0]} icon="M5 12h14" />
-              <button onClick={() => setZoom(1)} className="min-w-[48px] rounded-md px-2 py-1 font-mono text-xs text-ink-2 hover:bg-paper-dim" title="Fit">{Math.round(zoom * 100)}%</button>
-              <IconBtn label="Zoom in" onClick={() => setZoom(ZOOMS[Math.min(ZOOMS.length - 1, ZOOMS.indexOf(zoom) + 1)])} disabled={zoom === ZOOMS[ZOOMS.length - 1]} icon="M12 5v14M5 12h14" />
+              <IconBtn label={tr("Zoom out")} onClick={() => setZoom(ZOOMS[Math.max(0, ZOOMS.indexOf(zoom) - 1)])} disabled={zoom === ZOOMS[0]} icon="M5 12h14" />
+              <button onClick={() => setZoom(1)} className="min-w-[48px] rounded-md px-2 py-1 font-mono text-xs text-ink-2 hover:bg-paper-dim" title={tr("Fit")}>{Math.round(zoom * 100)}%</button>
+              <IconBtn label={tr("Zoom in")} onClick={() => setZoom(ZOOMS[Math.min(ZOOMS.length - 1, ZOOMS.indexOf(zoom) + 1)])} disabled={zoom === ZOOMS[ZOOMS.length - 1]} icon="M12 5v14M5 12h14" />
             </div>
           </div>
           <p className="mt-2 text-xs text-ink-3">
             {tool === 'select'
-              ? 'Click the object to keep it. Click more parts to add them. Right-click (or choose “− Remove”) to take parts away.'
-              : 'Paint over the picture to keep or erase parts. Zoom in for small details.'}
+              ? tr("Click the object to keep it. Click more parts to add them. Right-click (or choose “− Remove”) to take parts away.")
+              : tr("Paint over the picture to keep or erase parts. Zoom in for small details.")}
           </p>
         </div>
 
         {/* Output */}
         <div className="grid content-start gap-3 sm:grid-cols-2 lg:grid-cols-1">
-          <Section title="Background">
+          <Section title={tr("Background")}>
             <div className="flex flex-wrap items-center gap-1.5">
               <button
                 onClick={() => setBackground(null)}
                 aria-pressed={background === null}
-                aria-label="Transparent"
-                title="Transparent"
+                aria-label={tr("Transparent")}
+                title={tr("Transparent")}
                 className={clsx('h-7 w-7 rounded-full border', background === null ? 'ring-2 ring-workshop ring-offset-1 ring-offset-paper' : 'border-line')}
                 style={{ background: 'repeating-conic-gradient(#d4d4d4 0% 25%, #fff 0% 50%) 50% / 8px 8px' }}
               />
@@ -511,30 +512,30 @@ export default function RemoveBackground() {
                   key={c}
                   onClick={() => setBackground(c)}
                   aria-pressed={background === c}
-                  aria-label={`Background ${c}`}
+                  aria-label={tr("Background {0}", { 0: c })}
                   className={clsx('h-7 w-7 rounded-full border border-line', background === c && 'ring-2 ring-workshop ring-offset-1 ring-offset-paper')}
                   style={{ background: c }}
                 />
               ))}
-              <input type="color" value={background ?? '#ffffff'} onChange={(e) => setBackground(e.target.value)} className="h-7 w-9 cursor-pointer rounded border border-line bg-transparent" aria-label="Custom background colour" />
+              <input type="color" value={background ?? '#ffffff'} onChange={(e) => setBackground(e.target.value)} className="h-7 w-9 cursor-pointer rounded border border-line bg-transparent" aria-label={tr("Custom background colour")} />
             </div>
-            <p className="text-[11px] text-ink-3">{background ? 'Solid colour behind the object.' : 'Transparent (PNG).'}</p>
+            <p className="text-[11px] text-ink-3">{background ? tr("Solid colour behind the object.") : tr("Transparent (PNG).")}</p>
           </Section>
-          <Section title="Size">
+          <Section title={tr("Size")}>
             <label className="flex cursor-pointer items-center gap-2 text-sm">
               <input type="checkbox" checked={crop} onChange={(e) => setCrop(e.target.checked)} className="accent-[var(--color-workshop)]" />
-              Crop to the object
+              {tr("Crop to the object")}
             </label>
-            {crop && <Range label="Space around it" value={padding} min={0} max={200} onChange={setPadding} format={(v) => `${v}px`} />}
+            {crop && <Range label={tr("Space around it")} value={padding} min={0} max={200} onChange={setPadding} format={(v) => `${v}px`} />}
           </Section>
           <button
             onClick={() => void exportPng()}
             disabled={pending || !hasCutout}
             className="w-full rounded-md bg-ink px-3 py-2.5 text-sm font-semibold text-paper hover:opacity-90 disabled:opacity-40"
           >
-            Make PNG
+            {tr("Make PNG")}
           </button>
-          {!hasCutout && <p className="text-[11px] text-ink-3">Remove the background or select an object first.</p>}
+          {!hasCutout && <p className="text-[11px] text-ink-3">{tr("Remove the background or select an object first.")}</p>}
         </div>
       </div>
 

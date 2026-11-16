@@ -7,6 +7,7 @@ import type { InputVideoTrack } from 'mediabunny';
 import type { Project, VisualClip } from './types';
 import { totalDuration, videoStarts, visualDuration, fadeAlpha } from './types';
 import { drawFrame, outputSize, textsAt } from './compositor';
+import { tr } from '../i18n';
 
 export interface ExportOptions {
   quality: '720p' | '1080p';
@@ -27,7 +28,7 @@ const SAMPLE_RATE = 48000;
 export async function exportProject(project: Project, files: Map<string, File>, opts: ExportOptions): Promise<Blob> {
   const tl = project.timeline;
   const duration = totalDuration(tl);
-  if (duration <= 0) throw new Error('The timeline is empty. Add a clip first.');
+  if (duration <= 0) throw new Error(tr("The timeline is empty. Add a clip first."));
   const { width: W, height: H } = outputSize(project.aspect, opts.quality);
   const fps = opts.fps;
   const check = () => {
@@ -37,7 +38,7 @@ export async function exportProject(project: Project, files: Map<string, File>, 
   const videoCodec = (await canEncodeVideo('avc', { width: W, height: H }).catch(() => false))
     ? 'avc'
     : (await canEncodeVideo('vp9', { width: W, height: H }).catch(() => false)) ? 'vp9' : null;
-  if (!videoCodec) throw new Error("This browser can't encode video. Try the latest Chrome, Edge or Safari.");
+  if (!videoCodec) throw new Error(tr("This browser can't encode video. Try the latest Chrome, Edge or Safari."));
 
   // ---- Audio: mix every audible clip with the Web Audio API, offline (faster than real time).
   opts.onProgress(0, 'Mixing audio');
@@ -154,7 +155,7 @@ export async function exportProject(project: Project, files: Map<string, File>, 
   } finally {
     opts.signal.removeEventListener('abort', abort);
   }
-  if (!target.buffer) throw new Error('The export finished but produced no file.');
+  if (!target.buffer) throw new Error(tr("The export finished but produced no file."));
   opts.onProgress(1, 'Done');
   return new Blob([target.buffer], { type: 'video/mp4' });
 }

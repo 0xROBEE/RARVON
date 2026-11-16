@@ -8,6 +8,7 @@ import { formatBytes } from '../../../lib/imageUtils';
 import { VideoCancelledError, probeVideo, runVideoConversion, checkFileSize } from '../../../lib/videoEngine';
 import type { VideoInfo } from '../../../lib/videoEngine';
 import { ResultCard, ActionBar } from '../../../components/tool';
+import { tr } from '../../../lib/i18n';
 
 const PRESETS = [
   { label: '1080p', height: 1080 },
@@ -83,14 +84,14 @@ export default function VideoResolutionTool() {
   return (
     <div className="space-y-4">
       {!file ? (
-        <FileDropzone accept="video/mp4,video/webm,video/quicktime,video/x-matroska,.mkv,.mov" onFiles={handleFile} hint="MP4, MOV, WebM or MKV, up to 250MB" />
+        <FileDropzone accept="video/mp4,video/webm,video/quicktime,video/x-matroska,.mkv,.mov" onFiles={handleFile} hint={tr("MP4, MOV, WebM or MKV, up to 250MB")} />
       ) : (
         <div className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-line bg-paper-dim p-3 text-sm">
           <span className="truncate">
             {file.name} · {formatBytes(file.size)}
             {info && ` · ${info.width}×${info.height} · ${formatDuration(info.durationSec)}`}
           </span>
-          <button onClick={() => { setFile(null); setInfo(null); setResult(null); }} className="text-xs font-medium text-workshop hover:underline">Remove</button>
+          <button onClick={() => { setFile(null); setInfo(null); setResult(null); }} className="text-xs font-medium text-workshop hover:underline">{tr("Remove")}</button>
         </div>
       )}
 
@@ -105,19 +106,19 @@ export default function VideoResolutionTool() {
           </div>
           <div className="flex flex-wrap items-end gap-3">
             <label className="text-xs text-ink-2">
-              Width
+              {tr("Width")}
               <input type="number" value={width} onChange={(e) => setWidth(Math.max(2, Number(e.target.value)))} className="mt-1 block w-24 rounded-md border border-line bg-paper px-2 py-1.5 text-sm" />
             </label>
             <label className="text-xs text-ink-2">
-              Height
+              {tr("Height")}
               <input type="number" value={height} onChange={(e) => setHeight(Math.max(2, Number(e.target.value)))} className="mt-1 block w-24 rounded-md border border-line bg-paper px-2 py-1.5 text-sm" />
             </label>
           </div>
           <ActionBar>
-            <Button onClick={apply} disabled={busy || width < 2 || height < 2}>{busy ? 'Processing…' : 'Change resolution'}</Button>
-            {busy && <Button variant="secondary" onClick={() => abortRef.current?.abort()}>Cancel</Button>}
+            <Button onClick={apply} disabled={busy || width < 2 || height < 2}>{busy ? tr("Processing…") : tr("Change resolution")}</Button>
+            {busy && <Button variant="secondary" onClick={() => abortRef.current?.abort()}>{tr("Cancel")}</Button>}
           </ActionBar>
-          {busy && <ProgressBar value={progress * 100} label="Re-encoding" />}
+          {busy && <ProgressBar value={progress * 100} label={tr("Re-encoding")} />}
         </>
       )}
 

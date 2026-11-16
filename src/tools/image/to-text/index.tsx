@@ -7,6 +7,7 @@ import { formatBytes } from '../../../lib/imageUtils';
 import { OCR_LANGUAGES, recognizeText, terminateOcr } from '../../../lib/ocrEngine';
 import type { OcrLayout, OcrProgress } from '../../../lib/ocrEngine';
 import { decodeImage, preprocessForOcr } from '../../../lib/ocrPreprocess';
+import { tr } from '../../../lib/i18n';
 
 type Rotation = 0 | 90 | 180 | 270;
 
@@ -149,7 +150,7 @@ export default function ImageToText() {
         setStats({ confidence: result.confidence, ms: result.ms, langs: codes.join('+') });
         setRanWith(`${codes.join('+')}|${s.layout}|${s.straighten}|${rot}`);
         setMatchIndex(0);
-        if (!result.text) setError('No text was found in this image. If it does contain text, try rotating it, choosing the right language, or a sharper image.');
+        if (!result.text) setError(tr("No text was found in this image. If it does contain text, try rotating it, choosing the right language, or a sharper image."));
       } catch (e) {
         if (id !== runId.current) return;
         setError(e instanceof Error && e.message ? `Text recognition failed: ${e.message}` : 'Text recognition failed. Please try again.');
@@ -166,7 +167,7 @@ export default function ImageToText() {
   const loadFile = useCallback(
     async (f: File) => {
       if (!f.type.startsWith('image/') && !/\.(png|jpe?g|webp|gif|bmp|avif)$/i.test(f.name)) {
-        setError('That file isn’t an image. Choose a PNG, JPEG, WebP, GIF or BMP.');
+        setError(tr("That file isn’t an image. Choose a PNG, JPEG, WebP, GIF or BMP."));
         return;
       }
       runId.current++;
@@ -212,9 +213,9 @@ export default function ImageToText() {
           return;
         }
       }
-      setError('There’s no image on your clipboard. Copy an image or take a screenshot first.');
+      setError(tr("There’s no image on your clipboard. Copy an image or take a screenshot first."));
     } catch {
-      setError('Your browser didn’t allow reading the clipboard here. Press Ctrl+V (⌘V on Mac) on this page instead.');
+      setError(tr("Your browser didn’t allow reading the clipboard here. Press Ctrl+V (⌘V on Mac) on this page instead."));
     }
   }
 
@@ -267,7 +268,7 @@ export default function ImageToText() {
       flash('Select some text first');
       return;
     }
-    flash((await copyToClipboard(sel)) ? 'Selection copied' : 'Copy failed');
+    flash((await copyToClipboard(sel)) ? tr('Selection copied') : tr('Copy failed'));
   }
 
   const baseName = file ? file.name.replace(/\.[^.]+$/, '') : 'text';
@@ -275,8 +276,8 @@ export default function ImageToText() {
   const words = text.trim() ? text.trim().split(/\s+/).length : 0;
   const stageLabel =
     progress?.stage === 'recognizing'
-      ? `Reading text… ${Math.round(progress.fraction * 100)}%`
-      : `Loading ${primaryMeta.label}${langs.length > 1 ? ' + English' : ''} recognition data…`;
+      ? tr('Reading text… {n}%', { n: Math.round(progress.fraction * 100) })
+      : tr(langs.length > 1 ? 'Loading {lang} + English recognition data…' : 'Loading {lang} recognition data…', { lang: tr(primaryMeta.label) });
 
   function update(patch: Partial<Settings>) {
     setSettings((s) => ({ ...s, ...patch }));
@@ -285,7 +286,7 @@ export default function ImageToText() {
   const languagePicker = (
     <div className="flex flex-wrap items-end gap-3">
       <label className="text-xs text-ink-2">
-        Language of the text
+        {tr("Language of the text")}
         <select
           value={settings.primary}
           onChange={(e) => update({ primary: e.target.value })}
@@ -294,7 +295,7 @@ export default function ImageToText() {
         >
           {OCR_LANGUAGES.map((l) => (
             <option key={l.code} value={l.code}>
-              {l.label}{l.native !== l.label ? ` — ${l.native}` : ''}
+              {tr(l.label)}{l.native !== tr(l.label) ? ` — ${l.native}` : ''}
             </option>
           ))}
         </select>
@@ -302,7 +303,7 @@ export default function ImageToText() {
       {settings.primary !== 'eng' && (
         <label className="flex items-center gap-2 pb-2 text-xs text-ink-2">
           <input type="checkbox" checked={settings.withEnglish} disabled={busy} onChange={(e) => update({ withEnglish: e.target.checked })} />
-          Also contains English
+          {tr("Also contains English")}
         </label>
       )}
     </div>
@@ -315,12 +316,12 @@ export default function ImageToText() {
         <FileDropzone
           accept="image/*"
           onFiles={(files) => void loadFile(files[0])}
-          label="Drop an image here, click to browse, or paste with Ctrl+V"
-          hint="Screenshots, scans or photos of documents — PNG, JPEG, WebP"
+          label={tr("Drop an image here, click to browse, or paste with Ctrl+V")}
+          hint={tr("Screenshots, scans or photos of documents — PNG, JPEG, WebP")}
         />
         <div className="flex flex-wrap items-center gap-2 text-xs text-ink-3">
-          <Button variant="secondary" onClick={() => void pasteFromButton()}>Paste image from clipboard</Button>
-          <span>Text is recognized on your device. The image is never uploaded.</span>
+          <Button variant="secondary" onClick={() => void pasteFromButton()}>{tr("Paste image from clipboard")}</Button>
+          <span>{tr("Text is recognized on your device. The image is never uploaded.")}</span>
         </div>
         {error && <ErrorMessage>{error}</ErrorMessage>}
       </div>
@@ -332,26 +333,26 @@ export default function ImageToText() {
       <div className="flex flex-wrap items-end justify-between gap-3 rounded-lg border border-line bg-paper-dim p-3">
         {languagePicker}
         <div className="flex flex-wrap items-center gap-2">
-          <Button variant="secondary" onClick={reset}>New image</Button>
+          <Button variant="secondary" onClick={reset}>{tr("New image")}</Button>
           {busy ? (
-            <Button variant="secondary" onClick={cancel}>Cancel</Button>
+            <Button variant="secondary" onClick={cancel}>{tr("Cancel")}</Button>
           ) : (
-            <Button onClick={() => void runOcr(bitmap, rotation, settings)}>{ranWith ? 'Re-run OCR' : 'Extract text'}</Button>
+            <Button onClick={() => void runOcr(bitmap, rotation, settings)}>{ranWith ? tr("Re-run OCR") : tr("Extract text")}</Button>
           )}
         </div>
       </div>
 
       <div className="grid gap-3 lg:grid-cols-2">
         {/* Original image */}
-        <section aria-label="Original image" className="flex min-w-0 flex-col rounded-lg border border-line">
+        <section aria-label={tr("Original image")} className="flex min-w-0 flex-col rounded-lg border border-line">
           <div className="flex flex-wrap items-center justify-between gap-2 border-b border-line px-3 py-2 text-xs text-ink-2">
             <span className="truncate">{file.name} · {bitmap.width}×{bitmap.height} · {formatBytes(file.size)}</span>
             <div className="flex items-center gap-1">
               <button
                 onClick={() => setRotation((r) => (((r + 270) % 360) as Rotation))}
                 disabled={busy}
-                aria-label="Rotate image left"
-                title="Rotate left"
+                aria-label={tr("Rotate image left")}
+                title={tr("Rotate left")}
                 className="flex h-7 w-7 items-center justify-center rounded hover:bg-paper-dim disabled:opacity-40"
               >
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><path d="M3 12a9 9 0 109-9 9.75 9.75 0 00-6.74 2.74L3 8M3 3v5h5" strokeLinecap="round" strokeLinejoin="round" /></svg>
@@ -359,8 +360,8 @@ export default function ImageToText() {
               <button
                 onClick={() => setRotation((r) => (((r + 90) % 360) as Rotation))}
                 disabled={busy}
-                aria-label="Rotate image right"
-                title="Rotate right"
+                aria-label={tr("Rotate image right")}
+                title={tr("Rotate right")}
                 className="flex h-7 w-7 items-center justify-center rounded hover:bg-paper-dim disabled:opacity-40"
               >
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><path d="M21 12a9 9 0 11-9-9c2.52 0 4.93 1 6.74 2.74L21 8M21 3v5h-5" strokeLinecap="round" strokeLinejoin="round" /></svg>
@@ -371,25 +372,25 @@ export default function ImageToText() {
             {previewUrl && (
               <img
                 src={previewUrl}
-                alt="Image to extract text from"
+                alt={tr("Image to extract text from")}
                 className="max-h-[60vh] max-w-full object-contain shadow-sm transition-transform"
                 style={{ transform: `rotate(${rotation}deg)`, ...(rotation % 180 ? { maxWidth: '60vh', maxHeight: '100%' } : {}) }}
               />
             )}
           </div>
           <details className="border-t border-line px-3 py-2 text-xs text-ink-2">
-            <summary className="cursor-pointer select-none">Recognition options</summary>
+            <summary className="cursor-pointer select-none">{tr("Recognition options")}</summary>
             <div className="mt-2 flex flex-wrap items-center gap-4">
               <label className="flex items-center gap-2">
                 <input type="checkbox" checked={settings.straighten} disabled={busy} onChange={(e) => update({ straighten: e.target.checked })} />
-                Straighten tilted text automatically
+                {tr("Straighten tilted text automatically")}
               </label>
               <label className="flex items-center gap-2">
-                Layout
+                {tr("Layout")}
                 <select value={settings.layout} disabled={busy} onChange={(e) => update({ layout: e.target.value as OcrLayout })} className="rounded-md border border-line bg-paper px-2 py-1 text-xs text-ink">
-                  <option value="auto">Automatic (pages, columns)</option>
-                  <option value="block">Single block of text</option>
-                  <option value="line">Single line</option>
+                  <option value="auto">{tr("Automatic (pages, columns)")}</option>
+                  <option value="block">{tr("Single block of text")}</option>
+                  <option value="line">{tr("Single line")}</option>
                 </select>
               </label>
             </div>
@@ -397,7 +398,7 @@ export default function ImageToText() {
         </section>
 
         {/* Extracted text */}
-        <section aria-label="Extracted text" className="flex min-w-0 flex-col rounded-lg border border-line">
+        <section aria-label={tr("Extracted text")} className="flex min-w-0 flex-col rounded-lg border border-line">
           <div className="flex flex-wrap items-center gap-2 border-b border-line px-3 py-2">
             <div className="relative min-w-[10rem] flex-1">
               <input
@@ -408,17 +409,17 @@ export default function ImageToText() {
                   setMatchIndex(-1);
                 }}
                 onKeyDown={(e) => e.key === 'Enter' && goToMatch(e.shiftKey ? -1 : 1)}
-                placeholder="Search in text"
-                aria-label="Search in extracted text"
+                placeholder={tr("Search in text")}
+                aria-label={tr("Search in extracted text")}
                 dir="auto"
                 className="w-full rounded-md border border-line bg-paper px-2 py-1 text-xs"
               />
             </div>
             {query.trim() && (
               <span className="flex items-center gap-1 text-xs text-ink-3" aria-live="polite">
-                {matches.length ? `${Math.max(0, matchIndex) + 1}/${matches.length}` : 'No matches'}
-                <button onClick={() => goToMatch(-1)} disabled={!matches.length} aria-label="Previous match" className="rounded px-1 hover:bg-paper-dim disabled:opacity-30">↑</button>
-                <button onClick={() => goToMatch(1)} disabled={!matches.length} aria-label="Next match" className="rounded px-1 hover:bg-paper-dim disabled:opacity-30">↓</button>
+                {matches.length ? `${Math.max(0, matchIndex) + 1}/${matches.length}` : tr("No matches")}
+                <button onClick={() => goToMatch(-1)} disabled={!matches.length} aria-label={tr("Previous match")} className="rounded px-1 hover:bg-paper-dim disabled:opacity-30">↑</button>
+                <button onClick={() => goToMatch(1)} disabled={!matches.length} aria-label={tr("Next match")} className="rounded px-1 hover:bg-paper-dim disabled:opacity-30">↓</button>
               </span>
             )}
           </div>
@@ -430,8 +431,8 @@ export default function ImageToText() {
               onChange={(e) => setText(e.target.value)}
               dir="auto"
               spellCheck={false}
-              aria-label="Extracted text (editable)"
-              placeholder={busy ? '' : 'Extracted text will appear here. You can edit it before copying or downloading.'}
+              aria-label={tr("Extracted text (editable)")}
+              placeholder={busy ? '' : tr("Extracted text will appear here. You can edit it before copying or downloading.")}
               className="min-h-[320px] w-full flex-1 resize-y bg-paper p-3 text-[15px] leading-7 outline-none"
               // plaintext: each line/paragraph picks its own direction, so
               // Arabic paragraphs read right-to-left and English ones left-to-right.
@@ -442,33 +443,32 @@ export default function ImageToText() {
                 <div className="w-full max-w-xs">
                   <ProgressBar value={progress.stage === 'recognizing' ? progress.fraction * 100 : 0} label={stageLabel} />
                 </div>
-                <p className="text-center text-xs text-ink-3">The first run downloads this language’s recognition data once; after that it’s cached on your device.</p>
+                <p className="text-center text-xs text-ink-3">{tr("The first run downloads this language’s recognition data once; after that it’s cached on your device.")}</p>
               </div>
             )}
           </div>
 
           <div className="flex flex-wrap items-center justify-between gap-2 border-t border-line px-3 py-2">
             <div className="flex flex-wrap gap-1.5">
-              <Button variant="secondary" className="px-3 py-1.5 text-xs" disabled={!text} onClick={async () => flash((await copyToClipboard(text)) ? 'Copied all text' : 'Copy failed')}>Copy all</Button>
-              <Button variant="secondary" className="px-3 py-1.5 text-xs" disabled={!text} onClick={() => void copySelected()}>Copy selection</Button>
-              <Button variant="secondary" className="px-3 py-1.5 text-xs" disabled={!text} onClick={() => downloadText(text, `${baseName}.txt`, 'text/plain')}>Download .txt</Button>
-              <Button variant="secondary" className="px-3 py-1.5 text-xs" disabled={!text} onClick={() => downloadText(toMarkdown(text, file.name), `${baseName}.md`, 'text/markdown')}>Download .md</Button>
-              <Button variant="ghost" className="px-3 py-1.5 text-xs" disabled={!text} onClick={() => setText('')}>Clear</Button>
+              <Button variant="secondary" className="px-3 py-1.5 text-xs" disabled={!text} onClick={async () => flash((await copyToClipboard(text)) ? 'Copied all text' : 'Copy failed')}>{tr("Copy all")}</Button>
+              <Button variant="secondary" className="px-3 py-1.5 text-xs" disabled={!text} onClick={() => void copySelected()}>{tr("Copy selection")}</Button>
+              <Button variant="secondary" className="px-3 py-1.5 text-xs" disabled={!text} onClick={() => downloadText(text, `${baseName}.txt`, 'text/plain')}>{tr("Download .txt")}</Button>
+              <Button variant="secondary" className="px-3 py-1.5 text-xs" disabled={!text} onClick={() => downloadText(toMarkdown(text, file.name), `${baseName}.md`, 'text/markdown')}>{tr("Download .md")}</Button>
+              <Button variant="ghost" className="px-3 py-1.5 text-xs" disabled={!text} onClick={() => setText('')}>{tr("Clear")}</Button>
             </div>
             <span className="text-xs text-ink-3" aria-live="polite">
-              {notice ?? (stats ? `${words} words · ${Math.round(stats.ms / 100) / 10}s` : '')}
+              {notice ?? (stats ? tr("{0} words · {1}s", { 0: words, 1: Math.round(stats.ms / 100) / 10 }) : '')}
             </span>
           </div>
         </section>
       </div>
 
       {settingsChanged && !busy && (
-        <p className="text-xs text-ink-2">Settings changed — click <strong>Re-run OCR</strong> to apply them.</p>
+        <p className="text-xs text-ink-2">{tr("Settings changed — click")}{' '}<strong>{tr("Re-run OCR")}</strong>{' '}{tr("to apply them.")}</p>
       )}
       {stats && stats.confidence < 65 && text && (
         <p className="rounded-md border border-line bg-paper-dim px-3 py-2 text-xs text-ink-2">
-          Recognition confidence is low ({Math.round(stats.confidence)}%). Check the result carefully. Sharper, well-lit, straight images give
-          better results; make sure the right language is selected, and rotate the image if the text is sideways.
+          {tr("Recognition confidence is low (")}{Math.round(stats.confidence)}{tr("%). Check the result carefully. Sharper, well-lit, straight images give better results; make sure the right language is selected, and rotate the image if the text is sideways.")}
         </p>
       )}
       {error && <ErrorMessage>{error}</ErrorMessage>}

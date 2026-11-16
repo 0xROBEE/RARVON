@@ -4,6 +4,7 @@ import ErrorMessage from '../../../components/ErrorMessage';
 import FileDropzone from '../../../components/FileDropzone';
 import DownloadButton from '../../../components/DownloadButton';
 import { CopyButton } from '../../../components/tool';
+import { tr } from '../../../lib/i18n';
 
 export default function Base64Tool() {
   const [mode, setMode] = useState<'text' | 'file'>('text');
@@ -18,7 +19,7 @@ export default function Base64Tool() {
       setOutput(btoa(unescape(encodeURIComponent(input))));
       setError(null);
     } catch {
-      setError('Could not encode this text.');
+      setError(tr("Could not encode this text."));
     }
   }
 
@@ -32,7 +33,7 @@ export default function Base64Tool() {
       bytes = Uint8Array.from(atob(padded), (c) => c.charCodeAt(0));
     } catch {
       setOutput('');
-      setError("That doesn't look like valid Base64.");
+      setError(tr("That doesn't look like valid Base64."));
       return;
     }
     try {
@@ -56,7 +57,7 @@ export default function Base64Tool() {
       setFileResult({ url: URL.createObjectURL(blob), name: `${file.name}.base64.txt` });
       setError(null);
     };
-    reader.onerror = () => setError('Could not read that file.');
+    reader.onerror = () => setError(tr("Could not read that file."));
     reader.readAsDataURL(file);
   }
 
@@ -69,7 +70,7 @@ export default function Base64Tool() {
             onClick={() => setMode(m)}
             className={`flex-1 rounded px-3 py-1.5 capitalize transition-colors ${mode === m ? 'bg-ink text-paper' : 'text-ink-2 hover:text-ink'}`}
           >
-            {m}
+            {tr(m)}
           </button>
         ))}
       </div>
@@ -81,25 +82,25 @@ export default function Base64Tool() {
             onChange={(e) => setInput(e.target.value)}
             rows={6}
             spellCheck={false}
-            placeholder="Text or Base64 to convert"
+            placeholder={tr("Text or Base64 to convert")}
             className="w-full rounded-md border border-line bg-paper px-3 py-2 font-mono text-xs leading-relaxed focus:border-workshop"
           />
           <div className="flex gap-2">
-            <Button onClick={encode} disabled={!input}>Encode</Button>
-            <Button variant="secondary" onClick={decode} disabled={!input}>Decode</Button>
+            <Button onClick={encode} disabled={!input}>{tr("Encode")}</Button>
+            <Button variant="secondary" onClick={decode} disabled={!input}>{tr("Decode")}</Button>
           </div>
           {error && <ErrorMessage>{error}</ErrorMessage>}
           {binary && (
             <div className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-line bg-paper-dim p-3 text-sm">
-              <span>Decoded {binary.size.toLocaleString()} bytes of binary data (not text).</span>
-              <DownloadButton url={binary.url} filename="decoded.bin" label="Download decoded file" />
+              <span>{tr("Decoded")}{' '}{binary.size.toLocaleString()}{' '}{tr("bytes of binary data (not text).")}</span>
+              <DownloadButton url={binary.url} filename="decoded.bin" label={tr("Download decoded file")} />
             </div>
           )}
           {output && (
             <div>
               <div className="mb-1.5 flex items-center justify-between">
-                <span className="text-xs font-medium text-ink-2">Result</span>
-                <CopyButton text={output} label="Copy" />
+                <span className="text-xs font-medium text-ink-2">{tr("Result")}</span>
+                <CopyButton text={output} label={tr("Copy")} />
               </div>
               <pre className="max-h-64 overflow-auto whitespace-pre-wrap break-all rounded-md border border-line bg-paper-dim px-3 py-2 font-mono text-xs leading-relaxed">
                 {output}
@@ -109,9 +110,9 @@ export default function Base64Tool() {
         </>
       ) : (
         <>
-          <FileDropzone onFiles={handleFile} hint="Any file type" />
+          <FileDropzone onFiles={handleFile} hint={tr("Any file type")} />
           {error && <ErrorMessage>{error}</ErrorMessage>}
-          {fileResult && <DownloadButton url={fileResult.url} filename={fileResult.name} label="Download .base64.txt" />}
+          {fileResult && <DownloadButton url={fileResult.url} filename={fileResult.name} label={tr("Download .base64.txt")} />}
         </>
       )}
     </div>

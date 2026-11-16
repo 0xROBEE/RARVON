@@ -13,11 +13,15 @@ import NotFound from './pages/NotFound';
 import { SearchProvider } from './lib/searchContext';
 import { ThemeProvider } from './lib/themeContext';
 import { WorkspaceProvider } from './lib/workspaceContext';
+import { useI18n } from './lib/i18n';
+import { tr } from './lib/i18n';
 
 // The Video Editor workspace is a full-screen page without the site header and footer.
 const VideoEditorWorkspace = lazy(() => import('./tools/video/editor/Workspace'));
 
 export default function App() {
+  // Re-render the whole tree when the language changes (state inside tools is kept).
+  useI18n();
   return (
     <BrowserRouter>
       <ThemeProvider>
@@ -27,7 +31,7 @@ export default function App() {
               <Route
                 path="/editor/video/:id"
                 element={
-                  <Suspense fallback={<div className="grid min-h-screen place-items-center text-sm text-ink-3">Opening editor…</div>}>
+                  <Suspense fallback={<div className="grid min-h-screen place-items-center text-sm text-ink-3">{tr("Opening editor…")}</div>}>
                     <VideoEditorWorkspace />
                   </Suspense>
                 }

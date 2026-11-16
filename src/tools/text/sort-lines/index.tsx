@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import Button from '../../../components/Button';
 import { CopyButton } from '../../../components/tool';
+import { tr } from '../../../lib/i18n';
 
 type Mode = 'alpha' | 'alpha-desc' | 'numeric' | 'length' | 'random';
 
@@ -43,28 +44,28 @@ export default function SortLinesTool() {
         value={text}
         onChange={(e) => setText(e.target.value)}
         rows={8}
-        placeholder={'One item per line…'}
+        placeholder={tr("One item per line…")}
         className="w-full rounded-md border border-line bg-paper px-3 py-2 font-mono text-xs leading-relaxed focus:border-workshop"
       />
       <div className="flex flex-wrap items-center gap-3">
         <select value={mode} onChange={(e) => setMode(e.target.value as Mode)} className="rounded-md border border-line bg-paper px-2 py-2 text-xs">
           <option value="alpha">A → Z</option>
           <option value="alpha-desc">Z → A</option>
-          <option value="numeric">Numeric</option>
-          <option value="length">By length</option>
-          <option value="random">Shuffle</option>
+          <option value="numeric">{tr("Numeric")}</option>
+          <option value="length">{tr("By length")}</option>
+          <option value="random">{tr("Shuffle")}</option>
         </select>
         <label className="flex items-center gap-2 text-xs text-ink-2">
           <input type="checkbox" checked={removeEmpty} onChange={(e) => setRemoveEmpty(e.target.checked)} />
-          Remove empty lines
+          {tr("Remove empty lines")}
         </label>
-        <Button onClick={run} disabled={!text}>Sort</Button>
+        <Button onClick={run} disabled={!text}>{tr("Sort")}</Button>
       </div>
       {output !== '' && (
         <div>
           <div className="mb-1.5 flex items-center justify-between">
-            <span className="text-xs font-medium text-ink-2">Result</span>
-            <CopyButton text={output} label="Copy" />
+            <span className="text-xs font-medium text-ink-2">{tr("Result")}</span>
+            <CopyButton text={output} label={tr("Copy")} />
           </div>
           <pre className="max-h-72 overflow-auto whitespace-pre-wrap rounded-md border border-line bg-paper-dim px-3 py-2 font-mono text-xs leading-relaxed">
             {output}

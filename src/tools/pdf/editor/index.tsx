@@ -15,6 +15,7 @@ import '@fontsource/noto-sans/400.css';
 import '@fontsource/noto-sans-arabic/400.css';
 import { newId } from './types';
 import type { Annotation, EditorSnapshot, EditorTool, PageInstance, ShapeKind } from './types';
+import { tr } from '../../../lib/i18n';
 
 export default function PdfEditor() {
   return (
@@ -211,7 +212,7 @@ function PdfEditorInner() {
     return (
       <div className="flex justify-center">
         <div className="w-full max-w-3xl space-y-4">
-          <FileDropzone accept="application/pdf" onFiles={handleFile} hint="Opens entirely in your browser — nothing is uploaded" />
+          <FileDropzone accept="application/pdf" onFiles={handleFile} hint={tr("Opens entirely in your browser — nothing is uploaded")} />
           {loadError && <ErrorMessage>{loadError}</ErrorMessage>}
         </div>
       </div>
@@ -226,10 +227,10 @@ function PdfEditorInner() {
   return (
     <div data-workspace className="space-y-2">
       <div className="flex items-center justify-between text-xs text-ink-3">
-        <span className="truncate">{file.name} · {pages.length} page{pages.length !== 1 ? 's' : ''} · processed locally, not uploaded</span>
+        <span className="truncate">{file.name} · {tr(pages.length === 1 ? '{n} page' : '{n} pages', { n: pages.length })}{' '}{tr("· processed locally, not uploaded")}</span>
         <div className="flex gap-2 md:hidden">
-          <button onClick={() => setShowThumbsMobile((v) => !v)} className="rounded border border-line px-2 py-1">Pages</button>
-          <button onClick={() => setShowOptionsMobile((v) => !v)} className="rounded border border-line px-2 py-1">Options</button>
+          <button onClick={() => setShowThumbsMobile((v) => !v)} className="rounded border border-line px-2 py-1">{tr("Pages")}</button>
+          <button onClick={() => setShowOptionsMobile((v) => !v)} className="rounded border border-line px-2 py-1">{tr("Options")}</button>
         </div>
       </div>
 
@@ -251,7 +252,7 @@ function PdfEditorInner() {
           exporting={exporting}
         />
         <div className="flex min-h-0 flex-1">
-          <div className="hidden w-40 shrink-0 border-r border-line md:block lg:w-48">
+          <div className="hidden w-40 shrink-0 border-e border-line md:block lg:w-48">
             {currentPage && (
               <ThumbnailSidebar
                 srcBytes={srcBytes}
@@ -322,8 +323,8 @@ function PdfEditorInner() {
         <div className="fixed inset-0 z-40 flex md:hidden">
           <div className="w-64 bg-paper" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between border-b border-line p-2">
-              <span className="text-xs font-medium">Pages</span>
-              <button onClick={() => setShowThumbsMobile(false)} className="text-xs">Close</button>
+              <span className="text-xs font-medium">{tr("Pages")}</span>
+              <button onClick={() => setShowThumbsMobile(false)} className="text-xs">{tr("Close")}</button>
             </div>
             <ThumbnailSidebar
               srcBytes={srcBytes}
@@ -346,8 +347,8 @@ function PdfEditorInner() {
           <div className="flex-1 bg-ink/40" onClick={() => setShowOptionsMobile(false)} />
           <div className="w-64 bg-paper" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between border-b border-line p-2">
-              <span className="text-xs font-medium">Options</span>
-              <button onClick={() => setShowOptionsMobile(false)} className="text-xs">Close</button>
+              <span className="text-xs font-medium">{tr("Options")}</span>
+              <button onClick={() => setShowOptionsMobile(false)} className="text-xs">{tr("Close")}</button>
             </div>
             <OptionsPanel
               tool={tool}
@@ -375,11 +376,10 @@ function PdfEditorInner() {
       )}
 
       <p className="text-xs text-ink-3">
-        "Add/Edit Annotations" (this editor) draws new content on top of your PDF — it doesn't rewrite the
-        original text underneath, which real PDF text editing would require and isn't supported yet.
+        {tr("\"Add/Edit Annotations\" (this editor) draws new content on top of your PDF — it doesn't rewrite the original text underneath, which real PDF text editing would require and isn't supported yet.")}
       </p>
 
-      {exporting && <ProgressBar value={exportProgress * 100} label="Building PDF" />}
+      {exporting && <ProgressBar value={exportProgress * 100} label={tr("Building PDF")} />}
       {exportError && <ErrorMessage>{exportError}</ErrorMessage>}
       {result && (
         <div className="flex items-center justify-between rounded-md border border-line bg-paper-dim p-3">

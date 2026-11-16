@@ -7,6 +7,7 @@ import ProgressBar from '../../../components/ProgressBar';
 import { formatBytes } from '../../../lib/imageUtils';
 import { openPdfForRendering } from '../../../lib/pdfjs';
 import { ResultCard, ActionBar } from '../../../components/tool';
+import { tr } from '../../../lib/i18n';
 
 export default function CompressPdf() {
   const [file, setFile] = useState<File | null>(null);
@@ -56,7 +57,7 @@ export default function CompressPdf() {
       const base = file.name.replace(/\.pdf$/i, '');
       setResult({ url: URL.createObjectURL(blob), name: `${base}-compressed.pdf`, size: blob.size });
     } catch {
-      setError('Could not compress this PDF. Make sure it is a valid, unencrypted PDF.');
+      setError(tr("Could not compress this PDF. Make sure it is a valid, unencrypted PDF."));
     } finally {
       setBusy(false);
     }
@@ -69,38 +70,36 @@ export default function CompressPdf() {
       ) : (
         <div className="flex items-center justify-between rounded-md border border-line bg-paper-dim p-3 text-sm">
           <span className="truncate">{file.name} · {formatBytes(file.size)}</span>
-          <button onClick={() => { setFile(null); setResult(null); }} className="text-xs font-medium text-workshop hover:underline">Remove</button>
+          <button onClick={() => { setFile(null); setResult(null); }} className="text-xs font-medium text-workshop hover:underline">{tr("Remove")}</button>
         </div>
       )}
 
       {file && (
         <>
           <label className="flex items-center gap-3 text-xs text-ink-2">
-            Image quality
+            {tr("Image quality")}
             <input type="range" min={0.3} max={0.95} step={0.05} value={quality} onChange={(e) => setQuality(Number(e.target.value))} className="flex-1" />
             {Math.round(quality * 100)}%
           </label>
           <label className="flex items-center gap-3 text-xs text-ink-2">
-            Resolution
+            {tr("Resolution")}
             <input type="range" min={0.7} max={2} step={0.1} value={scale} onChange={(e) => setScale(Number(e.target.value))} className="flex-1" />
             {scale.toFixed(1)}×
           </label>
-          <ActionBar><Button onClick={compress} disabled={busy}>{busy ? 'Compressing…' : 'Compress PDF'}</Button></ActionBar>
-          {busy && <ProgressBar value={progress} label="Rendering pages" />}
+          <ActionBar><Button onClick={compress} disabled={busy}>{busy ? tr("Compressing…") : tr("Compress PDF")}</Button></ActionBar>
+          {busy && <ProgressBar value={progress} label={tr("Rendering pages")} />}
         </>
       )}
       {error && <ErrorMessage>{error}</ErrorMessage>}
       {result && file && (
         <ResultCard url={result.url} filename={result.name}>{result.name} · {formatBytes(result.size)}
-            <span className="ml-1 text-ink-3">
-              ({result.size < file.size ? `-${Math.round((1 - result.size / file.size) * 100)}%` : 'no smaller'})
+            <span className="ms-1 text-ink-3">
+              ({result.size < file.size ? `-${Math.round((1 - result.size / file.size) * 100)}%` : tr("no smaller")})
             </span></ResultCard>
       )}
       {result && file && result.size >= file.size && (
         <p className="text-xs text-ink-2">
-          The result isn&rsquo;t smaller than your original, so you&rsquo;re better off keeping the original. This method
-          works best on scanned or image-heavy PDFs; text-only documents are usually already compact. Lowering quality or
-          resolution may help.
+          {tr("The result isn’t smaller than your original, so you’re better off keeping the original. This method works best on scanned or image-heavy PDFs; text-only documents are usually already compact. Lowering quality or resolution may help.")}
         </p>
       )}
     </div>

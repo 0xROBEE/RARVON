@@ -5,6 +5,7 @@ import Button from '../../../components/Button';
 import ErrorMessage from '../../../components/ErrorMessage';
 import { canvasToBlob } from '../../../lib/imageUtils';
 import { ResultCard } from '../../../components/tool';
+import { tr } from '../../../lib/i18n';
 
 interface Rect { x: number; y: number; w: number; h: number }
 
@@ -68,14 +69,14 @@ export default function ImageCrop() {
       const scaleY = natural.h / box.height;
       const sx = rect.x * scaleX, sy = rect.y * scaleY, sw = rect.w * scaleX, sh = rect.h * scaleY;
       if (sw < 1 || sh < 1) {
-        setError('Drag a selection on the image first.');
+        setError(tr("Drag a selection on the image first."));
         return;
       }
       const canvas = document.createElement('canvas');
       canvas.width = Math.round(sw);
       canvas.height = Math.round(sh);
       const ctx = canvas.getContext('2d');
-      if (!ctx) throw new Error('Canvas is not supported in this browser.');
+      if (!ctx) throw new Error(tr("Canvas is not supported in this browser."));
       ctx.drawImage(imgRef.current, sx, sy, sw, sh, 0, 0, sw, sh);
       const type = file.type === 'image/png' ? 'image/png' : 'image/jpeg';
       const blob = await canvasToBlob(canvas, type, 0.92);
@@ -104,7 +105,7 @@ export default function ImageCrop() {
             <img
               ref={imgRef}
               src={imgUrl}
-              alt="To crop"
+              alt={tr("To crop")}
               className="block max-h-[420px] max-w-full"
               onLoad={(e) => setNatural({ w: e.currentTarget.naturalWidth, h: e.currentTarget.naturalHeight })}
               draggable={false}
@@ -116,11 +117,11 @@ export default function ImageCrop() {
               />
             )}
           </div>
-          <p className="text-xs text-ink-3">Drag on the image to select the region to keep.</p>
+          <p className="text-xs text-ink-3">{tr("Drag on the image to select the region to keep.")}</p>
           <div className="flex gap-2">
-            <Button onClick={crop} disabled={!rect || rect.w < 4}>Crop</Button>
+            <Button onClick={crop} disabled={!rect || rect.w < 4}>{tr("Crop")}</Button>
             <Button variant="secondary" onClick={() => { setFile(null); setImgUrl(''); setRect(null); setResult(null); }}>
-              Choose a different image
+              {tr("Choose a different image")}
             </Button>
           </div>
         </>

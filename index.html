@@ -24,6 +24,13 @@
         } catch (e) {
           document.documentElement.setAttribute('data-theme', 'light');
         }
+        // Interface language (English unless the visitor switched to Arabic).
+        try {
+          if (localStorage.getItem('bench-lang') === 'ar') {
+            document.documentElement.setAttribute('lang', 'ar');
+            document.documentElement.setAttribute('dir', 'rtl');
+          }
+        } catch (e) {}
       })();
     </script>
     <title>Bench — Free tools. No ads. No account.</title>

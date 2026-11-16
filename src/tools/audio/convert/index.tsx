@@ -10,6 +10,7 @@ import { formatBytes } from '../../../lib/imageUtils';
 import { AUDIO_TARGETS, CancelledError, convertAudio, encodableAudioTargets, probeAudio } from '../../../lib/audioEngine';
 import type { AudioInfo, AudioTarget } from '../../../lib/audioEngine';
 import { ActionBar, OptionCards } from '../../../components/tool';
+import { tr } from '../../../lib/i18n';
 
 const CODEC_LABELS: Record<string, string> = {
   aac: 'AAC', opus: 'Opus', mp3: 'MP3', vorbis: 'Vorbis', flac: 'FLAC', alac: 'ALAC',
@@ -94,29 +95,29 @@ export default function AudioConvertTool() {
   return (
     <div className="space-y-4">
       {!file ? (
-        <FileDropzone accept="audio/*,.mp3,.m4a,.flac,.ogg,.opus,.wav,.aac" onFiles={handleFile} hint="MP3, WAV, OGG, FLAC, M4A or Opus" />
+        <FileDropzone accept="audio/*,.mp3,.m4a,.flac,.ogg,.opus,.wav,.aac" onFiles={handleFile} hint={tr("MP3, WAV, OGG, FLAC, M4A or Opus")} />
       ) : (
         <div className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-line bg-paper-dim p-3 text-sm">
           <div className="flex flex-wrap items-center gap-2">
             <span className="truncate">{file.name} · {formatBytes(file.size)} · {formatDuration(duration)}</span>
             {sourceLabel && <FormatBadge label={sourceLabel} />}
           </div>
-          <button onClick={reset} className="text-xs font-medium text-workshop hover:underline">Remove</button>
+          <button onClick={reset} className="text-xs font-medium text-workshop hover:underline">{tr("Remove")}</button>
         </div>
       )}
 
       {file && (
         <>
-          <OptionCards legend="Convert to" name="audio-target" disabled={busy} value={fallback ? 'wav' : target} onChange={setTarget} options={options.map((o) => { const [label, hint] = o.label.split(' — '); return { value: o.value, label, hint }; })} />
-          {fallback && <p className="text-xs text-ink-3">This file can be decoded but not re-packaged by the converter, so only WAV output is available for it.</p>}
+          <OptionCards legend={tr("Convert to")} name="audio-target" disabled={busy} value={fallback ? 'wav' : target} onChange={setTarget} options={options.map((o) => { const [label, hint] = o.label.split(' — '); return { value: o.value, label, hint }; })} />
+          {fallback && <p className="text-xs text-ink-3">{tr("This file can be decoded but not re-packaged by the converter, so only WAV output is available for it.")}</p>}
           {target === 'mp3' && !fallback && (
-            <p className="text-xs text-ink-3">The first MP3 export downloads the MP3 encoder once (about 120 KB compressed); it runs on your device like everything else.</p>
+            <p className="text-xs text-ink-3">{tr("The first MP3 export downloads the MP3 encoder once (about 120 KB compressed); it runs on your device like everything else.")}</p>
           )}
           <ActionBar>
-            <Button onClick={convert} disabled={busy}>{busy ? 'Converting…' : 'Convert'}</Button>
-            {busy && <Button variant="secondary" onClick={() => abortRef.current?.abort()}>Cancel</Button>}
+            <Button onClick={convert} disabled={busy}>{busy ? tr("Converting…") : tr("Convert")}</Button>
+            {busy && <Button variant="secondary" onClick={() => abortRef.current?.abort()}>{tr("Cancel")}</Button>}
           </ActionBar>
-          {busy && <ProgressBar value={progress * 100} label={`Converting… ${Math.round(progress * 100)}%`} />}
+          {busy && <ProgressBar value={progress * 100} label={tr("Converting… {0}%", { 0: Math.round(progress * 100) })} />}
         </>
       )}
       {error && <ErrorMessage>{error}</ErrorMessage>}

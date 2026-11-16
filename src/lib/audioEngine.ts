@@ -4,6 +4,7 @@ import {
   canEncodeAudio,
 } from 'mediabunny';
 import type { AudioCodec } from 'mediabunny';
+import { tr } from './i18n';
 
 /**
  * Audio conversion on top of Mediabunny + WebCodecs: demux any container the
@@ -66,7 +67,7 @@ export async function probeAudio(file: File): Promise<AudioInfo> {
   const input = makeInput(file);
   if (!(await input.canRead())) throw new Error('unreadable');
   const track = await input.getPrimaryAudioTrack();
-  if (!track) throw new Error('This file has no audio track.');
+  if (!track) throw new Error(tr("This file has no audio track."));
   const [durationSec, videoTracks] = await Promise.all([input.computeDuration(), input.getVideoTracks()]);
   return {
     durationSec,
@@ -136,9 +137,9 @@ function ensureMp3Encoder(): Promise<void> {
  */
 export async function convertAudio(file: File, options: AudioJobOptions): Promise<{ blob: Blob; extension: string; mime: string; copied: boolean }> {
   const input = makeInput(file);
-  if (!(await input.canRead())) throw new Error('This file’s format isn’t supported.');
+  if (!(await input.canRead())) throw new Error(tr("This file’s format isn’t supported."));
   const track = await input.getPrimaryAudioTrack();
-  if (!track) throw new Error('This file has no audio track.');
+  if (!track) throw new Error(tr("This file has no audio track."));
 
   let format;
   let extension: string;
@@ -179,7 +180,7 @@ export async function convertAudio(file: File, options: AudioJobOptions): Promis
     showWarnings: false,
   });
   if (!conversion.isValid) {
-    throw new Error('This browser can’t decode the audio in this file.');
+    throw new Error(tr("This browser can’t decode the audio in this file."));
   }
   conversion.onProgress = (f) => options.onProgress?.(f);
 
@@ -194,6 +195,6 @@ export async function convertAudio(file: File, options: AudioJobOptions): Promis
     options.signal?.removeEventListener('abort', onAbort);
   }
   if (options.signal?.aborted) throw new CancelledError();
-  if (!target.buffer) throw new Error('Conversion finished but produced no output.');
+  if (!target.buffer) throw new Error(tr("Conversion finished but produced no output."));
   return { blob: new Blob([target.buffer], { type: mime }), extension, mime, copied };
 }

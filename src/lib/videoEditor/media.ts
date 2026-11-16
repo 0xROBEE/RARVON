@@ -1,6 +1,7 @@
 import { Input, BlobSource, ALL_FORMATS, CanvasSink } from 'mediabunny';
 import type { MediaItem, MediaType } from './types';
 import { uid } from './types';
+import { tr } from '../i18n';
 
 export const ACCEPT = 'video/mp4,video/quicktime,video/webm,video/x-matroska,.mkv,.mov,image/*,audio/*,.mp3,.m4a,.wav,.flac,.ogg,.opus';
 const MAX_BYTES = 2 * 1024 * 1024 * 1024;
@@ -27,13 +28,13 @@ function thumbFrom(source: CanvasImageSource, w: number, h: number) {
 /** Reads a dropped/picked file into a MediaItem (duration, size, thumbnail). Throws a readable message on failure. */
 export async function probeMedia(file: File): Promise<MediaItem> {
   const type = kindOf(file);
-  if (!type) throw new Error(`“${file.name}” isn't a video, picture or audio file.`);
-  if (file.size > MAX_BYTES) throw new Error(`“${file.name}” is larger than 2 GB, too big to edit in the browser.`);
+  if (!type) throw new Error(tr("“{0}” isn't a video, picture or audio file.", { 0: file.name }));
+  if (file.size > MAX_BYTES) throw new Error(tr("“{0}” is larger than 2 GB, too big to edit in the browser.", { 0: file.name }));
   const base = { id: uid(), name: file.name, type, mime: file.type || '', size: file.size };
 
   if (type === 'image') {
     const bmp = await createImageBitmap(file).catch(() => null);
-    if (!bmp) throw new Error(`“${file.name}” couldn't be opened as a picture.`);
+    if (!bmp) throw new Error(tr("“{0}” couldn't be opened as a picture.", { 0: file.name }));
     const item: MediaItem = { ...base, duration: 0, width: bmp.width, height: bmp.height, hasAudio: false, thumb: thumbFrom(bmp, bmp.width, bmp.height) };
     bmp.close();
     return item;
@@ -41,7 +42,7 @@ export async function probeMedia(file: File): Promise<MediaItem> {
 
   const input = new Input({ source: new BlobSource(file), formats: ALL_FORMATS });
   if (!(await input.canRead().catch(() => false))) {
-    throw new Error(`This browser can't read “${file.name}”. MP4, MOV, WebM and MKV videos and MP3, M4A, WAV, FLAC and OGG audio work.`);
+    throw new Error(tr("This browser can't read “{0}”. MP4, MOV, WebM and MKV videos and MP3, M4A, WAV, FLAC and OGG audio work.", { 0: file.name }));
   }
   const [videoTrack, audioTrack, duration] = await Promise.all([
     input.getPrimaryVideoTrack(),
@@ -50,12 +51,12 @@ export async function probeMedia(file: File): Promise<MediaItem> {
   ]);
 
   if (type === 'audio' || !videoTrack) {
-    if (!audioTrack) throw new Error(`“${file.name}” has no audio or video in it.`);
+    if (!audioTrack) throw new Error(tr("“{0}” has no audio or video in it.", { 0: file.name }));
     return { ...base, type: 'audio', duration, width: 0, height: 0, hasAudio: true };
   }
 
   if (!(await videoTrack.canDecode().catch(() => false))) {
-    throw new Error(`This browser can't decode the video in “${file.name}” (codec: ${videoTrack.codec ?? 'unknown'}). Try converting it to MP4 first.`);
+    throw new Error(tr("This browser can't decode the video in “{0}” (codec: {1}). Try converting it to MP4 first.", { 0: file.name, 1: videoTrack.codec ?? 'unknown' }));
   }
   const [width, height] = await Promise.all([videoTrack.getDisplayWidth(), videoTrack.getDisplayHeight()]);
   let thumb: string | undefined;

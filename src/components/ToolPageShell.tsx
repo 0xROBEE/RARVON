@@ -5,6 +5,7 @@ import { getCategory, relatedTools } from '../lib/toolRegistry';
 import { CategoryIcon } from '../lib/categoryIcons';
 import { useWorkspace } from '../lib/workspaceContext';
 import { KIND_LABEL, kindOfFile, toolsForKind } from '../lib/fileKinds';
+import { tr } from '../lib/i18n';
 
 /**
  * Next steps under a tool: once it has produced a result, tools that accept
@@ -24,8 +25,8 @@ function NextSteps({ tool, wide }: { tool: ToolMeta; wide: boolean }) {
     <section className={`mt-10 border-t border-line pt-6 ${wide ? 'mx-auto max-w-3xl' : ''}`} aria-labelledby="next-heading">
       {next.length > 0 && own && kind ? (
         <>
-          <h2 id="next-heading" className="font-display text-sm font-semibold">Continue with {own.filename}</h2>
-          <p className="mt-1 text-xs text-ink-3">Opens the tool with your {KIND_LABEL[kind]} already loaded.</p>
+          <h2 id="next-heading" className="font-display text-sm font-semibold">{tr('Continue with {name}', { name: own.filename })}</h2>
+          <p className="mt-1 text-xs text-ink-3">{tr('Opens the tool with your {kind} already loaded.', { kind: tr(KIND_LABEL[kind]) })}</p>
           <div className="mt-3 flex flex-wrap gap-2">
             {next.map((t) => (
               <Link
@@ -35,14 +36,14 @@ function NextSteps({ tool, wide }: { tool: ToolMeta; wide: boolean }) {
                 className="flex items-center gap-2 rounded-full border border-line py-1 pe-3 ps-1 text-xs font-medium text-ink-2 hover:border-ink hover:text-ink"
               >
                 <CategoryIcon category={t.category} size={22} />
-                {t.name}
+                {tr(t.name)}
               </Link>
             ))}
           </div>
         </>
       ) : (
         <>
-          <h2 id="next-heading" className="font-display text-sm font-semibold">Related tools</h2>
+          <h2 id="next-heading" className="font-display text-sm font-semibold">{tr('Related tools')}</h2>
           <div className="mt-3 flex flex-wrap gap-2">
             {related.map((t) => (
               <Link
@@ -51,7 +52,7 @@ function NextSteps({ tool, wide }: { tool: ToolMeta; wide: boolean }) {
                 className="flex items-center gap-2 rounded-full border border-line py-1 pe-3 ps-1 text-xs font-medium text-ink-2 hover:border-ink hover:text-ink"
               >
                 <CategoryIcon category={t.category} size={22} />
-                {t.name}
+                {tr(t.name)}
               </Link>
             ))}
           </div>
@@ -70,18 +71,18 @@ export default function ToolPageShell({ tool, children }: { tool: ToolMeta; chil
           open a workspace (an element with data-workspace), then the header
           collapses to a compact full-width bar above it. */}
       <div className={wide ? 'mx-auto max-w-3xl pt-6 group-has-[[data-workspace]]/shell:max-w-none group-has-[[data-workspace]]/shell:pt-0' : undefined}>
-        <nav aria-label="Breadcrumb" className="mb-2 flex flex-wrap items-center gap-1 text-xs text-ink-3">
-          <Link to="/tools" className="hover:text-ink">All tools</Link>
+        <nav aria-label={tr("Breadcrumb")} className="mb-2 flex flex-wrap items-center gap-1 text-xs text-ink-3">
+          <Link to="/tools" className="hover:text-ink">{tr('All tools')}</Link>
           <span aria-hidden="true">/</span>
-          <Link to={`/tools/${tool.category}`} className="hover:text-ink">{category?.name}</Link>
+          <Link to={`/tools/${tool.category}`} className="hover:text-ink">{tr(category?.name ?? '')}</Link>
           <span aria-hidden="true">/</span>
-          <span className="text-ink">{tool.name}</span>
+          <span className="text-ink">{tr(tool.name)}</span>
         </nav>
         <div className="flex items-center gap-3">
           <CategoryIcon category={tool.category} size={40} className={wide ? 'group-has-[[data-workspace]]/shell:hidden' : undefined} />
-          <h1 className={`font-display text-2xl font-semibold tracking-tight sm:text-3xl ${wide ? 'group-has-[[data-workspace]]/shell:text-lg sm:group-has-[[data-workspace]]/shell:text-xl' : ''}`}>{tool.name}</h1>
+          <h1 className={`font-display text-2xl font-semibold tracking-tight sm:text-3xl ${wide ? 'group-has-[[data-workspace]]/shell:text-lg sm:group-has-[[data-workspace]]/shell:text-xl' : ''}`}>{tr(tool.name)}</h1>
         </div>
-        <p className={`mt-2 max-w-xl text-sm text-ink-2 ${wide ? 'group-has-[[data-workspace]]/shell:hidden' : ''}`}>{tool.description}</p>
+        <p className={`mt-2 max-w-xl text-sm text-ink-2 ${wide ? 'group-has-[[data-workspace]]/shell:hidden' : ''}`}>{tr(tool.description)}</p>
       </div>
 
       <div className={wide ? 'mt-8 group-has-[[data-workspace]]/shell:mt-3' : 'mt-8'}>{children}</div>
@@ -90,12 +91,12 @@ export default function ToolPageShell({ tool, children }: { tool: ToolMeta; chil
 
       {tool.faq && tool.faq.length > 0 && (
         <section className={`mt-12 border-t border-line pt-6 ${wide ? 'mx-auto max-w-3xl' : ''}`} aria-labelledby="faq-heading">
-          <h2 id="faq-heading" className="font-display text-sm font-semibold">Frequently asked questions</h2>
+          <h2 id="faq-heading" className="font-display text-sm font-semibold">{tr('Frequently asked questions')}</h2>
           <dl className="mt-3 space-y-4">
             {tool.faq.map((f) => (
               <div key={f.q}>
-                <dt className="text-sm font-medium">{f.q}</dt>
-                <dd className="mt-1 text-sm text-ink-2">{f.a}</dd>
+                <dt className="text-sm font-medium">{tr(f.q)}</dt>
+                <dd className="mt-1 text-sm text-ink-2">{tr(f.a)}</dd>
               </div>
             ))}
           </dl>

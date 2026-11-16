@@ -8,6 +8,7 @@ import { getSupportedEncodeFormats } from '../../../lib/imageFormatSupport';
 import type { ImageFormatOption } from '../../../lib/imageFormatSupport';
 import { resolutionPresets, socialPresets } from '../../../lib/resizePresets';
 import { ResultCard, ActionBar } from '../../../components/tool';
+import { tr } from '../../../lib/i18n';
 
 const MAX_PREVIEW_DIM = 380;
 const MIN_DIM = 8;
@@ -80,7 +81,7 @@ export default function ImageResize() {
       const preferred = encodeFormats.find((fmt) => fmt.mime === f.type) ?? encodeFormats[0] ?? null;
       setFormat(preferred);
     } catch {
-      setError('Could not read this image.');
+      setError(tr("Could not read this image."));
     }
   }
 
@@ -176,7 +177,7 @@ export default function ImageResize() {
         canvas.width = width;
         canvas.height = height;
         const ctx = canvas.getContext('2d');
-        if (!ctx || !img) throw new Error('Canvas is not supported in this browser.');
+        if (!ctx || !img) throw new Error(tr("Canvas is not supported in this browser."));
         if (format.mime === 'image/jpeg') {
           ctx.fillStyle = '#ffffff';
           ctx.fillRect(0, 0, width, height);
@@ -211,7 +212,7 @@ export default function ImageResize() {
             onClick={() => { setFile(null); setImg(null); setOriginal(null); setResult(null); }}
             className="text-xs font-medium text-workshop hover:underline"
           >
-            Remove
+            {tr("Remove")}
           </button>
         </div>
       )}
@@ -224,17 +225,17 @@ export default function ImageResize() {
               style={{ width: MAX_PREVIEW_DIM, height: MAX_PREVIEW_DIM, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
             >
               <div className="relative" style={{ width: previewW, height: previewH }}>
-                <img src={img.src} alt="Preview" className={`block h-full w-full rounded-sm shadow-sm ${fit === 'cover' ? 'object-cover' : fit === 'contain' ? 'object-contain' : 'object-fill'}`} draggable={false} />
+                <img src={img.src} alt={tr("Preview")} className={`block h-full w-full rounded-sm shadow-sm ${fit === 'cover' ? 'object-cover' : fit === 'contain' ? 'object-contain' : 'object-fill'}`} draggable={false} />
                 <div
                   onPointerDown={onHandlePointerDown}
                   onPointerMove={onHandlePointerMove}
                   onPointerUp={onHandlePointerUp}
                   onPointerLeave={onHandlePointerUp}
                   role="slider"
-                  aria-label="Drag to resize"
+                  aria-label={tr("Drag to resize")}
                   aria-valuenow={width}
                   tabIndex={0}
-                  className="absolute -right-1.5 -bottom-1.5 h-4 w-4 touch-none cursor-nwse-resize rounded-full border-2 border-paper bg-workshop shadow"
+                  className="absolute -end-1.5 -bottom-1.5 h-4 w-4 touch-none cursor-nwse-resize rounded-full border-2 border-paper bg-workshop shadow"
                 />
               </div>
             </div>
@@ -242,32 +243,32 @@ export default function ImageResize() {
             <div className="space-y-3">
               <div className="grid grid-cols-2 gap-3 text-xs">
                 <div className="rounded-md border border-line bg-paper-dim p-3">
-                  <p className="text-ink-3">Original</p>
+                  <p className="text-ink-3">{tr("Original")}</p>
                   <p className="mt-0.5 font-display text-sm font-semibold">{original.w} × {original.h}</p>
                   <p className="text-ink-3">{formatBytes(file.size)}</p>
                 </div>
                 <div className="rounded-md border border-line bg-paper-dim p-3">
-                  <p className="text-ink-3">Current</p>
+                  <p className="text-ink-3">{tr("Current")}</p>
                   <p className="mt-0.5 font-display text-sm font-semibold">{width} × {height}</p>
                   <p className="text-ink-3">
-                    {estimating ? 'estimating…' : estimatedSize !== null ? `~${formatBytes(estimatedSize)} (estimated)` : '—'}
+                    {estimating ? tr("estimating…") : estimatedSize !== null ? tr("~{0} (estimated)", { 0: formatBytes(estimatedSize) }) : '—'}
                   </p>
                 </div>
               </div>
 
               <div className="flex flex-wrap items-end gap-3">
                 <label className="text-xs text-ink-2">
-                  Width
+                  {tr("Width")}
                   <input type="number" value={width} onChange={(e) => onWidthChange(Number(e.target.value))} className="mt-1 block w-24 rounded-md border border-line bg-paper px-2 py-1.5 text-sm" />
                 </label>
                 <label className="text-xs text-ink-2">
-                  Height
+                  {tr("Height")}
                   <input type="number" value={height} onChange={(e) => onHeightChange(Number(e.target.value))} className="mt-1 block w-24 rounded-md border border-line bg-paper px-2 py-1.5 text-sm" />
                 </label>
                 <button
                   onClick={() => setLockRatio((v) => !v)}
                   aria-pressed={lockRatio}
-                  title={lockRatio ? 'Aspect ratio locked' : 'Aspect ratio unlocked'}
+                  title={lockRatio ? tr("Aspect ratio locked") : tr("Aspect ratio unlocked")}
                   className={`mb-0.5 flex h-8 w-8 items-center justify-center rounded-md border ${lockRatio ? 'border-workshop bg-workshop-dim text-workshop' : 'border-line text-ink-3'}`}
                 >
                   {lockRatio ? (
@@ -279,9 +280,9 @@ export default function ImageResize() {
               </div>
 
               <label className="flex items-center gap-3 text-xs text-ink-2">
-                Scale
+                {tr("Scale")}
                 <input type="range" min={5} max={200} value={percent} onChange={(e) => onPercentChange(Number(e.target.value))} className="flex-1 max-w-xs" />
-                <span className="w-12 text-right font-mono">{percent}%</span>
+                <span className="w-12 text-end font-mono">{percent}%</span>
               </label>
             </div>
           </div>
@@ -294,13 +295,13 @@ export default function ImageResize() {
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className={showAdvanced ? 'rotate-90' : ''}>
                 <path d="M9 6l6 6-6 6" strokeLinecap="round" strokeLinejoin="round" />
               </svg>
-              Advanced
+              {tr("Advanced")}
             </button>
 
             {showAdvanced && (
               <div className="mt-3 space-y-4 rounded-md border border-line bg-paper-dim p-4">
                 <div>
-                  <p className="mb-2 text-xs font-medium text-ink-2">Resolution presets</p>
+                  <p className="mb-2 text-xs font-medium text-ink-2">{tr("Resolution presets")}</p>
                   <div className="flex flex-wrap gap-2">
                     {resolutionPresets.map((p) => (
                       <button key={p.label} onClick={() => applyPreset(p.width, p.height)} className="rounded-md border border-line bg-paper px-2.5 py-1 text-xs hover:border-ink">
@@ -310,7 +311,7 @@ export default function ImageResize() {
                   </div>
                 </div>
                 <div>
-                  <p className="mb-2 text-xs font-medium text-ink-2">Social media presets</p>
+                  <p className="mb-2 text-xs font-medium text-ink-2">{tr("Social media presets")}</p>
                   <div className="flex flex-wrap gap-2">
                     {socialPresets.map((p) => (
                       <button key={p.label} onClick={() => applyPreset(p.width, p.height)} className="rounded-md border border-line bg-paper px-2.5 py-1 text-xs hover:border-ink">
@@ -321,7 +322,7 @@ export default function ImageResize() {
                 </div>
                 <div className="flex flex-wrap items-center gap-4">
                   <label className="flex items-center gap-2 text-xs text-ink-2">
-                    Output format
+                    {tr("Output format")}
                     <select
                       value={format?.mime ?? ''}
                       onChange={(e) => setFormat(encodeFormats.find((f) => f.mime === e.target.value) ?? null)}
@@ -334,7 +335,7 @@ export default function ImageResize() {
                   </label>
                   {supportsQuality && (
                     <label className="flex items-center gap-3 text-xs text-ink-2">
-                      Quality
+                      {tr("Quality")}
                       <input type="range" min={0.3} max={1} step={0.05} value={quality} onChange={(e) => setQuality(Number(e.target.value))} className="w-32" />
                       {Math.round(quality * 100)}%
                     </label>
@@ -346,15 +347,15 @@ export default function ImageResize() {
 
           {original && Math.abs(original.w / original.h - width / height) > 0.01 && (
             <label className="flex flex-wrap items-center gap-2 text-xs text-ink-2">
-              The new shape differs from the original —
-              <select value={fit} onChange={(e) => setFit(e.target.value as Fit)} className="rounded-md border border-line bg-paper px-2 py-1 text-xs text-ink" aria-label="Fit">
-                <option value="cover">Crop to fill</option>
-                <option value="contain">Fit inside (add borders)</option>
-                <option value="stretch">Stretch</option>
+              {tr("The new shape differs from the original —")}
+              <select value={fit} onChange={(e) => setFit(e.target.value as Fit)} className="rounded-md border border-line bg-paper px-2 py-1 text-xs text-ink" aria-label={tr("Fit")}>
+                <option value="cover">{tr("Crop to fill")}</option>
+                <option value="contain">{tr("Fit inside (add borders)")}</option>
+                <option value="stretch">{tr("Stretch")}</option>
               </select>
             </label>
           )}
-          <ActionBar><Button onClick={download} disabled={busy || !format}>{busy ? 'Preparing…' : 'Resize image'}</Button></ActionBar>
+          <ActionBar><Button onClick={download} disabled={busy || !format}>{busy ? tr("Preparing…") : tr("Resize image")}</Button></ActionBar>
         </>
       )}
 

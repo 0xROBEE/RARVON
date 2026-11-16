@@ -4,6 +4,7 @@ import FileDropzone from '../../../components/FileDropzone';
 import Button from '../../../components/Button';
 import ErrorMessage from '../../../components/ErrorMessage';
 import { ResultCard, ActionBar } from '../../../components/tool';
+import { tr } from '../../../lib/i18n';
 
 interface Meta {
   title: string; author: string; subject: string; keywords: string; creator: string; producer: string;
@@ -32,7 +33,7 @@ export default function PdfMetadata() {
         producer: doc.getProducer() ?? '',
       });
     } catch {
-      setError('Could not read this PDF.');
+      setError(tr("Could not read this PDF."));
     }
   }
 
@@ -53,7 +54,7 @@ export default function PdfMetadata() {
       const base = file.name.replace(/\.pdf$/i, '');
       setResult({ url: URL.createObjectURL(blob), name: `${base}-updated.pdf` });
     } catch {
-      setError('Could not save metadata to this PDF.');
+      setError(tr("Could not save metadata to this PDF."));
     } finally {
       setBusy(false);
     }
@@ -75,7 +76,7 @@ export default function PdfMetadata() {
       ) : (
         <div className="flex items-center justify-between rounded-md border border-line bg-paper-dim p-3 text-sm">
           <span className="truncate">{file.name}</span>
-          <button onClick={() => { setFile(null); setMeta(null); setResult(null); }} className="text-xs font-medium text-workshop hover:underline">Remove</button>
+          <button onClick={() => { setFile(null); setMeta(null); setResult(null); }} className="text-xs font-medium text-workshop hover:underline">{tr("Remove")}</button>
         </div>
       )}
 
@@ -91,7 +92,7 @@ export default function PdfMetadata() {
               />
             </label>
           ))}
-          <ActionBar><Button onClick={save} disabled={busy}>{busy ? 'Saving…' : 'Save changes'}</Button></ActionBar>
+          <ActionBar><Button onClick={save} disabled={busy}>{busy ? tr("Saving…") : tr("Save changes")}</Button></ActionBar>
         </div>
       )}
       {error && <ErrorMessage>{error}</ErrorMessage>}

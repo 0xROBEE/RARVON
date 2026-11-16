@@ -4,6 +4,7 @@ import FileDropzone from '../../../components/FileDropzone';
 import Button from '../../../components/Button';
 import ErrorMessage from '../../../components/ErrorMessage';
 import { ResultCard, ActionBar } from '../../../components/tool';
+import { tr } from '../../../lib/i18n';
 
 type Position = 'bottom-center' | 'bottom-right' | 'bottom-left' | 'top-center' | 'top-right' | 'top-left';
 
@@ -65,7 +66,7 @@ export default function PageNumbersTool() {
       const base = file.name.replace(/\.pdf$/i, '');
       setResult({ url: URL.createObjectURL(blob), name: `${base}-numbered.pdf` });
     } catch {
-      setError('Could not add page numbers to this PDF.');
+      setError(tr("Could not add page numbers to this PDF."));
     } finally {
       setBusy(false);
     }
@@ -78,7 +79,7 @@ export default function PageNumbersTool() {
       ) : (
         <div className="flex items-center justify-between rounded-md border border-line bg-paper-dim p-3 text-sm">
           <span className="truncate">{file.name}</span>
-          <button onClick={() => { setFile(null); setResult(null); }} className="text-xs font-medium text-workshop hover:underline">Remove</button>
+          <button onClick={() => { setFile(null); setResult(null); }} className="text-xs font-medium text-workshop hover:underline">{tr("Remove")}</button>
         </div>
       )}
 
@@ -86,19 +87,19 @@ export default function PageNumbersTool() {
         <>
           <div className="flex flex-wrap items-end gap-3">
             <label className="text-xs text-ink-2">
-              Start at
+              {tr("Start at")}
               <input type="number" value={start} onChange={(e) => setStart(Number(e.target.value))} className="mt-1 block w-20 rounded-md border border-line bg-paper px-2 py-1.5 text-sm" />
             </label>
             <label className="text-xs text-ink-2">
-              Format
+              {tr("Format")}
               <input value={format} onChange={(e) => setFormat(e.target.value)} className="mt-1 block w-32 rounded-md border border-line bg-paper px-2 py-1.5 text-sm font-mono" />
             </label>
             <label className="text-xs text-ink-2">
-              Font size
+              {tr("Font size")}
               <input type="number" min={6} max={36} value={fontSize} onChange={(e) => setFontSize(Number(e.target.value))} className="mt-1 block w-20 rounded-md border border-line bg-paper px-2 py-1.5 text-sm" />
             </label>
           </div>
-          <p className="text-xs text-ink-3">Use <code className="rounded bg-paper-dim px-1 py-0.5 font-mono">{'{n}'}</code> for the number and <code className="rounded bg-paper-dim px-1 py-0.5 font-mono">{'{total}'}</code> for the page count, e.g. "Page {'{n}'} of {'{total}'}".</p>
+          <p className="text-xs text-ink-3">{tr("Use")}{' '}<code className="rounded bg-paper-dim px-1 py-0.5 font-mono">{'{n}'}</code>{' '}{tr("for the number and")}{' '}<code className="rounded bg-paper-dim px-1 py-0.5 font-mono">{'{total}'}</code>{' '}{tr("for the page count, e.g. \"Page")}{' '}{'{n}'}{' '}{tr("of")}{' '}{tr("{total}")}".</p>
 
           <div className="flex flex-wrap gap-2">
             {POSITIONS.map((p) => (
@@ -112,7 +113,7 @@ export default function PageNumbersTool() {
             ))}
           </div>
 
-          <ActionBar><Button onClick={apply} disabled={busy}>{busy ? 'Applying…' : 'Add page numbers'}</Button></ActionBar>
+          <ActionBar><Button onClick={apply} disabled={busy}>{busy ? tr("Applying…") : tr("Add page numbers")}</Button></ActionBar>
         </>
       )}
       {error && <ErrorMessage>{error}</ErrorMessage>}

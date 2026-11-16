@@ -6,6 +6,7 @@ import ErrorMessage from '../../../components/ErrorMessage';
 import { getPdfPageCount } from '../../../lib/pdfjs';
 import { parsePageRange } from '../../../lib/pageRange';
 import { ResultCard, ActionBar } from '../../../components/tool';
+import { tr } from '../../../lib/i18n';
 
 export default function DeletePdfPages() {
   const [file, setFile] = useState<File | null>(null);
@@ -28,7 +29,7 @@ export default function DeletePdfPages() {
       setFile(f);
     } catch {
       setFile(null);
-      setError('Could not read this PDF. Make sure it is a valid, unencrypted PDF file.');
+      setError(tr("Could not read this PDF. Make sure it is a valid, unencrypted PDF file."));
     }
   }
 
@@ -37,11 +38,11 @@ export default function DeletePdfPages() {
     if (!file) return;
     const toRemove = new Set(parsePageRange(range, pageCount));
     if (!toRemove.size) {
-      setError('Enter at least one valid page number to delete.');
+      setError(tr("Enter at least one valid page number to delete."));
       return;
     }
     if (toRemove.size >= pageCount) {
-      setError('That would delete every page. Leave at least one page in the document.');
+      setError(tr("That would delete every page. Leave at least one page in the document."));
       return;
     }
     setBusy(true);
@@ -58,7 +59,7 @@ export default function DeletePdfPages() {
       const base = file.name.replace(/\.pdf$/i, '');
       setResult({ url: URL.createObjectURL(blob), name: `${base}-pages-removed.pdf` });
     } catch {
-      setError('Could not delete pages from this PDF.');
+      setError(tr("Could not delete pages from this PDF."));
     } finally {
       setBusy(false);
     }
@@ -70,18 +71,18 @@ export default function DeletePdfPages() {
         <FileDropzone accept="application/pdf" onFiles={handleFile} />
       ) : (
         <div className="flex items-center justify-between rounded-md border border-line bg-paper-dim p-3 text-sm">
-          <span className="truncate">{file.name} · {pageCount} page{pageCount !== 1 ? 's' : ''}</span>
-          <button onClick={() => { setFile(null); setResult(null); }} className="text-xs font-medium text-workshop hover:underline">Remove file</button>
+          <span className="truncate">{file.name} · {tr(pageCount === 1 ? '{n} page' : '{n} pages', { n: pageCount })}</span>
+          <button onClick={() => { setFile(null); setResult(null); }} className="text-xs font-medium text-workshop hover:underline">{tr("Remove file")}</button>
         </div>
       )}
 
       {file && (
         <>
           <label className="block text-xs text-ink-2">
-            Pages to delete (e.g. 2, 4-6)
+            {tr("Pages to delete (e.g. 2, 4-6)")}
             <input value={range} onChange={(e) => setRange(e.target.value)} placeholder="e.g. 2, 4-6" className="mt-1 block w-full rounded-md border border-line bg-paper px-3 py-2 text-sm" />
           </label>
-          <ActionBar><Button onClick={remove} disabled={busy || !range.trim()}>{busy ? 'Deleting…' : 'Delete pages'}</Button></ActionBar>
+          <ActionBar><Button onClick={remove} disabled={busy || !range.trim()}>{busy ? tr("Deleting…") : tr("Delete pages")}</Button></ActionBar>
         </>
       )}
       {error && <ErrorMessage>{error}</ErrorMessage>}

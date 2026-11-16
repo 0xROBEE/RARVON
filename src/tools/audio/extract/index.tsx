@@ -10,6 +10,7 @@ import { AUDIO_TARGETS, CancelledError, convertAudio, encodableAudioTargets, pro
 import type { AudioInfo, AudioTarget } from '../../../lib/audioEngine';
 import { extractAudioFromVideo } from '../../../lib/videoAudioCapture';
 import { ActionBar, OptionCards } from '../../../components/tool';
+import { tr } from '../../../lib/i18n';
 
 const supportsCaptureStream =
   typeof HTMLVideoElement !== 'undefined' &&
@@ -51,12 +52,12 @@ export default function ExtractAudioTool() {
       setFile(f);
     } catch (e) {
       if (e instanceof Error && e.message.includes('no audio')) {
-        setError('This video has no audio track to extract.');
+        setError(tr("This video has no audio track to extract."));
       } else if (supportsCaptureStream) {
         setUseCapture(true);
         setFile(f);
       } else {
-        setError('This video format can’t be read in this browser. MP4, MOV, WebM and MKV work best.');
+        setError(tr("This video format can’t be read in this browser. MP4, MOV, WebM and MKV work best."));
       }
     }
   }
@@ -101,30 +102,29 @@ export default function ExtractAudioTool() {
   return (
     <div className="space-y-4">
       {!file ? (
-        <FileDropzone accept="video/*,.mkv,.mov" onFiles={handleFile} hint="MP4, MOV, WebM, MKV or any video your browser can play" />
+        <FileDropzone accept="video/*,.mkv,.mov" onFiles={handleFile} hint={tr("MP4, MOV, WebM, MKV or any video your browser can play")} />
       ) : (
         <div className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-line bg-paper-dim p-3 text-sm">
           <span className="truncate">{file.name} · {formatBytes(file.size)}{info && ` · ${formatDuration(info.durationSec)} · ${info.codec?.toUpperCase() ?? 'audio'}`}</span>
-          <button onClick={reset} className="text-xs font-medium text-workshop hover:underline">Remove</button>
+          <button onClick={reset} className="text-xs font-medium text-workshop hover:underline">{tr("Remove")}</button>
         </div>
       )}
 
       {file && !useCapture && (
-        <OptionCards legend="Save as" name="extract-format" disabled={busy} value={choice} onChange={setChoice} options={options.map((o) => { const [label, hint] = o.label.split(' — '); return { value: o.value, label, hint }; })} />
+        <OptionCards legend={tr("Save as")} name="extract-format" disabled={busy} value={choice} onChange={setChoice} options={options.map((o) => { const [label, hint] = o.label.split(' — '); return { value: o.value, label, hint }; })} />
       )}
       {file && useCapture && (
         <p className="text-xs text-ink-3">
-          This video’s format can’t be read directly, so its audio is captured while it plays in the background — this takes about as
-          long as the video itself.
+          {tr("This video’s format can’t be read directly, so its audio is captured while it plays in the background — this takes about as long as the video itself.")}
         </p>
       )}
       {file && (
         <>
           <ActionBar>
-            <Button onClick={extract} disabled={busy}>{busy ? 'Extracting…' : 'Extract audio'}</Button>
-            {busy && !useCapture && <Button variant="secondary" onClick={() => abortRef.current?.abort()}>Cancel</Button>}
+            <Button onClick={extract} disabled={busy}>{busy ? tr("Extracting…") : tr("Extract audio")}</Button>
+            {busy && !useCapture && <Button variant="secondary" onClick={() => abortRef.current?.abort()}>{tr("Cancel")}</Button>}
           </ActionBar>
-          {busy && <ProgressBar value={progress * 100} label={useCapture ? 'Capturing audio' : `Extracting… ${Math.round(progress * 100)}%`} />}
+          {busy && <ProgressBar value={progress * 100} label={useCapture ? tr("Capturing audio") : tr("Extracting… {0}%", { 0: Math.round(progress * 100) })} />}
         </>
       )}
       {error && <ErrorMessage>{error}</ErrorMessage>}

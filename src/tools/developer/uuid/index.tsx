@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import Button from '../../../components/Button';
 import { CopyButton } from '../../../components/tool';
+import { tr } from '../../../lib/i18n';
 
 export default function UuidTool() {
   const [count, setCount] = useState(5);
@@ -18,7 +19,7 @@ export default function UuidTool() {
     <div className="space-y-4">
       <div className="flex flex-wrap items-center gap-4">
         <label className="flex items-center gap-2 text-xs text-ink-2">
-          Count
+          {tr("Count")}
           <input
             type="number"
             min={1}
@@ -30,15 +31,15 @@ export default function UuidTool() {
         </label>
         <label className="flex items-center gap-2 text-xs text-ink-2">
           <input type="checkbox" checked={uppercase} onChange={(e) => setUppercase(e.target.checked)} />
-          Uppercase
+          {tr("Uppercase")}
         </label>
-        <Button onClick={generate}>Generate</Button>
+        <Button onClick={generate}>{tr("Generate")}</Button>
       </div>
 
       <div>
         <div className="mb-1.5 flex items-center justify-between">
-          <span className="text-xs font-medium text-ink-2">{ids.length} UUID{ids.length !== 1 ? 's' : ''}</span>
-          <CopyButton text={text} label="Copy all" />
+          <span className="text-xs font-medium text-ink-2">{ids.length}{' '}{tr("UUID")}{ids.length !== 1 ? 's' : ''}</span>
+          <CopyButton text={text} label={tr("Copy all")} />
         </div>
         <pre className="max-h-72 overflow-auto rounded-md border border-line bg-paper-dim px-3 py-2 font-mono text-xs leading-relaxed">
           {text}

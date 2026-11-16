@@ -5,6 +5,7 @@ import { createTextDrawer } from './pdfText';
 import type { TextDrawer } from './pdfText';
 import { NOTE_ICON_PT, TEXT_BASELINE, UNDERLINE_THICKNESS } from './types';
 import type { Annotation, PageInstance, ShapeAnnotation, TextAnnotation } from './types';
+import { tr } from '../../../lib/i18n';
 
 /** Font stack used for text in the editor overlay and in rasterized output. */
 export const EDITOR_FONT_STACK = '"Noto Sans", "Noto Sans Arabic", "Segoe UI", Tahoma, sans-serif';
@@ -73,7 +74,7 @@ function loadImage(src: string): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {
     const im = new Image();
     im.onload = () => resolve(im);
-    im.onerror = () => reject(new Error('An image in this document failed to load.'));
+    im.onerror = () => reject(new Error(tr("An image in this document failed to load.")));
     im.src = src;
   });
 }
@@ -224,7 +225,7 @@ function rotateCanvas(source: HTMLCanvasElement, degreesCw: number): HTMLCanvasE
 
 async function canvasToBytes(canvas: HTMLCanvasElement, type: 'image/png' | 'image/jpeg', quality?: number) {
   const blob: Blob = await new Promise((resolve, reject) =>
-    canvas.toBlob((b) => (b ? resolve(b) : reject(new Error('Could not encode page image.'))), type, quality),
+    canvas.toBlob((b) => (b ? resolve(b) : reject(new Error(tr("Could not encode page image.")))), type, quality),
   );
   return new Uint8Array(await blob.arrayBuffer());
 }

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import Button from '../../../components/Button';
 import ErrorMessage from '../../../components/ErrorMessage';
 import { CopyButton } from '../../../components/tool';
+import { tr } from '../../../lib/i18n';
 
 export default function UrlEncodeTool() {
   const [input, setInput] = useState('');
@@ -18,7 +19,7 @@ export default function UrlEncodeTool() {
       setError(null);
     } catch {
       setOutput('');
-      setError("That doesn't look like validly percent-encoded text.");
+      setError(tr("That doesn't look like validly percent-encoded text."));
     }
   }
 
@@ -29,19 +30,19 @@ export default function UrlEncodeTool() {
         onChange={(e) => setInput(e.target.value)}
         rows={5}
         spellCheck={false}
-        placeholder="https://example.com/search?q=hello world"
+        placeholder={tr("https://example.com/search?q=hello world")}
         className="w-full rounded-md border border-line bg-paper px-3 py-2 font-mono text-xs leading-relaxed focus:border-workshop"
       />
       <div className="flex gap-2">
-        <Button onClick={encode} disabled={!input}>Encode</Button>
-        <Button variant="secondary" onClick={decode} disabled={!input}>Decode</Button>
+        <Button onClick={encode} disabled={!input}>{tr("Encode")}</Button>
+        <Button variant="secondary" onClick={decode} disabled={!input}>{tr("Decode")}</Button>
       </div>
       {error && <ErrorMessage>{error}</ErrorMessage>}
       {output && (
         <div>
           <div className="mb-1.5 flex items-center justify-between">
-            <span className="text-xs font-medium text-ink-2">Result</span>
-            <CopyButton text={output} label="Copy" />
+            <span className="text-xs font-medium text-ink-2">{tr("Result")}</span>
+            <CopyButton text={output} label={tr("Copy")} />
           </div>
           <pre className="max-h-64 overflow-auto whitespace-pre-wrap break-all rounded-md border border-line bg-paper-dim px-3 py-2 font-mono text-xs leading-relaxed">
             {output}

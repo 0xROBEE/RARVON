@@ -4,6 +4,7 @@ import Button from '../../../components/Button';
 import ErrorMessage from '../../../components/ErrorMessage';
 import { loadImage, canvasToBlob, formatBytes } from '../../../lib/imageUtils';
 import { ActionBar, OptionCards, ResultCard, SizeDelta } from '../../../components/tool';
+import { tr } from '../../../lib/i18n';
 
 /** Palette sizes for PNG. 0 = lossless re-compression (no colour reduction). */
 const PNG_LEVELS = [
@@ -23,7 +24,7 @@ function quantizePng(rgba: ArrayBuffer, width: number, height: number, colors: n
     };
     worker.onerror = () => {
       worker.terminate();
-      reject(new Error('PNG compression failed.'));
+      reject(new Error(tr("PNG compression failed.")));
     };
     worker.postMessage({ rgba, width, height, colors }, [rgba]);
   });
@@ -51,7 +52,7 @@ export default function ImageCompress() {
       canvas.width = img.naturalWidth;
       canvas.height = img.naturalHeight;
       const ctx = canvas.getContext('2d', { willReadFrequently: isPng });
-      if (!ctx) throw new Error('Canvas is not supported in this browser.');
+      if (!ctx) throw new Error(tr("Canvas is not supported in this browser."));
       const base = file.name.replace(/\.[^.]+$/, '');
       let blob: Blob;
       let ext: string;
@@ -82,31 +83,31 @@ export default function ImageCompress() {
   return (
     <div className="space-y-4">
       {!file ? (
-        <FileDropzone accept="image/*" onFiles={(f) => { setFile(f[0]); setResult(null); setError(null); }} hint="JPG, PNG or WebP" />
+        <FileDropzone accept="image/*" onFiles={(f) => { setFile(f[0]); setResult(null); setError(null); }} hint={tr("JPG, PNG or WebP")} />
       ) : (
         <div className="flex items-center justify-between rounded-md border border-line bg-paper-dim p-3">
           <span className="truncate text-sm">{file.name} · {formatBytes(file.size)}</span>
           <button onClick={() => { setFile(null); setResult(null); }} className="text-xs font-medium text-workshop hover:underline">
-            Remove
+            {tr("Remove")}
           </button>
         </div>
       )}
 
       {file && !isPng && (
         <label className="flex items-center gap-3 text-xs text-ink-2">
-          Quality
-          <input type="range" min={0.1} max={1} step={0.05} value={quality} onChange={(e) => setQuality(Number(e.target.value))} className="flex-1" aria-label="Quality" />
+          {tr("Quality")}
+          <input type="range" min={0.1} max={1} step={0.05} value={quality} onChange={(e) => setQuality(Number(e.target.value))} className="flex-1" aria-label={tr("Quality")} />
           {Math.round(quality * 100)}%
         </label>
       )}
       {file && isPng && (
         <div className="grid gap-2">
-          <OptionCards legend="PNG compression" name="png-colors" disabled={busy} value={colors} onChange={setColors} options={PNG_LEVELS.map((l) => ({ value: l.colors, label: l.label, hint: l.hint }))} />
-          <p className="text-xs text-ink-3">Transparency is kept. Reducing to a colour palette is how PNGs get dramatically smaller.</p>
+          <OptionCards legend={tr("PNG compression")} name="png-colors" disabled={busy} value={colors} onChange={setColors} options={PNG_LEVELS.map((l) => ({ value: l.colors, label: l.label, hint: l.hint }))} />
+          <p className="text-xs text-ink-3">{tr("Transparency is kept. Reducing to a colour palette is how PNGs get dramatically smaller.")}</p>
         </div>
       )}
 
-      <ActionBar><Button onClick={compress} disabled={!file || busy}>{busy ? 'Compressing…' : 'Compress'}</Button></ActionBar>
+      <ActionBar><Button onClick={compress} disabled={!file || busy}>{busy ? tr("Compressing…") : tr("Compress")}</Button></ActionBar>
       {error && <ErrorMessage>{error}</ErrorMessage>}
       {result && file && (
         result.size < file.size ? (
@@ -116,8 +117,7 @@ export default function ImageCompress() {
           </ResultCard>
         ) : (
           <ErrorMessage>
-            This image is already well compressed — the result ({formatBytes(result.size)}) isn’t smaller than the original
-            ({formatBytes(file.size)}). Keep your original, or try {isPng ? 'fewer colours' : 'a lower quality'}.
+            {tr("This image is already well compressed — the result (")}{formatBytes(result.size)}{tr(") isn’t smaller than the original (")}{formatBytes(file.size)}{tr("). Keep your original, or try")}{' '}{isPng ? tr("fewer colours") : tr("a lower quality")}.
           </ErrorMessage>
         )
       )}

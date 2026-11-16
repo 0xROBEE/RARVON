@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import clsx from 'clsx';
 import DownloadButton from '../DownloadButton';
+import { tr } from '../../lib/i18n';
 
 /**
  * Shared building blocks for tool pages, so every tool looks and behaves the
@@ -28,7 +29,7 @@ export function ResultCard({
   return (
     <div
       role="group"
-      aria-label="Result"
+      aria-label={tr("Result")}
       className="grid gap-2 rounded-xl border p-3 sm:p-4"
       style={{ borderColor: 'color-mix(in srgb, var(--color-signal) 40%, var(--color-line))', background: 'var(--color-signal-dim)' }}
     >
@@ -53,7 +54,7 @@ export function SizeDelta({ before, after }: { before: number; after: number }) 
   const pct = Math.round((1 - after / before) * 100);
   return (
     <span className={clsx('ms-1 font-mono text-xs', after < before ? 'text-signal' : 'text-ink-3')}>
-      ({after < before ? `−${pct}%` : 'no smaller'})
+      ({after < before ? `−${pct}%` : tr("no smaller")})
     </span>
   );
 }
@@ -96,7 +97,7 @@ export function CopyButton({
     timer.current = window.setTimeout(() => setState('idle'), 1600);
   }
 
-  const shown = state === 'copied' ? 'Copied' : state === 'failed' ? 'Copy failed' : label;
+  const shown = state === 'copied' ? tr('Copied') : state === 'failed' ? tr('Copy failed') : tr(label);
   return (
     <button
       type="button"
@@ -150,7 +151,7 @@ export function OptionCards<T extends string | number>({
 }) {
   return (
     <fieldset disabled={disabled} className="min-w-0">
-      <legend className="mb-2 text-xs font-medium text-ink-2">{legend}</legend>
+      <legend className="mb-2 text-xs font-medium text-ink-2">{tr(legend)}</legend>
       <div
         className={clsx(
           'grid gap-2',
@@ -170,11 +171,11 @@ export function OptionCards<T extends string | number>({
             >
               {/* Covers the whole card (transparent), so the full card is the click target and stays focusable. */}
               <input type="radio" name={name} checked={checked} onChange={() => onChange(o.value)} className="absolute inset-0 m-0 h-full w-full cursor-pointer opacity-0" />
-              <span className="text-sm font-medium">{o.label}</span>
+              <span className="text-sm font-medium">{tr(o.label)}</span>
               {o.hint && (
                 <span className="text-xs text-ink-3">
                   <span className="sr-only"> — </span>
-                  {o.hint}
+                  {tr(o.hint)}
                 </span>
               )}
             </label>

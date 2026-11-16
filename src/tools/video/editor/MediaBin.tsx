@@ -5,6 +5,7 @@ import { formatTime, usedMediaIds } from '../../../lib/videoEditor/types';
 import { ACCEPT } from '../../../lib/videoEditor/media';
 import { formatBytes } from '../../../lib/imageUtils';
 import { MEDIA_DRAG_TYPE } from './Timeline';
+import { tr } from '../../../lib/i18n';
 
 interface Props {
   project: Project;
@@ -44,10 +45,10 @@ export default function MediaBin({ project, importing, errors, onDismissErrors, 
       }}
     >
       <div className="flex items-center justify-between gap-2 border-b border-line px-4 py-3">
-        <h2 className="font-display text-sm font-semibold">Media</h2>
+        <h2 className="font-display text-sm font-semibold">{tr("Media")}</h2>
         <button onClick={() => input.current?.click()} className="inline-flex items-center gap-1.5 rounded-md bg-ink px-2.5 py-1.5 text-xs font-medium text-paper hover:opacity-90">
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg>
-          Import
+          {tr("Import")}
         </button>
         <input
           ref={input}
@@ -55,7 +56,7 @@ export default function MediaBin({ project, importing, errors, onDismissErrors, 
           multiple
           accept={ACCEPT}
           className="hidden"
-          aria-label="Import media files"
+          aria-label={tr("Import media files")}
           data-testid="editor-import"
           onChange={(e) => {
             if (e.target.files?.length) onImport([...e.target.files]);
@@ -68,7 +69,7 @@ export default function MediaBin({ project, importing, errors, onDismissErrors, 
         {errors.length > 0 && (
           <div className="mb-3 rounded-md border border-warn/40 bg-warn-dim p-2 text-xs text-warn" role="alert">
             {errors.map((e) => <p key={e}>{e}</p>)}
-            <button onClick={onDismissErrors} className="mt-1 underline">Dismiss</button>
+            <button onClick={onDismissErrors} className="mt-1 underline">{tr("Dismiss")}</button>
           </div>
         )}
         {project.media.length === 0 && importing.length === 0 && (
@@ -77,7 +78,7 @@ export default function MediaBin({ project, importing, errors, onDismissErrors, 
             className="flex w-full flex-col items-center gap-2 rounded-lg border border-dashed border-line px-3 py-8 text-center text-xs text-ink-3 hover:border-ink hover:text-ink-2"
           >
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M12 16V4m0 0L7 9m5-5l5 5M4 20h16" /></svg>
-            Drop videos, pictures or music here, or click to choose
+            {tr("Drop videos, pictures or music here, or click to choose")}
           </button>
         )}
         <ul className="grid gap-2">
@@ -103,22 +104,22 @@ export default function MediaBin({ project, importing, errors, onDismissErrors, 
                 <p className="truncate text-xs font-medium" title={m.name}>{m.name}</p>
                 <p className="font-mono text-[10px] text-ink-3">
                   {m.type === 'image' ? `${m.width}×${m.height}` : formatTime(m.duration, false)} · {formatBytes(m.size)}
-                  {used.has(m.id) && <span className="ms-1 text-signal">· in use</span>}
+                  {used.has(m.id) && <span className="ms-1 text-signal">{tr("· in use")}</span>}
                 </p>
               </div>
               <button
                 onClick={() => onAdd(m)}
                 className="grid h-7 w-7 shrink-0 place-items-center rounded-md border border-line text-ink-2 hover:border-workshop hover:bg-workshop-dim hover:text-workshop"
-                aria-label={`Add ${m.name} to the timeline`}
-                title="Add to the timeline"
+                aria-label={tr("Add {0} to the timeline", { 0: m.name })}
+                title={tr("Add to the timeline")}
               >
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg>
               </button>
               <button
                 onClick={() => onRemove(m)}
                 className="grid h-7 w-7 shrink-0 place-items-center rounded-md text-ink-3 opacity-0 hover:text-warn focus:opacity-100 group-hover:opacity-100"
-                aria-label={`Remove ${m.name}`}
-                title="Remove from project"
+                aria-label={tr("Remove {0}", { 0: m.name })}
+                title={tr("Remove from project")}
               >
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" /></svg>
               </button>
@@ -127,7 +128,7 @@ export default function MediaBin({ project, importing, errors, onDismissErrors, 
           {importing.map((n) => (
             <li key={n} className="flex items-center gap-2 rounded-lg border border-dashed border-line p-2 text-xs text-ink-3">
               <span className="h-3 w-3 animate-spin rounded-full border-2 border-line border-t-workshop" aria-hidden="true" />
-              Adding {n}…
+              {tr("Adding")}{' '}{n}…
             </li>
           ))}
         </ul>

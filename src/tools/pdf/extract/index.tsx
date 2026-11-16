@@ -6,6 +6,7 @@ import ErrorMessage from '../../../components/ErrorMessage';
 import { getPdfPageCount } from '../../../lib/pdfjs';
 import { parsePageRange } from '../../../lib/pageRange';
 import { ResultCard, ActionBar } from '../../../components/tool';
+import { tr } from '../../../lib/i18n';
 
 export default function ExtractPdf() {
   const [file, setFile] = useState<File | null>(null);
@@ -28,7 +29,7 @@ export default function ExtractPdf() {
       setFile(f);
     } catch {
       setFile(null);
-      setError('Could not read this PDF. Make sure it is a valid, unencrypted PDF file.');
+      setError(tr("Could not read this PDF. Make sure it is a valid, unencrypted PDF file."));
     }
   }
 
@@ -37,7 +38,7 @@ export default function ExtractPdf() {
     if (!file) return;
     const pages = parsePageRange(range, pageCount);
     if (!pages.length) {
-      setError('Enter at least one valid page number.');
+      setError(tr("Enter at least one valid page number."));
       return;
     }
     setBusy(true);
@@ -53,7 +54,7 @@ export default function ExtractPdf() {
       const base = file.name.replace(/\.pdf$/i, '');
       setResult({ url: URL.createObjectURL(blob), name: `${base}-extracted.pdf` });
     } catch {
-      setError('Could not extract pages from this PDF.');
+      setError(tr("Could not extract pages from this PDF."));
     } finally {
       setBusy(false);
     }
@@ -65,18 +66,18 @@ export default function ExtractPdf() {
         <FileDropzone accept="application/pdf" onFiles={handleFile} />
       ) : (
         <div className="flex items-center justify-between rounded-md border border-line bg-paper-dim p-3 text-sm">
-          <span className="truncate">{file.name} · {pageCount} page{pageCount !== 1 ? 's' : ''}</span>
-          <button onClick={() => { setFile(null); setResult(null); }} className="text-xs font-medium text-workshop hover:underline">Remove</button>
+          <span className="truncate">{file.name} · {tr(pageCount === 1 ? '{n} page' : '{n} pages', { n: pageCount })}</span>
+          <button onClick={() => { setFile(null); setResult(null); }} className="text-xs font-medium text-workshop hover:underline">{tr("Remove")}</button>
         </div>
       )}
 
       {file && (
         <>
           <label className="block text-xs text-ink-2">
-            Pages to extract (e.g. 1-3, 5)
+            {tr("Pages to extract (e.g. 1-3, 5)")}
             <input value={range} onChange={(e) => setRange(e.target.value)} placeholder={`1-${pageCount}`} className="mt-1 block w-full rounded-md border border-line bg-paper px-3 py-2 text-sm" />
           </label>
-          <ActionBar><Button onClick={extract} disabled={busy || !range.trim()}>{busy ? 'Extracting…' : 'Extract pages'}</Button></ActionBar>
+          <ActionBar><Button onClick={extract} disabled={busy || !range.trim()}>{busy ? tr("Extracting…") : tr("Extract pages")}</Button></ActionBar>
         </>
       )}
       {error && <ErrorMessage>{error}</ErrorMessage>}

@@ -5,6 +5,7 @@ import Button from '../../../components/Button';
 import ErrorMessage from '../../../components/ErrorMessage';
 import { formatBytes } from '../../../lib/imageUtils';
 import { ResultCard, ActionBar } from '../../../components/tool';
+import { tr } from '../../../lib/i18n';
 
 export default function MergePdf() {
   const [files, setFiles] = useState<File[]>([]);
@@ -33,7 +34,7 @@ export default function MergePdf() {
 
   async function merge() {
     if (files.length < 2) {
-      setError('Add at least two PDFs to merge.');
+      setError(tr("Add at least two PDFs to merge."));
       return;
     }
     setBusy(true);
@@ -50,7 +51,7 @@ export default function MergePdf() {
       const blob = new Blob([bytes as BlobPart], { type: 'application/pdf' });
       setResult({ url: URL.createObjectURL(blob), name: 'merged.pdf' });
     } catch {
-      setError('Could not merge these PDFs. Make sure each file is a valid, unencrypted PDF.');
+      setError(tr("Could not merge these PDFs. Make sure each file is a valid, unencrypted PDF."));
     } finally {
       setBusy(false);
     }
@@ -58,7 +59,7 @@ export default function MergePdf() {
 
   return (
     <div className="space-y-4">
-      <FileDropzone accept="application/pdf" multiple onFiles={addFiles} label="Drop PDFs here, or click to browse" hint="Add two or more files" />
+      <FileDropzone accept="application/pdf" multiple onFiles={addFiles} label={tr("Drop PDFs here, or click to browse")} hint={tr("Add two or more files")} />
 
       {files.length > 0 && (
         <ul className="space-y-2">
@@ -66,16 +67,16 @@ export default function MergePdf() {
             <li key={`${f.name}-${i}`} className="flex items-center justify-between gap-2 rounded-md border border-line bg-paper-dim p-2.5 text-sm">
               <span className="truncate">{i + 1}. {f.name} · {formatBytes(f.size)}</span>
               <div className="flex shrink-0 gap-1">
-                <button onClick={() => move(i, -1)} disabled={i === 0} className="rounded px-1.5 py-1 text-xs hover:bg-paper disabled:opacity-30" aria-label="Move up">↑</button>
-                <button onClick={() => move(i, 1)} disabled={i === files.length - 1} className="rounded px-1.5 py-1 text-xs hover:bg-paper disabled:opacity-30" aria-label="Move down">↓</button>
-                <button onClick={() => remove(i)} className="rounded px-1.5 py-1 text-xs text-warn hover:bg-paper" aria-label="Remove">✕</button>
+                <button onClick={() => move(i, -1)} disabled={i === 0} className="rounded px-1.5 py-1 text-xs hover:bg-paper disabled:opacity-30" aria-label={tr("Move up")}>↑</button>
+                <button onClick={() => move(i, 1)} disabled={i === files.length - 1} className="rounded px-1.5 py-1 text-xs hover:bg-paper disabled:opacity-30" aria-label={tr("Move down")}>↓</button>
+                <button onClick={() => remove(i)} className="rounded px-1.5 py-1 text-xs text-warn hover:bg-paper" aria-label={tr("Remove")}>✕</button>
               </div>
             </li>
           ))}
         </ul>
       )}
 
-      <ActionBar><Button onClick={merge} disabled={files.length < 2 || busy}>{busy ? 'Merging…' : 'Merge PDFs'}</Button></ActionBar>
+      <ActionBar><Button onClick={merge} disabled={files.length < 2 || busy}>{busy ? tr("Merging…") : tr("Merge PDFs")}</Button></ActionBar>
       {error && <ErrorMessage>{error}</ErrorMessage>}
       {result && (
         <ResultCard url={result.url} filename={result.name}>{result.name}</ResultCard>

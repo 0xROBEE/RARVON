@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { CopyButton } from '../../../components/tool';
+import { tr } from '../../../lib/i18n';
 
 const converters: Record<string, (s: string) => string> = {
   UPPERCASE: (s) => s.toUpperCase(),
@@ -31,7 +32,7 @@ export default function CaseConverter() {
         value={text}
         onChange={(e) => setText(e.target.value)}
         rows={6}
-        placeholder="Type or paste text here…"
+        placeholder={tr("Type or paste text here…")}
         className="w-full rounded-md border border-line bg-paper px-3 py-2 text-sm leading-relaxed focus:border-workshop"
       />
       <div className="space-y-2">
@@ -42,7 +43,7 @@ export default function CaseConverter() {
               <div className="mb-1 flex items-center justify-between">
                 <span className="text-xs font-medium text-ink-3">{label}</span>
                 {result && (
-                  <CopyButton text={result} label="Copy" />
+                  <CopyButton text={result} label={tr("Copy")} />
                 )}
               </div>
               <p className="min-h-5 break-words text-sm">{result || <span className="text-ink-3">—</span>}</p>

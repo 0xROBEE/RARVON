@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef } from 'react';
 import type { Project } from '../../../lib/videoEditor/types';
 import { audioDuration, fadeAlpha, totalDuration } from '../../../lib/videoEditor/types';
 import { drawFrame, outputSize, textsAt, visualStateAt } from '../../../lib/videoEditor/compositor';
+import { tr } from '../../../lib/i18n';
 
 interface Props {
   project: Project;
@@ -218,7 +219,7 @@ export default function Preview({ project, urls, time, playing, onTime, onEnded 
       data-testid="editor-preview"
       className="max-h-full max-w-full rounded-md bg-black shadow-sm"
       style={{ aspectRatio: `${W} / ${H}` }}
-      aria-label="Video preview"
+      aria-label={tr("Video preview")}
     />
   );
 }

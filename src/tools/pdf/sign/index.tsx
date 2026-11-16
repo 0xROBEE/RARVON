@@ -6,6 +6,7 @@ import Button from '../../../components/Button';
 import ErrorMessage from '../../../components/ErrorMessage';
 import { getPdfPageCount, renderPdfPageToCanvas } from '../../../lib/pdfjs';
 import { ResultCard } from '../../../components/tool';
+import { tr } from '../../../lib/i18n';
 
 interface Box { x: number; y: number; w: number; h: number }
 
@@ -38,7 +39,7 @@ export default function SignPdfTool() {
       setPageCount(count);
       setPageNumber(1);
     } catch {
-      setError('Could not read this PDF.');
+      setError(tr("Could not read this PDF."));
     }
   }
 
@@ -50,7 +51,7 @@ export default function SignPdfTool() {
         const canvas = await renderPdfPageToCanvas(bytes, pageNumber, 1.2);
         setPagePreview({ url: canvas.toDataURL('image/png'), naturalW: canvas.width, naturalH: canvas.height });
       } catch {
-        setError('Could not render this page.');
+        setError(tr("Could not render this page."));
       } finally {
         setLoadingPreview(false);
       }
@@ -153,7 +154,7 @@ export default function SignPdfTool() {
       const base = file.name.replace(/\.pdf$/i, '');
       setResult({ url: URL.createObjectURL(blob), name: `${base}-signed.pdf` });
     } catch {
-      setError('Could not place the signature on this PDF.');
+      setError(tr("Could not place the signature on this PDF."));
     } finally {
       setBusy(false);
     }
@@ -165,17 +166,17 @@ export default function SignPdfTool() {
         <FileDropzone accept="application/pdf" onFiles={handleFile} />
       ) : (
         <div className="flex items-center justify-between rounded-md border border-line bg-paper-dim p-3 text-sm">
-          <span className="truncate">{file.name} · {pageCount} page{pageCount !== 1 ? 's' : ''}</span>
-          <button onClick={() => { setFile(null); setResult(null); setPagePreview(null); }} className="text-xs font-medium text-workshop hover:underline">Remove</button>
+          <span className="truncate">{file.name} · {tr(pageCount === 1 ? '{n} page' : '{n} pages', { n: pageCount })}</span>
+          <button onClick={() => { setFile(null); setResult(null); setPagePreview(null); }} className="text-xs font-medium text-workshop hover:underline">{tr("Remove")}</button>
         </div>
       )}
 
       {file && (
         <>
           <div>
-            <h2 className="font-display text-sm font-semibold">1. Create your signature</h2>
+            <h2 className="font-display text-sm font-semibold">{tr("1. Create your signature")}</h2>
             <div className="mt-2 flex gap-1 rounded-md border border-line bg-paper-dim p-1 text-xs font-medium">
-              <span className="px-3 py-1.5 text-ink-3">Draw below, or upload an image instead</span>
+              <span className="px-3 py-1.5 text-ink-3">{tr("Draw below, or upload an image instead")}</span>
             </div>
             <canvas
               ref={padRef}
@@ -188,24 +189,24 @@ export default function SignPdfTool() {
               className="mt-2 w-full max-w-[400px] touch-none cursor-crosshair rounded-md border border-line bg-white"
             />
             <div className="mt-2 flex flex-wrap gap-2">
-              <Button variant="secondary" onClick={clearPad}>Clear</Button>
-              <Button onClick={useDrawnSignature}>Use this drawing</Button>
-              <FileDropzone accept="image/png,image/jpeg" onFiles={handleSignatureUpload} label="Or drop a signature image" />
+              <Button variant="secondary" onClick={clearPad}>{tr("Clear")}</Button>
+              <Button onClick={useDrawnSignature}>{tr("Use this drawing")}</Button>
+              <FileDropzone accept="image/png,image/jpeg" onFiles={handleSignatureUpload} label={tr("Or drop a signature image")} />
             </div>
             {signatureDataUrl && (
               <div className="mt-2 flex items-center gap-2 rounded-md border border-line bg-paper-dim p-2">
-                <span className="text-xs text-ink-3">Signature ready:</span>
-                <img src={signatureDataUrl} alt="Your signature" className="h-10 bg-white" />
+                <span className="text-xs text-ink-3">{tr("Signature ready:")}</span>
+                <img src={signatureDataUrl} alt={tr("Your signature")} className="h-10 bg-white" />
               </div>
             )}
           </div>
 
           {signatureDataUrl && (
             <div>
-              <h2 className="font-display text-sm font-semibold">2. Place it on the page</h2>
+              <h2 className="font-display text-sm font-semibold">{tr("2. Place it on the page")}</h2>
               {pageCount > 1 && (
                 <label className="mt-2 flex items-center gap-2 text-xs text-ink-2">
-                  Page
+                  {tr("Page")}
                   <input
                     type="number"
                     min={1}
@@ -214,10 +215,10 @@ export default function SignPdfTool() {
                     onChange={(e) => setPageNumber(Math.min(pageCount, Math.max(1, Number(e.target.value))))}
                     className="w-16 rounded-md border border-line bg-paper px-2 py-1 text-sm"
                   />
-                  of {pageCount}
+                  {tr("of")}{' '}{pageCount}
                 </label>
               )}
-              {loadingPreview && <p className="mt-2 text-xs text-ink-3">Rendering page…</p>}
+              {loadingPreview && <p className="mt-2 text-xs text-ink-3">{tr("Rendering page…")}</p>}
               {pagePreview && (
                 <div
                   ref={previewContainerRef}
@@ -227,18 +228,18 @@ export default function SignPdfTool() {
                   className="relative mt-2 w-full max-w-md select-none overflow-hidden rounded-md border border-line"
                   style={{ aspectRatio: `${pagePreview.naturalW} / ${pagePreview.naturalH}` }}
                 >
-                  <img src={pagePreview.url} alt={`Page ${pageNumber}`} className="pointer-events-none block w-full" draggable={false} />
+                  <img src={pagePreview.url} alt={tr("Page {0}", { 0: pageNumber })} className="pointer-events-none block w-full" draggable={false} />
                   <div
                     onPointerDown={onBoxPointerDown}
                     className="absolute touch-none cursor-move border-2 border-workshop bg-white/70"
                     style={{ left: box.x, top: box.y, width: box.w, height: box.h }}
                   >
-                    <img src={signatureDataUrl} alt="Signature preview" className="pointer-events-none h-full w-full object-contain" />
+                    <img src={signatureDataUrl} alt={tr("Signature preview")} className="pointer-events-none h-full w-full object-contain" />
                   </div>
                 </div>
               )}
               <label className="mt-2 flex items-center gap-3 text-xs text-ink-2">
-                Signature size
+                {tr("Signature size")}
                 <input
                   type="range"
                   min={80}
@@ -250,7 +251,7 @@ export default function SignPdfTool() {
                   }}
                 />
               </label>
-              <Button onClick={apply} disabled={busy} className="mt-2">{busy ? 'Signing…' : 'Sign PDF'}</Button>
+              <Button onClick={apply} disabled={busy} className="mt-2">{busy ? tr("Signing…") : tr("Sign PDF")}</Button>
             </div>
           )}
         </>

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import Button from '../../../components/Button';
 import FileDropzone from '../../../components/FileDropzone';
 import ErrorMessage from '../../../components/ErrorMessage';
+import { tr } from '../../../lib/i18n';
 
 const algorithms = ['SHA-1', 'SHA-256', 'SHA-384', 'SHA-512'] as const;
 
@@ -35,7 +36,7 @@ export default function HashTool() {
       setResults(next);
       setError(null);
     } catch {
-      setError('Could not hash that file.');
+      setError(tr("Could not hash that file."));
     }
   }
 
@@ -51,7 +52,7 @@ export default function HashTool() {
             }}
             className={`flex-1 rounded px-3 py-1.5 capitalize transition-colors ${mode === m ? 'bg-ink text-paper' : 'text-ink-2 hover:text-ink'}`}
           >
-            {m}
+            {tr(m)}
           </button>
         ))}
       </div>
@@ -65,12 +66,12 @@ export default function HashTool() {
             spellCheck={false}
             className="w-full rounded-md border border-line bg-paper px-3 py-2 font-mono text-xs leading-relaxed focus:border-workshop"
           />
-          <Button onClick={hashText} disabled={!input}>Generate hashes</Button>
+          <Button onClick={hashText} disabled={!input}>{tr("Generate hashes")}</Button>
         </>
       ) : (
         <>
-          <FileDropzone onFiles={hashFile} hint="Any file type" />
-          {fileName && <p className="text-xs text-ink-3">Hashed: {fileName}</p>}
+          <FileDropzone onFiles={hashFile} hint={tr("Any file type")} />
+          {fileName && <p className="text-xs text-ink-3">{tr("Hashed:")}{' '}{fileName}</p>}
         </>
       )}
 
@@ -86,7 +87,7 @@ export default function HashTool() {
                   onClick={() => navigator.clipboard.writeText(results[algo])}
                   className="text-xs font-medium text-workshop hover:underline"
                 >
-                  Copy
+                  {tr("Copy")}
                 </button>
               </div>
               <p className="break-all font-mono text-xs text-ink-2">{results[algo]}</p>

@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import Button from '../../../components/Button';
+import { tr } from '../../../lib/i18n';
 
 // This tool is intentionally non-functional. A real short link needs a
 // server to remember where each code points, which this project doesn't
@@ -8,7 +9,7 @@ import Button from '../../../components/Button';
 // (e.g. POST /api/links) to make this tool live without touching the UI.
 
 async function createShortLink(_longUrl: string): Promise<{ shortUrl: string }> {
-  throw new Error('No backend is connected yet.');
+  throw new Error(tr("No backend is connected yet."));
 }
 
 export default function UrlShortenerTool() {
@@ -21,7 +22,7 @@ export default function UrlShortenerTool() {
     try {
       await createShortLink(longUrl);
     } catch {
-      setNotice('Short links need a backend, which isn\u2019t connected in this free build yet.');
+      setNotice(tr("Short links need a backend, which isn’t connected in this free build yet."));
     } finally {
       setSubmitting(false);
     }
@@ -30,17 +31,17 @@ export default function UrlShortenerTool() {
   return (
     <div className="space-y-4">
       <div>
-        <label htmlFor="long-url" className="mb-1.5 block text-xs font-medium text-ink-2">Long URL</label>
+        <label htmlFor="long-url" className="mb-1.5 block text-xs font-medium text-ink-2">{tr("Long URL")}</label>
         <input
           id="long-url"
           value={longUrl}
           onChange={(e) => setLongUrl(e.target.value)}
-          placeholder="https://example.com/a/very/long/path"
+          placeholder={tr("https://example.com/a/very/long/path")}
           className="w-full rounded-md border border-line bg-paper px-3 py-2 text-sm focus:border-workshop"
         />
       </div>
       <Button onClick={handleSubmit} disabled={!longUrl.trim() || submitting}>
-        {submitting ? 'Shortening…' : 'Shorten URL'}
+        {submitting ? tr("Shortening…") : tr("Shorten URL")}
       </Button>
       {notice && <p className="text-xs text-ink-3">{notice}</p>}
     </div>

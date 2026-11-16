@@ -3,6 +3,7 @@ import type { DragEvent, PointerEvent as ReactPointerEvent } from 'react';
 import clsx from 'clsx';
 import type { MediaItem, Project, Timeline as TL, TrackKind } from '../../../lib/videoEditor/types';
 import { MIN_CLIP, audioDuration, totalDuration, videoStarts, visualDuration, formatTime } from '../../../lib/videoEditor/types';
+import { tr } from '../../../lib/i18n';
 
 export interface Selection {
   kind: TrackKind;
@@ -121,12 +122,14 @@ export default function Timeline({ project, time, pps, selection, onSelect, onSe
       ref={scroller}
       className="relative h-full overflow-x-auto overflow-y-hidden select-none"
       data-testid="timeline"
+      // Time runs left to right in both languages; the drag maths relies on it.
+      dir="ltr"
     >
       <div className="relative" style={{ width: width + LABEL_W }}>
         {/* Ruler */}
         <div className="sticky top-0 z-20 flex h-6 border-b border-line bg-paper-dim">
           <div className="sticky left-0 z-10 shrink-0 border-r border-line bg-paper-dim" style={{ width: LABEL_W }} />
-          <div className="relative flex-1 cursor-pointer" onPointerDown={startSeekDrag} aria-label="Timeline ruler">
+          <div className="relative flex-1 cursor-pointer" onPointerDown={startSeekDrag} aria-label={tr("Timeline ruler")}>
             {ticks.map((t) => (
               <span key={t} className="absolute top-0 h-full border-l border-line ps-1 font-mono text-[10px] leading-6 text-ink-3" style={{ left: t * pps }}>
                 {formatTime(t, false)}
@@ -138,7 +141,7 @@ export default function Timeline({ project, time, pps, selection, onSelect, onSe
         {ROWS.map((row) => (
           <div key={row.kind} className="flex border-b border-line" style={{ height: row.h }}>
             <div className="sticky left-0 z-10 flex shrink-0 items-center border-r border-line bg-paper-dim px-3 text-xs font-medium text-ink-2" style={{ width: LABEL_W }}>
-              {row.label}
+              {tr(row.label)}
             </div>
             <div
               className="relative flex-1"
@@ -151,10 +154,10 @@ export default function Timeline({ project, time, pps, selection, onSelect, onSe
               data-track={row.kind}
             >
               {row.kind === 'video' && tl.video.length === 0 && (
-                <span className="pointer-events-none absolute inset-y-0 left-3 flex items-center text-xs text-ink-3">Drag videos and pictures here, or press + on one</span>
+                <span className="pointer-events-none absolute inset-y-0 left-3 flex items-center text-xs text-ink-3">{tr("Drag videos and pictures here, or press + on one")}</span>
               )}
               {row.kind === 'audio' && tl.audio.length === 0 && (
-                <span className="pointer-events-none absolute inset-y-0 left-3 flex items-center text-xs text-ink-3">Drag music or sound here</span>
+                <span className="pointer-events-none absolute inset-y-0 left-3 flex items-center text-xs text-ink-3">{tr("Drag music or sound here")}</span>
               )}
               {row.kind === 'video' && tl.video.map((c, i) => {
                 const m = media.get(c.mediaId);
@@ -166,7 +169,7 @@ export default function Timeline({ project, time, pps, selection, onSelect, onSe
                     selected={selection?.id === c.id}
                     tone="video"
                     thumb={m?.thumb}
-                    label={m?.name ?? 'Missing file'}
+                    label={m?.name ?? tr("Missing file")}
                     badges={[c.speed !== 1 ? `${c.speed}×` : '', c.muted && m?.type === 'video' ? 'Muted' : ''].filter(Boolean)}
                     onPointerDown={(e, mode) => startClipDrag(e, 'video', c.id, mode)}
                   />
@@ -179,7 +182,7 @@ export default function Timeline({ project, time, pps, selection, onSelect, onSe
                   width={c.duration * pps}
                   selected={selection?.id === c.id}
                   tone="text"
-                  label={c.text || 'Text'}
+                  label={c.text || tr("Text")}
                   onPointerDown={(e, mode) => startClipDrag(e, 'text', c.id, mode)}
                 />
               ))}
@@ -190,7 +193,7 @@ export default function Timeline({ project, time, pps, selection, onSelect, onSe
                   width={audioDuration(c) * pps}
                   selected={selection?.id === c.id}
                   tone="audio"
-                  label={media.get(c.mediaId)?.name ?? 'Missing file'}
+                  label={media.get(c.mediaId)?.name ?? tr("Missing file")}
                   onPointerDown={(e, mode) => startClipDrag(e, 'audio', c.id, mode)}
                 />
               ))}
@@ -221,7 +224,7 @@ function ClipBox({ left, width, selected, tone, label, thumb, badges = [], onPoi
     <div
       role="button"
       tabIndex={-1}
-      aria-label={`${tone} clip: ${label}`}
+      aria-label={tr("{0} clip: {1}", { 0: tone, 1: label })}
       aria-pressed={selected}
       data-clip={tone}
       className={clsx(

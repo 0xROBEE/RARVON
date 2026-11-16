@@ -7,11 +7,12 @@ import ComingSoonNotice from '../components/ComingSoonNotice';
 import ExperimentalNotice from '../components/ExperimentalNotice';
 import { usePageMeta, toolJsonLd } from '../lib/usePageMeta';
 import { recordToolVisit } from '../lib/recentTools';
+import { tr } from '../lib/i18n';
 
 export default function ToolPage() {
   const { category, slug } = useParams<{ category: string; slug: string }>();
   const tool = getTool(category ?? '', slug ?? '');
-  usePageMeta(tool ? tool.name : 'Bench', tool ? tool.shortDescription : '', {
+  usePageMeta(tool ? tr(tool.name) : 'Bench', tool ? tr(tool.shortDescription) : '', {
     jsonLd: tool ? toolJsonLd(tool, getCategory(tool.category)?.name ?? '') : null,
   });
   const key = tool ? `${tool.category}/${tool.slug}` : '';
@@ -34,7 +35,7 @@ export default function ToolPage() {
     <ToolPageShell tool={tool}>
       {tool.status === 'coming-soon' && <div className="mb-4"><ComingSoonNotice reason={tool.comingSoonReason} /></div>}
       {tool.status === 'experimental' && <ExperimentalNotice note={EXPERIMENTAL_NOTE} />}
-      <Suspense fallback={<div className="py-12 text-center text-sm text-ink-3">Loading tool…</div>}>
+      <Suspense fallback={<div className="py-12 text-center text-sm text-ink-3">{tr("Loading tool…")}</div>}>
         {Component ? <Component /> : null}
       </Suspense>
     </ToolPageShell>

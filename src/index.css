@@ -112,3 +112,52 @@ body {
   outline: 2px solid var(--color-workshop);
   outline-offset: 2px;
 }
+
+/* ---------- Arabic interface ---------- */
+:root[lang="ar"] {
+  --font-body: "Noto Sans Arabic", "Inter", system-ui, sans-serif;
+  --font-display: "Noto Sans Arabic", "Space Grotesk", "Inter", sans-serif;
+}
+/* Arabic letters join; letter-spacing breaks them apart. */
+:root[lang="ar"] body * {
+  letter-spacing: normal !important;
+}
+
+/* Language switch: the new language sweeps across in its reading direction
+   (from the right for Arabic, from the left for English) over the old page. */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 650ms;
+  animation-timing-function: cubic-bezier(0.65, 0, 0.35, 1);
+  mix-blend-mode: normal;
+}
+:root[data-lang-switch] ::view-transition-old(root) {
+  animation-name: lang-old-out;
+}
+:root[data-lang-switch="ar"] ::view-transition-new(root) {
+  animation-name: lang-in-from-right;
+}
+:root[data-lang-switch="en"] ::view-transition-new(root) {
+  animation-name: lang-in-from-left;
+}
+@keyframes lang-in-from-right {
+  from { clip-path: inset(0 0 0 100%); filter: blur(6px); }
+  60% { filter: blur(0); }
+  to { clip-path: inset(0 0 0 0); }
+}
+@keyframes lang-in-from-left {
+  from { clip-path: inset(0 100% 0 0); filter: blur(6px); }
+  60% { filter: blur(0); }
+  to { clip-path: inset(0 0 0 0); }
+}
+@keyframes lang-old-out {
+  to { opacity: 0.35; transform: scale(0.985); }
+}
+/* Browsers without view transitions get a short fade. */
+:root.lang-fade body {
+  opacity: 0;
+  transition: opacity 150ms ease;
+}
+body {
+  transition: background-color 150ms ease, color 150ms ease, opacity 200ms ease;
+}

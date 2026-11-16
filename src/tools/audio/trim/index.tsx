@@ -4,6 +4,7 @@ import Button from '../../../components/Button';
 import ErrorMessage from '../../../components/ErrorMessage';
 import { decodeAudioFile, audioBufferToWavBlob, trimAudioBuffer, formatDuration } from '../../../lib/audioUtils';
 import { ResultCard, ActionBar } from '../../../components/tool';
+import { tr } from '../../../lib/i18n';
 
 export default function TrimAudioTool() {
   const [file, setFile] = useState<File | null>(null);
@@ -28,14 +29,14 @@ export default function TrimAudioTool() {
       setStart(0);
       setEnd(buf.duration);
     } catch {
-      setError('Could not decode this audio file. Try a WAV, MP3 or OGG file.');
+      setError(tr("Could not decode this audio file. Try a WAV, MP3 or OGG file."));
     }
   }
 
   function trim() {
     if (!file || !buffer) return;
     if (end <= start) {
-      setError('End time must be after the start time.');
+      setError(tr("End time must be after the start time."));
       return;
     }
     setBusy(true);
@@ -46,7 +47,7 @@ export default function TrimAudioTool() {
       const base = file.name.replace(/\.[^.]+$/, '');
       setResult({ url: URL.createObjectURL(blob), name: `${base}-trimmed.wav` });
     } catch {
-      setError('Could not trim this audio.');
+      setError(tr("Could not trim this audio."));
     } finally {
       setBusy(false);
     }
@@ -55,11 +56,11 @@ export default function TrimAudioTool() {
   return (
     <div className="space-y-4">
       {!file ? (
-        <FileDropzone accept="audio/*" onFiles={handleFile} hint="WAV, MP3, OGG or M4A" />
+        <FileDropzone accept="audio/*" onFiles={handleFile} hint={tr("WAV, MP3, OGG or M4A")} />
       ) : (
         <div className="flex items-center justify-between rounded-md border border-line bg-paper-dim p-3 text-sm">
           <span className="truncate">{file.name}{buffer && ` · ${formatDuration(buffer.duration)}`}</span>
-          <button onClick={() => { setFile(null); setBuffer(null); setResult(null); }} className="text-xs font-medium text-workshop hover:underline">Remove</button>
+          <button onClick={() => { setFile(null); setBuffer(null); setResult(null); }} className="text-xs font-medium text-workshop hover:underline">{tr("Remove")}</button>
         </div>
       )}
 
@@ -68,7 +69,7 @@ export default function TrimAudioTool() {
           <audio src={previewUrl ?? undefined} controls className="w-full" />
           <div className="grid grid-cols-2 gap-4">
             <label className="text-xs text-ink-2">
-              Start ({formatDuration(start)})
+              {tr("Start (")}{formatDuration(start)})
               <input
                 type="range" min={0} max={buffer.duration} step={0.1}
                 value={start}
@@ -77,7 +78,7 @@ export default function TrimAudioTool() {
               />
             </label>
             <label className="text-xs text-ink-2">
-              End ({formatDuration(end)})
+              {tr("End (")}{formatDuration(end)})
               <input
                 type="range" min={0} max={buffer.duration} step={0.1}
                 value={end}
@@ -86,8 +87,8 @@ export default function TrimAudioTool() {
               />
             </label>
           </div>
-          <p className="text-xs text-ink-3">Clip length: {formatDuration(end - start)}</p>
-          <ActionBar><Button onClick={trim} disabled={busy}>{busy ? 'Trimming…' : 'Trim & export as WAV'}</Button></ActionBar>
+          <p className="text-xs text-ink-3">{tr("Clip length:")}{' '}{formatDuration(end - start)}</p>
+          <ActionBar><Button onClick={trim} disabled={busy}>{busy ? tr("Trimming…") : tr("Trim & export as WAV")}</Button></ActionBar>
         </>
       )}
       {error && <ErrorMessage>{error}</ErrorMessage>}

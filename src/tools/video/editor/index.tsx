@@ -13,6 +13,7 @@ import { useWorkspace } from '../../../lib/workspaceContext';
 import { ChoiceButton, ICONS, Modal, NewProjectDialog } from './dialogs';
 import type { NewProjectChoice } from './dialogs';
 import { handoff, isOpenElsewhere } from './openLock';
+import { tr } from '../../../lib/i18n';
 
 const editorPath = (id: string) => `/editor/video/${id}`;
 
@@ -84,7 +85,7 @@ export default function VideoEditorProjects() {
     if (c.folderSave) {
       const dir = await pickFolder();
       if (!dir) {
-        setError('No folder was picked. Pick one, or turn off “Save to a folder”.');
+        setError(tr("No folder was picked. Pick one, or turn off “Save to a folder”."));
         return;
       }
       await rememberFolder(p.id, dir);
@@ -99,7 +100,7 @@ export default function VideoEditorProjects() {
 
   const openFile = async (file: File) => {
     setError(null);
-    setBusy('Opening project…');
+    setBusy(tr("Opening project…"));
     try {
       const { project, files } = await readProjectFile(file);
       const p = await importProject(project, files, { browserSave: true, folderSave: false });
@@ -115,21 +116,21 @@ export default function VideoEditorProjects() {
     setError(null);
     const dir = await pickFolder();
     if (!dir) return;
-    setBusy('Opening project…');
+    setBusy(tr("Opening project…"));
     try {
       const { project, files } = await readProjectFolder(dir);
       const p = await importProject(project, files, { browserSave: false, folderSave: true });
       await rememberFolder(p.id, dir);
       navigate(editorPath(p.id));
     } catch {
-      setError("That folder doesn't contain a Bench video project (project.json).");
+      setError(tr("That folder doesn't contain a Bench video project (project.json)."));
     } finally {
       setBusy(null);
     }
   };
 
   const downloadFile = async (p: Project) => {
-    setBusy('Preparing the project file…');
+    setBusy(tr("Preparing the project file…"));
     try {
       download(await projectFileBlob(p, await loadMediaFiles(p)), safeFileName(p.name) + PROJECT_EXT);
     } finally {
@@ -140,7 +141,7 @@ export default function VideoEditorProjects() {
   if (!supported) {
     return (
       <div className="rounded-lg border border-line bg-paper-dim p-5 text-sm text-ink-2">
-        This browser can’t store video projects. Use a recent version of Chrome, Edge, Firefox or Safari.
+        {tr("This browser can’t store video projects. Use a recent version of Chrome, Edge, Firefox or Safari.")}
       </div>
     );
   }
@@ -156,19 +157,19 @@ export default function VideoEditorProjects() {
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M12 5v14M5 12h14" /></svg>
           </span>
           <span>
-            <span className="block font-display text-base font-semibold">New project</span>
-            <span className="block text-sm text-ink-2">Start editing with your videos, pictures and music</span>
+            <span className="block font-display text-base font-semibold">{tr("New project")}</span>
+            <span className="block text-sm text-ink-2">{tr("Start editing with your videos, pictures and music")}</span>
           </span>
         </button>
         <div className="grid gap-2">
           <button onClick={() => fileInput.current?.click()} className="flex items-center gap-3 rounded-xl border border-line px-4 py-3 text-start text-sm hover:border-ink">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-ink-2" aria-hidden="true"><path d="M14 3H6v18h12V7zM14 3v4h4" /></svg>
-            <span><span className="font-medium">Open project file</span> <span className="text-ink-3">({PROJECT_EXT})</span></span>
+            <span><span className="font-medium">{tr("Open project file")}</span> <span className="text-ink-3">({PROJECT_EXT})</span></span>
           </button>
           {folderSaveSupported() && (
             <button onClick={() => void openFolder()} className="flex items-center gap-3 rounded-xl border border-line px-4 py-3 text-start text-sm hover:border-ink">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-ink-2" aria-hidden="true"><path d={ICONS.folder} /></svg>
-              <span className="font-medium">Open project folder</span>
+              <span className="font-medium">{tr("Open project folder")}</span>
             </button>
           )}
           <input
@@ -176,7 +177,7 @@ export default function VideoEditorProjects() {
             type="file"
             accept={`${PROJECT_EXT},application/zip`}
             className="hidden"
-            aria-label="Open project file"
+            aria-label={tr("Open project file")}
             data-testid="open-project-file"
             onChange={(e) => {
               const f = e.target.files?.[0];
@@ -188,9 +189,9 @@ export default function VideoEditorProjects() {
       </div>
 
       <p className="-mt-4 text-sm text-ink-2">
-        Just need to cut the start or end off a video?{' '}
-        <Link to="/tools/video/trim" className="font-medium text-workshop hover:underline">Quick trim →</Link>{' '}
-        <span className="text-ink-3">It’s instant and keeps the original quality.</span>
+        {tr("Just need to cut the start or end off a video?")}{' '}
+        <Link to="/tools/video/trim" className="font-medium text-workshop hover:underline">{tr("Quick trim →")}</Link>{' '}
+        <span className="text-ink-3">{tr("It’s instant and keeps the original quality.")}</span>
       </p>
 
       {error && <p className="rounded-md bg-warn-dim p-3 text-sm text-warn" role="alert">{error}</p>}
@@ -198,13 +199,13 @@ export default function VideoEditorProjects() {
 
       <section aria-labelledby="projects-heading">
         <div className="flex items-baseline justify-between gap-3">
-          <h2 id="projects-heading" className="font-display text-base font-semibold">Your projects</h2>
-          {usage && usage.quota > 0 && <span className="text-xs text-ink-3">{formatBytes(usage.used)} used on this device</span>}
+          <h2 id="projects-heading" className="font-display text-base font-semibold">{tr("Your projects")}</h2>
+          {usage && usage.quota > 0 && <span className="text-xs text-ink-3">{formatBytes(usage.used)}{' '}{tr("used on this device")}</span>}
         </div>
         {projects === null ? (
-          <p className="mt-3 text-sm text-ink-3">Loading…</p>
+          <p className="mt-3 text-sm text-ink-3">{tr("Loading…")}</p>
         ) : saved.length === 0 ? (
-          <p className="mt-3 rounded-lg border border-dashed border-line p-6 text-center text-sm text-ink-3">Projects you auto-save in this browser show up here.</p>
+          <p className="mt-3 rounded-lg border border-dashed border-line p-6 text-center text-sm text-ink-3">{tr("Projects you auto-save in this browser show up here.")}</p>
         ) : (
           <ul className="mt-3 grid gap-2">
             {saved.map((p) => {
@@ -219,17 +220,17 @@ export default function VideoEditorProjects() {
                     <span className="min-w-0">
                       <span className="block truncate font-medium">{p.name}</span>
                       <span className="block text-xs text-ink-3">
-                        {ASPECTS[p.aspect].label} · {formatTime(totalDuration(p.timeline), false)} · {formatBytes(size)} · edited {new Date(p.updatedAt).toLocaleDateString()}
+                        {ASPECTS[p.aspect].label} · {formatTime(totalDuration(p.timeline), false)} · {formatBytes(size)}{' '}{tr("· edited")}{' '}{new Date(p.updatedAt).toLocaleDateString()}
                       </span>
                     </span>
                   </button>
-                  <button onClick={() => navigate(editorPath(p.id))} className="rounded-md bg-ink px-3 py-1.5 text-xs font-medium text-paper hover:opacity-90">Open</button>
-                  <button onClick={() => void downloadFile(p)} className="rounded-md border border-line px-2.5 py-1.5 text-xs hover:border-ink" title="Download project file">
-                    <span className="sr-only">Download project file for {p.name}</span>
+                  <button onClick={() => navigate(editorPath(p.id))} className="rounded-md bg-ink px-3 py-1.5 text-xs font-medium text-paper hover:opacity-90">{tr("Open")}</button>
+                  <button onClick={() => void downloadFile(p)} className="rounded-md border border-line px-2.5 py-1.5 text-xs hover:border-ink" title={tr("Download project file")}>
+                    <span className="sr-only">{tr("Download project file for")}{' '}{p.name}</span>
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d={ICONS.download} /></svg>
                   </button>
-                  <button onClick={() => setConfirmDelete(p)} className="rounded-md border border-line px-2.5 py-1.5 text-xs hover:border-warn hover:text-warn" title="Delete project">
-                    <span className="sr-only">Delete {p.name}</span>
+                  <button onClick={() => setConfirmDelete(p)} className="rounded-md border border-line px-2.5 py-1.5 text-xs hover:border-warn hover:text-warn" title={tr("Delete project")}>
+                    <span className="sr-only">{tr("Delete")}{' '}{p.name}</span>
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d={ICONS.trash} /></svg>
                   </button>
                 </li>
@@ -251,10 +252,10 @@ export default function VideoEditorProjects() {
       )}
 
       {confirmDelete && (
-        <Modal title="Delete project?" onClose={() => setConfirmDelete(null)} labelledBy="delete-title">
-          <p className="text-sm text-ink-2">“{confirmDelete.name}” and its media will be deleted from this browser. This can’t be undone.</p>
+        <Modal title={tr("Delete project?")} onClose={() => setConfirmDelete(null)} labelledBy="delete-title">
+          <p className="text-sm text-ink-2">“{confirmDelete.name}{tr("” and its media will be deleted from this browser. This can’t be undone.")}</p>
           <div className="mt-5 flex justify-end gap-2">
-            <button onClick={() => setConfirmDelete(null)} className="rounded-md border border-line px-4 py-2 text-sm hover:border-ink">Cancel</button>
+            <button onClick={() => setConfirmDelete(null)} className="rounded-md border border-line px-4 py-2 text-sm hover:border-ink">{tr("Cancel")}</button>
             <button
               onClick={async () => {
                 await deleteProject(confirmDelete.id);
@@ -263,22 +264,22 @@ export default function VideoEditorProjects() {
               }}
               className="rounded-md bg-warn px-4 py-2 text-sm font-semibold text-white hover:opacity-90"
             >
-              Delete
+              {tr("Delete")}
             </button>
           </div>
         </Modal>
       )}
 
       {recovery && !newOpen && (
-        <Modal title="You left a project without saving" locked labelledBy="recovery-title">
+        <Modal title={tr("You left a project without saving")} locked labelledBy="recovery-title">
           <p className="mb-4 text-sm text-ink-2">
-            “{recovery.name}” has changes you didn’t save. Bench kept a copy. Choose what to do with it before you continue.
+            “{recovery.name}{tr("” has changes you didn’t save. Bench kept a copy. Choose what to do with it before you continue.")}
           </p>
           <div className="grid gap-2">
-            <ChoiceButton tone="primary" icon={ICONS.restore} title="Restore and keep editing" onClick={() => navigate(editorPath(recovery.id))} />
+            <ChoiceButton tone="primary" icon={ICONS.restore} title={tr("Restore and keep editing")} onClick={() => navigate(editorPath(recovery.id))} />
             <ChoiceButton
               icon={ICONS.save}
-              title="Save project"
+              title={tr("Save project")}
               detail="Keep it in this browser under “Your projects”."
               onClick={async () => {
                 await saveProjectJson({ ...recovery, browserSave: true, pendingChoice: false });
@@ -287,7 +288,7 @@ export default function VideoEditorProjects() {
             />
             <ChoiceButton
               icon={ICONS.download}
-              title="Download project file"
+              title={tr("Download project file")}
               onClick={async () => {
                 await downloadFile(recovery);
                 await deleteProject(recovery.id);
@@ -297,7 +298,7 @@ export default function VideoEditorProjects() {
             <ChoiceButton
               tone="danger"
               icon={ICONS.trash}
-              title="Discard project"
+              title={tr("Discard project")}
               detail="Delete the copy. This can’t be undone."
               onClick={async () => {
                 await deleteProject(recovery.id);

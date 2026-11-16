@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import Button from '../../../components/Button';
+import { tr } from '../../../lib/i18n';
 
 export default function TimestampTool() {
   const [unixInput, setUnixInput] = useState(String(Math.floor(Date.now() / 1000)));
@@ -26,7 +27,7 @@ export default function TimestampTool() {
   return (
     <div className="space-y-8">
       <div className="space-y-3">
-        <h2 className="font-display text-sm font-semibold">Unix timestamp → date</h2>
+        <h2 className="font-display text-sm font-semibold">{tr("Unix timestamp → date")}</h2>
         <div className="flex flex-wrap items-center gap-2">
           <input
             value={unixInput}
@@ -38,24 +39,24 @@ export default function TimestampTool() {
             onChange={(e) => setUnit(e.target.value as 'seconds' | 'milliseconds')}
             className="rounded-md border border-line bg-paper px-2 py-2 text-xs"
           >
-            <option value="seconds">Seconds</option>
-            <option value="milliseconds">Milliseconds</option>
+            <option value="seconds">{tr("Seconds")}</option>
+            <option value="milliseconds">{tr("Milliseconds")}</option>
           </select>
-          <Button variant="secondary" onClick={useNow}>Use now</Button>
+          <Button variant="secondary" onClick={useNow}>{tr("Use now")}</Button>
         </div>
         {dateFromUnix ? (
           <div className="rounded-md border border-line bg-paper-dim p-3 text-sm">
-            <p><span className="text-ink-3">UTC:</span> {dateFromUnix.toUTCString()}</p>
-            <p><span className="text-ink-3">Local:</span> {dateFromUnix.toString()}</p>
-            <p><span className="text-ink-3">ISO 8601:</span> {dateFromUnix.toISOString()}</p>
+            <p><span className="text-ink-3">{tr("UTC:")}</span> {dateFromUnix.toUTCString()}</p>
+            <p><span className="text-ink-3">{tr("Local:")}</span> {dateFromUnix.toString()}</p>
+            <p><span className="text-ink-3">{tr("ISO 8601:")}</span> {dateFromUnix.toISOString()}</p>
           </div>
         ) : (
-          <p className="text-xs text-warn">Not a valid number.</p>
+          <p className="text-xs text-warn">{tr("Not a valid number.")}</p>
         )}
       </div>
 
       <div className="space-y-3 border-t border-line pt-6">
-        <h2 className="font-display text-sm font-semibold">Date → Unix timestamp</h2>
+        <h2 className="font-display text-sm font-semibold">{tr("Date → Unix timestamp")}</h2>
         <input
           type="datetime-local"
           step={1}
@@ -65,11 +66,11 @@ export default function TimestampTool() {
         />
         {dateFromInput ? (
           <div className="rounded-md border border-line bg-paper-dim p-3 text-sm font-mono">
-            <p>{Math.floor(dateFromInput.getTime() / 1000)} <span className="text-ink-3">seconds</span></p>
-            <p>{dateFromInput.getTime()} <span className="text-ink-3">milliseconds</span></p>
+            <p>{Math.floor(dateFromInput.getTime() / 1000)} <span className="text-ink-3">{tr("seconds")}</span></p>
+            <p>{dateFromInput.getTime()} <span className="text-ink-3">{tr("milliseconds")}</span></p>
           </div>
         ) : (
-          <p className="text-xs text-warn">Enter a valid date.</p>
+          <p className="text-xs text-warn">{tr("Enter a valid date.")}</p>
         )}
       </div>
     </div>

@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import ErrorMessage from '../../../components/ErrorMessage';
+import { tr } from '../../../lib/i18n';
 
 const FLAG_OPTIONS = [
   { flag: 'g', label: 'Global' },
@@ -65,7 +66,7 @@ export default function RegexTester() {
   return (
     <div className="space-y-4">
       <div>
-        <label htmlFor="regex-pattern" className="mb-1.5 block text-xs font-medium text-ink-2">Pattern</label>
+        <label htmlFor="regex-pattern" className="mb-1.5 block text-xs font-medium text-ink-2">{tr("Pattern")}</label>
         <div className="flex items-center gap-1 rounded-md border border-line bg-paper px-3 py-2 font-mono text-sm focus-within:border-workshop">
           <span className="text-ink-3">/</span>
           <input
@@ -83,13 +84,13 @@ export default function RegexTester() {
         {FLAG_OPTIONS.map((f) => (
           <label key={f.flag} className="flex items-center gap-2 text-xs text-ink-2">
             <input type="checkbox" checked={flags.has(f.flag)} onChange={() => toggleFlag(f.flag)} />
-            {f.label} ({f.flag})
+            {tr(f.label)} ({f.flag})
           </label>
         ))}
       </div>
 
       <div>
-        <label htmlFor="regex-text" className="mb-1.5 block text-xs font-medium text-ink-2">Test text</label>
+        <label htmlFor="regex-text" className="mb-1.5 block text-xs font-medium text-ink-2">{tr("Test text")}</label>
         <textarea
           id="regex-text"
           value={text}
@@ -106,7 +107,7 @@ export default function RegexTester() {
         <>
           <div>
             <p className="mb-1.5 text-xs font-medium text-ink-2">
-              {matches.length} match{matches.length !== 1 ? 'es' : ''}
+              {tr(matches.length === 1 ? '{n} match' : '{n} matches', { n: matches.length })}
             </p>
             <pre className="whitespace-pre-wrap break-all rounded-md border border-line bg-paper-dim px-3 py-2 font-mono text-xs leading-relaxed">
               {highlighted.map((p, i) =>
@@ -121,14 +122,14 @@ export default function RegexTester() {
 
           {matches.length > 0 && matches.some((m) => m.length > 1) && (
             <div>
-              <p className="mb-1.5 text-xs font-medium text-ink-2">Capture groups</p>
+              <p className="mb-1.5 text-xs font-medium text-ink-2">{tr("Capture groups")}</p>
               <div className="space-y-2">
                 {matches.map((m, i) => (
                   <div key={i} className="rounded-md border border-line bg-paper-dim p-2.5 text-xs">
-                    <span className="text-ink-3">Match {i + 1}:</span>{' '}
+                    <span className="text-ink-3">{tr("Match")}{' '}{i + 1}:</span>{' '}
                     {Array.from(m).slice(1).map((g, gi) => (
-                      <span key={gi} className="mr-3 font-mono">
-                        ${gi + 1}: {g ?? <span className="text-ink-3">undefined</span>}
+                      <span key={gi} className="me-3 font-mono">
+                        ${gi + 1}: {g ?? <span className="text-ink-3">{tr("undefined")}</span>}
                       </span>
                     ))}
                   </div>

@@ -1,3 +1,4 @@
+import { tr } from './i18n';
 /**
  * Plays a video file (muted, off-screen) and captures its audio track live
  * via captureStream(), recording the result. This works across arbitrary
@@ -26,7 +27,7 @@ export function extractAudioFromVideo(
 
     video.onerror = () => {
       cleanup();
-      reject(new Error('Could not read this video file.'));
+      reject(new Error(tr("Could not read this video file.")));
     };
 
     video.onloadedmetadata = async () => {
@@ -36,7 +37,7 @@ export function extractAudioFromVideo(
         const audioTracks = stream.getAudioTracks();
         if (!audioTracks.length) {
           cleanup();
-          reject(new Error('This video doesn\u2019t have an audio track.'));
+          reject(new Error(tr("This video doesn’t have an audio track.")));
           return;
         }
         const audioOnlyStream = new MediaStream(audioTracks);
@@ -45,7 +46,7 @@ export function extractAudioFromVideo(
         const mimeType = candidates.find((t) => MediaRecorder.isTypeSupported(t));
         if (!mimeType) {
           cleanup();
-          reject(new Error('This browser doesn\u2019t support recording audio tracks.'));
+          reject(new Error(tr("This browser doesn’t support recording audio tracks.")));
           return;
         }
 
@@ -56,7 +57,7 @@ export function extractAudioFromVideo(
         };
         recorder.onerror = () => {
           cleanup();
-          reject(new Error('Recording the audio track failed.'));
+          reject(new Error(tr("Recording the audio track failed.")));
         };
         recorder.onstop = () => {
           cleanup();
@@ -72,7 +73,7 @@ export function extractAudioFromVideo(
         await video.play();
       } catch (e) {
         cleanup();
-        reject(e instanceof Error ? e : new Error('Could not extract audio from this video.'));
+        reject(e instanceof Error ? e : new Error(tr("Could not extract audio from this video.")));
       }
     };
   });

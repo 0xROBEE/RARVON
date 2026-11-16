@@ -6,6 +6,7 @@ import ErrorMessage from '../../../components/ErrorMessage';
 import { getPdfPageCount } from '../../../lib/pdfjs';
 import { parsePageRange } from '../../../lib/pageRange';
 import { ResultCard, ActionBar } from '../../../components/tool';
+import { tr } from '../../../lib/i18n';
 
 export default function RotatePdf() {
   const [file, setFile] = useState<File | null>(null);
@@ -30,7 +31,7 @@ export default function RotatePdf() {
       setFile(f);
     } catch {
       setFile(null);
-      setError('Could not read this PDF. Make sure it is a valid, unencrypted PDF file.');
+      setError(tr("Could not read this PDF. Make sure it is a valid, unencrypted PDF file."));
     }
   }
 
@@ -54,7 +55,7 @@ export default function RotatePdf() {
       const base = file.name.replace(/\.pdf$/i, '');
       setResult({ url: URL.createObjectURL(blob), name: `${base}-rotated.pdf` });
     } catch {
-      setError('Could not rotate this PDF. Make sure it is a valid, unencrypted PDF.');
+      setError(tr("Could not rotate this PDF. Make sure it is a valid, unencrypted PDF."));
     } finally {
       setBusy(false);
     }
@@ -66,8 +67,8 @@ export default function RotatePdf() {
         <FileDropzone accept="application/pdf" onFiles={handleFile} />
       ) : (
         <div className="flex items-center justify-between rounded-md border border-line bg-paper-dim p-3 text-sm">
-          <span className="truncate">{file.name} · {pageCount} page{pageCount !== 1 ? 's' : ''}</span>
-          <button onClick={() => { setFile(null); setResult(null); }} className="text-xs font-medium text-workshop hover:underline">Remove</button>
+          <span className="truncate">{file.name} · {tr(pageCount === 1 ? '{n} page' : '{n} pages', { n: pageCount })}</span>
+          <button onClick={() => { setFile(null); setResult(null); }} className="text-xs font-medium text-workshop hover:underline">{tr("Remove")}</button>
         </div>
       )}
 
@@ -85,16 +86,16 @@ export default function RotatePdf() {
             ))}
           </div>
           <div className="flex gap-1 rounded-md border border-line bg-paper-dim p-1 text-xs font-medium">
-            <button onClick={() => setScope('all')} className={`flex-1 rounded px-3 py-1.5 ${scope === 'all' ? 'bg-ink text-paper' : 'text-ink-2'}`}>All pages</button>
-            <button onClick={() => setScope('range')} className={`flex-1 rounded px-3 py-1.5 ${scope === 'range' ? 'bg-ink text-paper' : 'text-ink-2'}`}>Specific pages</button>
+            <button onClick={() => setScope('all')} className={`flex-1 rounded px-3 py-1.5 ${scope === 'all' ? 'bg-ink text-paper' : 'text-ink-2'}`}>{tr("All pages")}</button>
+            <button onClick={() => setScope('range')} className={`flex-1 rounded px-3 py-1.5 ${scope === 'range' ? 'bg-ink text-paper' : 'text-ink-2'}`}>{tr("Specific pages")}</button>
           </div>
           {scope === 'range' && (
             <label className="block text-xs text-ink-2">
-              Pages (e.g. 1-3, 5)
+              {tr("Pages (e.g. 1-3, 5)")}
               <input value={range} onChange={(e) => setRange(e.target.value)} className="mt-1 block w-full rounded-md border border-line bg-paper px-3 py-2 text-sm" />
             </label>
           )}
-          <ActionBar><Button onClick={rotate} disabled={busy}>{busy ? 'Rotating…' : 'Rotate PDF'}</Button></ActionBar>
+          <ActionBar><Button onClick={rotate} disabled={busy}>{busy ? tr("Rotating…") : tr("Rotate PDF")}</Button></ActionBar>
         </>
       )}
       {error && <ErrorMessage>{error}</ErrorMessage>}

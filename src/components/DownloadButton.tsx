@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import Button from './Button';
 import { useWorkspace } from '../lib/workspaceContext';
+import { tr } from '../lib/i18n';
 
 interface DownloadButtonProps {
   url: string;
@@ -45,7 +46,7 @@ export default function DownloadButton({ url, filename, label = 'Download result
         <path d="M12 4v12m0 0l-4-4m4 4l4-4" strokeLinecap="round" strokeLinejoin="round" />
         <path d="M4 18v1a2 2 0 002 2h12a2 2 0 002-2v-1" strokeLinecap="round" strokeLinejoin="round" />
       </svg>
-      {label}
+      {tr(label)}
     </Button>
   );
 }

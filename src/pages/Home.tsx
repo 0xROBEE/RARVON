@@ -17,6 +17,7 @@ import { useInstallPrompt } from '../lib/installPrompt';
 import { COLLECTIONS, resolveCollection, collectionSize } from '../lib/collections';
 import type { Collection } from '../lib/collections';
 import { ActionIcon } from '../lib/actionIcons';
+import { tr } from '../lib/i18n';
 
 const toolCount = tools.filter((t) => t.status !== 'coming-soon').length;
 const MAX_SUGGESTIONS = 6;
@@ -90,14 +91,14 @@ function DropStart() {
           </svg>
         </span>
         <span>
-          <span className="block font-display text-lg font-semibold">Drop any file here</span>
-          <span className="mt-0.5 block text-sm text-ink-2">or paste an image with Ctrl+V. Your file stays on this device.</span>
+          <span className="block font-display text-lg font-semibold">{tr('Drop any file here')}</span>
+          <span className="mt-0.5 block text-sm text-ink-2">{tr('or paste an image with Ctrl+V. Your file stays on this device.')}</span>
         </span>
-        <span className="inline-flex items-center justify-center rounded-md bg-ink px-4 py-2.5 text-sm font-medium text-paper">Choose file</span>
+        <span className="inline-flex items-center justify-center rounded-md bg-ink px-4 py-2.5 text-sm font-medium text-paper">{tr('Choose file')}</span>
         <input
           type="file"
           className="sr-only"
-          aria-label="Choose a file to work on"
+          aria-label={tr('Choose a file to work on')}
           onChange={(e) => {
             const f = e.target.files?.[0];
             if (f) setFile(f);
@@ -112,9 +113,9 @@ function DropStart() {
             <CategoryIcon category={kind === 'zip' || kind === 'other' ? 'utilities' : kind === 'text' ? 'text' : kind} size={34} />
             <div className="min-w-0 flex-1">
               <p className="truncate font-medium">{file.name}</p>
-              <p className="text-xs text-ink-3">{formatBytes(file.size)} · what would you like to do with this {KIND_LABEL[kind]}?</p>
+              <p className="text-xs text-ink-3">{formatBytes(file.size)} · {tr('what would you like to do with this {kind}?', { kind: tr(KIND_LABEL[kind]) })}</p>
             </div>
-            <button onClick={() => setFile(null)} className="text-xs font-medium text-ink-3 hover:text-ink">Clear</button>
+            <button onClick={() => setFile(null)} className="text-xs font-medium text-ink-3 hover:text-ink">{tr('Clear')}</button>
           </div>
           <div className="mt-3 flex flex-wrap gap-2">
             {suggestions.slice(0, MAX_SUGGESTIONS).map((t, i) => (
@@ -127,19 +128,19 @@ function DropStart() {
                 )}
               >
                 <CategoryIcon category={t.category} size={24} />
-                {t.name}
+                {tr(t.name)}
               </button>
             ))}
             {suggestions.length > MAX_SUGGESTIONS && (
               <details className="relative">
                 <summary className="flex cursor-pointer list-none items-center rounded-full border border-line px-3 py-1.5 text-sm font-medium text-ink-2 hover:border-ink">
-                  + {suggestions.length - MAX_SUGGESTIONS} more
+                  {tr('+ {n} more', { n: suggestions.length - MAX_SUGGESTIONS })}
                 </summary>
                 <div className="absolute start-0 z-10 mt-1 grid w-60 gap-0.5 rounded-xl border border-line bg-elevated p-2 shadow-lg">
                   {suggestions.slice(MAX_SUGGESTIONS).map((t) => (
                     <button key={t.category + t.slug} onClick={() => open(t)} className="flex items-center gap-2 rounded-md px-2 py-1.5 text-start text-sm hover:bg-paper-dim">
                       <CategoryIcon category={t.category} size={22} />
-                      {t.name}
+                      {tr(t.name)}
                     </button>
                   ))}
                 </div>
@@ -154,8 +155,8 @@ function DropStart() {
 
 export default function Home() {
   usePageMeta(
-    'Bench — Free tools. No ads. No account.',
-    'Free, ad-free, account-free tools for PDFs, images, video, audio, text and data — processed on your device.',
+    tr('Bench — Free tools. No ads. No account.'),
+    tr('Free, ad-free, account-free tools for PDFs, images, video, audio, text and data — processed on your device.'),
   );
   const { openSearch } = useToolSearch();
   const { canInstall, installed, install } = useInstallPrompt();
@@ -169,9 +170,9 @@ export default function Home() {
     <>
       <section className="bg-grid-paper border-b border-line">
         <div className="mx-auto max-w-4xl px-4 py-12 sm:px-6 sm:py-16">
-          <h1 className="font-display text-4xl font-semibold leading-[1.05] tracking-tight sm:text-5xl">Drop a file. Pick what to do.</h1>
+          <h1 className="font-display text-4xl font-semibold leading-[1.05] tracking-tight sm:text-5xl">{tr('Drop a file. Pick what to do.')}</h1>
           <p className="mt-4 max-w-xl text-base text-ink-2">
-            PDFs, images, video, audio and text. Free, no ads, no account, and everything runs on your device.
+            {tr('PDFs, images, video, audio and text. Free, no ads, no account, and everything runs on your device.')}
           </p>
           <DropStart />
           <button
@@ -182,7 +183,7 @@ export default function Home() {
               <circle cx="11" cy="11" r="7" />
               <path d="M21 21l-4.3-4.3" strokeLinecap="round" />
             </svg>
-            Or search {toolCount} tools
+            {tr('Or search {n} tools', { n: toolCount })}
             <kbd className="rounded border border-line px-1.5 font-mono text-[10px]">⌘K</kbd>
           </button>
         </div>
@@ -190,12 +191,12 @@ export default function Home() {
 
       {recent.length > 0 && (
         <section className="mx-auto max-w-6xl px-4 pt-10 sm:px-6" aria-labelledby="recent-heading">
-          <h2 id="recent-heading" className="font-display text-base font-semibold">Recently used</h2>
+          <h2 id="recent-heading" className="font-display text-base font-semibold">{tr('Recently used')}</h2>
           <div className="mt-3 flex flex-wrap gap-2">
             {recent.map((t) => (
               <Link key={t.category + t.slug} to={`/tools/${t.category}/${t.slug}`} className="flex items-center gap-2 rounded-full border border-line py-1 pe-3 ps-1 text-sm font-medium hover:border-ink">
                 <CategoryIcon category={t.category} size={24} />
-                {t.name}
+                {tr(t.name)}
               </Link>
             ))}
           </div>
@@ -204,8 +205,8 @@ export default function Home() {
 
       <section className="mx-auto max-w-6xl px-4 py-10 sm:px-6" aria-labelledby="all-heading">
         <div className="flex items-baseline justify-between gap-4">
-          <h2 id="all-heading" className="font-display text-lg font-semibold">All tools</h2>
-          <Link to="/tools" className="text-sm font-medium text-workshop hover:underline">Browse all tools →</Link>
+          <h2 id="all-heading" className="font-display text-lg font-semibold">{tr('All tools')}</h2>
+          <Link to="/tools" className="text-sm font-medium text-workshop hover:underline">{tr('Browse all tools →')}</Link>
         </div>
         <div className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {categories.filter((c) => !HOME_HIDDEN_CATEGORIES.includes(c.slug)).map((c) => {
@@ -219,22 +220,22 @@ export default function Home() {
               <div key={c.slug} className="flex flex-col rounded-xl border border-line bg-elevated p-4">
                 <Link to={`/tools/${c.slug}`} className="flex items-center gap-2 font-display text-sm font-semibold hover:text-workshop">
                   <CategoryIcon category={c.slug} size={30} />
-                  {c.name}
+                  {tr(c.name)}
                   <span className="ms-auto font-mono text-xs font-normal text-ink-3">{list.length}</span>
                 </Link>
                 <ul className="mt-3 grid gap-0.5">
                   {shown.map((t) => (
                     <li key={t.slug}>
                       <Link to={`/tools/${t.category}/${t.slug}`} className="flex items-center justify-between gap-2 rounded-md px-2 py-1.5 text-sm text-ink-2 hover:bg-paper-dim hover:text-ink">
-                        <span className="truncate">{t.name}</span>
-                        {t.status === 'experimental' && <span className="shrink-0 font-mono text-[10px] uppercase tracking-wide text-warn">Beta</span>}
+                        <span className="truncate">{tr(t.name)}</span>
+                        {t.status === 'experimental' && <span className="shrink-0 font-mono text-[10px] uppercase tracking-wide text-warn">{tr('Beta')}</span>}
                       </Link>
                     </li>
                   ))}
                 </ul>
                 {more > 0 && (
                   <Link to={`/tools/${c.slug}`} className="mt-2 px-2 text-sm font-medium text-workshop hover:underline">
-                    +{more} more {c.name} tool{more === 1 ? '' : 's'}
+                    {tr(more === 1 ? '+{n} more {name} tool' : '+{n} more {name} tools', { n: more, name: tr(c.name) })}
                   </Link>
                 )}
               </div>
@@ -254,38 +255,38 @@ export default function Home() {
               ))}
             </span>
             <span className="mt-3 flex items-center gap-1.5 font-display text-sm font-semibold group-hover:text-workshop">
-              See all {toolCount} tools
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="transition-transform duration-200 group-hover:translate-x-1" aria-hidden="true">
+              {tr('See all {n} tools', { n: toolCount })}
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="transition-transform duration-200 group-hover:translate-x-1 rtl:-scale-x-100 rtl:group-hover:-translate-x-1" aria-hidden="true">
                 <path d="M5 12h14M13 6l6 6-6 6" />
               </svg>
             </span>
-            <span className="mt-1 text-xs text-ink-3">Including Developer and Utilities tools</span>
+            <span className="mt-1 text-xs text-ink-3">{tr('Including Developer and Utilities tools')}</span>
           </Link>
         </div>
       </section>
 
       <section className="mx-auto max-w-6xl px-4 pb-4 sm:px-6" aria-labelledby="tips-heading">
-        <h2 id="tips-heading" className="font-display text-lg font-semibold">Get more out of Bench</h2>
+        <h2 id="tips-heading" className="font-display text-lg font-semibold">{tr('Get more out of Bench')}</h2>
         <div className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <Tip icon="M12 3v12m0 0l-4-4m4 4l4-4M5 21h14" title="Works offline">
+          <Tip icon="M12 3v12m0 0l-4-4m4 4l4-4M5 21h14" title={tr('Works offline')}>
             {installed
-              ? 'Bench is installed on this device. Every tool works without an internet connection.'
-              : 'After your first visit every tool works without a connection. Install Bench to open it like an app.'}
+              ? tr('Bench is installed on this device. Every tool works without an internet connection.')
+              : tr('After your first visit every tool works without a connection. Install Bench to open it like an app.')}
             {canInstall && (
               <button onClick={() => void install()} className="mt-3 inline-flex items-center gap-1.5 rounded-md border border-line bg-paper px-3 py-1.5 text-xs font-medium text-ink hover:border-ink">
-                Install app
+                {tr('Install app')}
               </button>
             )}
           </Tip>
-          <Tip icon="M8 4h8l2 3h2v13H4V7h2zM12 11v5m-2.5-2.5h5" title="Drop or paste anything">
-            Drop a file at the top of this page, or paste a screenshot with Ctrl+V, and Bench suggests the right tool.
+          <Tip icon="M8 4h8l2 3h2v13H4V7h2zM12 11v5m-2.5-2.5h5" title={tr('Drop or paste anything')}>
+            {tr('Drop a file at the top of this page, or paste a screenshot with Ctrl+V, and Bench suggests the right tool.')}
           </Tip>
-          <Tip icon="M4 12h12m0 0l-4-4m4 4l-4 4M20 5v14" title="Keep going with a result">
-            Every result has “Continue with” buttons that open the next tool with your file already loaded.
+          <Tip icon="M4 12h12m0 0l-4-4m4 4l-4 4M20 5v14" title={tr('Keep going with a result')}>
+            {tr('Every result has “Continue with” buttons that open the next tool with your file already loaded.')}
           </Tip>
-          <Tip icon="M11 4a7 7 0 100 14 7 7 0 000-14zM21 21l-4.5-4.5" title="Find any tool fast">
-            Press <kbd className="rounded border border-line px-1 font-mono text-[11px]">Ctrl</kbd>{' '}
-            <kbd className="rounded border border-line px-1 font-mono text-[11px]">K</kbd> on any page and type what you want to do, like “compress video”.
+          <Tip icon="M11 4a7 7 0 100 14 7 7 0 000-14zM21 21l-4.5-4.5" title={tr('Find any tool fast')}>
+            {tr('Press')} <kbd className="rounded border border-line px-1 font-mono text-[11px]">Ctrl</kbd>{' '}
+            <kbd className="rounded border border-line px-1 font-mono text-[11px]">K</kbd> {tr('on any page and type what you want to do, like “compress video”.')}
           </Tip>
         </div>
       </section>
@@ -320,21 +321,21 @@ function CollectionCard({ collection }: { collection: Collection }) {
         <span className="grid h-[30px] w-[30px] place-items-center rounded-lg bg-workshop-dim text-workshop">
           <ActionIcon action={collection.slug} className="h-[18px] w-[18px]" />
         </span>
-        All {collection.title} tools
+        {tr('All {name} tools', { name: tr(collection.title) })}
         <span className="ms-auto font-mono text-xs font-normal text-ink-3">{collectionSize(collection)}</span>
       </Link>
       <ul className="mt-3 grid gap-0.5">
         {shown.map((t) => (
           <li key={t.category + t.slug}>
             <Link to={`/tools/${t.category}/${t.slug}`} className="flex items-center justify-between gap-2 rounded-md px-2 py-1.5 text-sm text-ink-2 hover:bg-paper-dim hover:text-ink">
-              <span className="truncate">{t.name}</span>
-              {t.status === 'experimental' && <span className="shrink-0 font-mono text-[10px] uppercase tracking-wide text-warn">Beta</span>}
+              <span className="truncate">{tr(t.name)}</span>
+              {t.status === 'experimental' && <span className="shrink-0 font-mono text-[10px] uppercase tracking-wide text-warn">{tr('Beta')}</span>}
             </Link>
           </li>
         ))}
       </ul>
       <Link to={`/${collection.slug}`} className="mt-2 px-2 text-sm font-medium text-workshop hover:underline">
-        {more > 0 ? `+${more} more ${collection.title} tools` : `Open ${collection.title}`}
+        {more > 0 ? tr('+{n} more {name} tools', { n: more, name: tr(collection.title) }) : tr('Open {name}', { name: tr(collection.title) })}
       </Link>
     </div>
   );

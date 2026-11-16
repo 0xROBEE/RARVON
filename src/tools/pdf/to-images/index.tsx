@@ -7,6 +7,7 @@ import ProgressBar from '../../../components/ProgressBar';
 import { getPdfPageCount, renderPdfPageToCanvas } from '../../../lib/pdfjs';
 import { canvasToBlob } from '../../../lib/imageUtils';
 import { ResultCard, ActionBar } from '../../../components/tool';
+import { tr } from '../../../lib/i18n';
 
 export default function PdfToImages() {
   const [file, setFile] = useState<File | null>(null);
@@ -50,7 +51,7 @@ export default function PdfToImages() {
         setResult({ url: URL.createObjectURL(zipBlob), name: `${base}-images.zip` });
       }
     } catch {
-      setError('Could not convert this PDF to images.');
+      setError(tr("Could not convert this PDF to images."));
     } finally {
       setBusy(false);
     }
@@ -63,7 +64,7 @@ export default function PdfToImages() {
       ) : (
         <div className="flex items-center justify-between rounded-md border border-line bg-paper-dim p-3 text-sm">
           <span className="truncate">{file.name}</span>
-          <button onClick={() => { setFile(null); setResult(null); }} className="text-xs font-medium text-workshop hover:underline">Remove</button>
+          <button onClick={() => { setFile(null); setResult(null); }} className="text-xs font-medium text-workshop hover:underline">{tr("Remove")}</button>
         </div>
       )}
 
@@ -71,20 +72,20 @@ export default function PdfToImages() {
         <>
           <div className="flex flex-wrap items-center gap-4">
             <label className="flex items-center gap-2 text-xs text-ink-2">
-              Format
+              {tr("Format")}
               <select value={format} onChange={(e) => setFormat(e.target.value as typeof format)} className="rounded-md border border-line bg-paper px-2 py-1.5 text-xs">
-                <option value="image/png">PNG</option>
-                <option value="image/jpeg">JPG</option>
+                <option value="image/png">{tr("PNG")}</option>
+                <option value="image/jpeg">{tr("JPG")}</option>
               </select>
             </label>
             <label className="flex items-center gap-2 text-xs text-ink-2">
-              Resolution
+              {tr("Resolution")}
               <input type="range" min={1} max={4} step={0.5} value={scale} onChange={(e) => setScale(Number(e.target.value))} />
               {scale}×
             </label>
           </div>
-          <ActionBar><Button onClick={convert} disabled={busy}>{busy ? 'Converting…' : 'Convert to images'}</Button></ActionBar>
-          {busy && <ProgressBar value={progress} label="Rendering pages" />}
+          <ActionBar><Button onClick={convert} disabled={busy}>{busy ? tr("Converting…") : tr("Convert to images")}</Button></ActionBar>
+          {busy && <ProgressBar value={progress} label={tr("Rendering pages")} />}
         </>
       )}
       {error && <ErrorMessage>{error}</ErrorMessage>}

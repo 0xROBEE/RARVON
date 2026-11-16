@@ -10,6 +10,7 @@ import type { VideoInfo } from '../../../lib/videoEngine';
 import { ResultCard, ActionBar } from '../../../components/tool';
 import { Link, useNavigate } from 'react-router-dom';
 import { handoff } from '../editor/openLock';
+import { tr } from '../../../lib/i18n';
 
 export default function TrimVideoTool() {
   const [file, setFile] = useState<File | null>(null);
@@ -51,7 +52,7 @@ export default function TrimVideoTool() {
     const controller = new AbortController();
     if (!file || !info || !info.container) return;
     if (end <= start) {
-      setError('End time must be after the start time.');
+      setError(tr("End time must be after the start time."));
       return;
     }
     setBusy(true);
@@ -78,14 +79,14 @@ export default function TrimVideoTool() {
   return (
     <div className="space-y-4">
       {!file ? (
-        <FileDropzone accept="video/mp4,video/webm,video/quicktime,video/x-matroska,.mkv,.mov" onFiles={handleFile} hint="MP4, MOV, WebM or MKV, up to 250MB" />
+        <FileDropzone accept="video/mp4,video/webm,video/quicktime,video/x-matroska,.mkv,.mov" onFiles={handleFile} hint={tr("MP4, MOV, WebM or MKV, up to 250MB")} />
       ) : (
         <div className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-line bg-paper-dim p-3 text-sm">
           <span className="truncate">
             {file.name} · {formatBytes(file.size)}
             {info && ` · ${info.width}×${info.height} · ${formatDuration(info.durationSec)}`}
           </span>
-          <button onClick={() => { setFile(null); setInfo(null); setResult(null); }} className="text-xs font-medium text-workshop hover:underline">Remove</button>
+          <button onClick={() => { setFile(null); setInfo(null); setResult(null); }} className="text-xs font-medium text-workshop hover:underline">{tr("Remove")}</button>
         </div>
       )}
 
@@ -93,25 +94,25 @@ export default function TrimVideoTool() {
         <>
           <div className="grid grid-cols-2 gap-4">
             <label className="text-xs text-ink-2">
-              Start ({formatDuration(start)})
+              {tr("Start (")}{formatDuration(start)})
               <input type="range" min={0} max={info.durationSec} step={0.1} value={start} onChange={(e) => setStart(Math.min(Number(e.target.value), end - 0.1))} className="mt-2 block w-full" />
             </label>
             <label className="text-xs text-ink-2">
-              End ({formatDuration(end)})
+              {tr("End (")}{formatDuration(end)})
               <input type="range" min={0} max={info.durationSec} step={0.1} value={end} onChange={(e) => setEnd(Math.max(Number(e.target.value), start + 0.1))} className="mt-2 block w-full" />
             </label>
           </div>
-          <p className="text-xs text-ink-3">Clip length: {formatDuration(end - start)}. This is designed to copy the existing video stream directly rather than re-encode it, which keeps quality intact when your browser can do that for this file.</p>
+          <p className="text-xs text-ink-3">{tr("Clip length:")}{' '}{formatDuration(end - start)}{tr(". This is designed to copy the existing video stream directly rather than re-encode it, which keeps quality intact when your browser can do that for this file.")}</p>
           <ActionBar>
-            <Button onClick={trim} disabled={busy}>{busy ? 'Trimming…' : 'Trim video'}</Button>
-            {busy && <Button variant="secondary" onClick={() => abortRef.current?.abort()}>Cancel</Button>}
+            <Button onClick={trim} disabled={busy}>{busy ? tr("Trimming…") : tr("Trim video")}</Button>
+            {busy && <Button variant="secondary" onClick={() => abortRef.current?.abort()}>{tr("Cancel")}</Button>}
           </ActionBar>
-          {busy && <ProgressBar value={progress * 100} label="Processing" />}
+          {busy && <ProgressBar value={progress * 100} label={tr("Processing")} />}
         </>
       )}
 
       <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-line px-4 py-3 text-sm" data-testid="editor-link">
-        <span className="text-ink-2">Need to cut out a middle part, join clips or add text and music?</span>
+        <span className="text-ink-2">{tr("Need to cut out a middle part, join clips or add text and music?")}</span>
         {file ? (
           <button
             onClick={() => {
@@ -120,10 +121,10 @@ export default function TrimVideoTool() {
             }}
             className="font-medium text-workshop hover:underline"
           >
-            Open this video in Video Editor →
+            {tr("Open this video in Video Editor →")}
           </button>
         ) : (
-          <Link to="/tools/video/editor" className="font-medium text-workshop hover:underline">Open Video Editor →</Link>
+          <Link to="/tools/video/editor" className="font-medium text-workshop hover:underline">{tr("Open Video Editor →")}</Link>
         )}
       </div>
 

@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import ErrorMessage from '../../../components/ErrorMessage';
 import { CopyButton } from '../../../components/tool';
+import { tr } from '../../../lib/i18n';
 
 function base64UrlDecode(segment: string): string {
   const padded = segment.replace(/-/g, '+').replace(/_/g, '/').padEnd(segment.length + ((4 - (segment.length % 4)) % 4), '=');
@@ -58,14 +59,14 @@ export default function JwtDecoder() {
   return (
     <div className="space-y-4">
       <div>
-        <label htmlFor="jwt-input" className="mb-1.5 block text-xs font-medium text-ink-2">Paste a JWT</label>
+        <label htmlFor="jwt-input" className="mb-1.5 block text-xs font-medium text-ink-2">{tr("Paste a JWT")}</label>
         <textarea
           id="jwt-input"
           value={token}
           onChange={(e) => setToken(e.target.value)}
           rows={4}
           spellCheck={false}
-          placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...."
+          placeholder={tr("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9....")}
           className="w-full rounded-md border border-line bg-paper px-3 py-2 font-mono text-xs leading-relaxed focus:border-workshop"
         />
       </div>
@@ -85,20 +86,20 @@ export default function JwtDecoder() {
           )}
           <div>
             <div className="mb-1.5 flex items-center justify-between">
-              <span className="text-xs font-medium text-ink-2">Header</span>
-              <CopyButton text={decoded.header} label="Copy" />
+              <span className="text-xs font-medium text-ink-2">{tr("Header")}</span>
+              <CopyButton text={decoded.header} label={tr("Copy")} />
             </div>
             <pre className="overflow-auto rounded-md border border-line bg-paper-dim px-3 py-2 font-mono text-xs leading-relaxed">{decoded.header}</pre>
           </div>
           <div>
             <div className="mb-1.5 flex items-center justify-between">
-              <span className="text-xs font-medium text-ink-2">Payload</span>
-              <CopyButton text={decoded.payload} label="Copy" />
+              <span className="text-xs font-medium text-ink-2">{tr("Payload")}</span>
+              <CopyButton text={decoded.payload} label={tr("Copy")} />
             </div>
             <pre className="overflow-auto rounded-md border border-line bg-paper-dim px-3 py-2 font-mono text-xs leading-relaxed">{decoded.payload}</pre>
           </div>
           <p className="text-xs text-ink-3">
-            {decoded.signaturePresent ? 'A signature segment is present but not verified here.' : 'No signature segment was found.'}
+            {decoded.signaturePresent ? tr("A signature segment is present but not verified here.") : tr("No signature segment was found.")}
           </p>
         </div>
       )}

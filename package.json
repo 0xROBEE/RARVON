@@ -12,7 +12,8 @@
     "test:e2e": "playwright test",
     "test:all": "vitest run && playwright test",
     "fetch-models": "node scripts/fetch-ai-models.mjs",
-    "prebuild": "node scripts/fetch-ai-models.mjs"
+    "prebuild": "node scripts/fetch-ai-models.mjs",
+    "i18n:missing": "node scripts/i18n-missing.mjs"
   },
   "dependencies": {
     "@fontsource/inter": "^5.3.0",

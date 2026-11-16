@@ -5,6 +5,7 @@ import {
   QUALITY_HIGH, QUALITY_MEDIUM, QUALITY_LOW,
 } from 'mediabunny';
 import type { VideoCodec } from 'mediabunny';
+import { tr } from './i18n';
 
 export type OutputContainer = 'mp4' | 'webm';
 
@@ -71,7 +72,7 @@ export async function probeVideo(file: File): Promise<VideoInfo> {
   const input = makeInput(file);
   const canRead = await input.canRead();
   if (!canRead) {
-    throw new Error("This browser couldn't read this video. MP4, MOV, WebM and MKV files are supported — see the tool's FAQ for why other formats aren't.");
+    throw new Error(tr("This browser couldn't read this video. MP4, MOV, WebM and MKV files are supported — see the tool's FAQ for why other formats aren't."));
   }
   const format = await input.getFormat();
   const [videoTracks, audioTracks, duration] = await Promise.all([
@@ -80,7 +81,7 @@ export async function probeVideo(file: File): Promise<VideoInfo> {
     input.computeDuration(),
   ]);
   const track = videoTracks[0];
-  if (!track) throw new Error("This file doesn't have a video track.");
+  if (!track) throw new Error(tr("This file doesn't have a video track."));
   const [width, height] = await Promise.all([track.getDisplayWidth(), track.getDisplayHeight()]);
   const videoCodec = track.codec;
   const webmCodec = videoCodec === 'vp8' || videoCodec === 'vp9' || videoCodec === 'av1';
@@ -123,7 +124,7 @@ export async function runVideoConversion(file: File, options: RunConversionOptio
   const input = makeInput(file);
   const canRead = await input.canRead();
   if (!canRead) {
-    throw new Error("This browser couldn't read this video file.");
+    throw new Error(tr("This browser couldn't read this video file."));
   }
 
   const target = new BufferTarget();
@@ -155,7 +156,7 @@ export async function runVideoConversion(file: File, options: RunConversionOptio
   });
 
   if (!conversion.isValid) {
-    throw new Error("This video couldn't be converted with the current settings — it may use a codec this browser can't decode.");
+    throw new Error(tr("This video couldn't be converted with the current settings — it may use a codec this browser can't decode."));
   }
 
   conversion.onProgress = (fraction) => options.onProgress?.(fraction);
@@ -171,7 +172,7 @@ export async function runVideoConversion(file: File, options: RunConversionOptio
   }
   if (options.signal?.aborted) throw new VideoCancelledError();
 
-  if (!target.buffer) throw new Error('Conversion finished but produced no output.');
+  if (!target.buffer) throw new Error(tr("Conversion finished but produced no output."));
   return new Blob([target.buffer], { type: options.container === 'mp4' ? 'video/mp4' : 'video/webm' });
 }
 

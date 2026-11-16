@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import Button from '../../../components/Button';
 import { CopyButton } from '../../../components/tool';
+import { tr } from '../../../lib/i18n';
 
 export default function TextCleaner() {
   const [text, setText] = useState('');
@@ -40,7 +41,7 @@ export default function TextCleaner() {
         value={text}
         onChange={(e) => setText(e.target.value)}
         rows={8}
-        placeholder="Paste messy text here…"
+        placeholder={tr("Paste messy text here…")}
         className="w-full rounded-md border border-line bg-paper px-3 py-2 text-sm leading-relaxed focus:border-workshop"
       />
       <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
@@ -52,16 +53,16 @@ export default function TextCleaner() {
         ].map(([key, label]) => (
           <label key={key} className="flex items-center gap-2 text-xs text-ink-2">
             <input type="checkbox" checked={options[key as keyof typeof options]} onChange={() => toggle(key as keyof typeof options)} />
-            {label}
+            {tr(label)}
           </label>
         ))}
       </div>
-      <Button onClick={clean} disabled={!text}>Clean text</Button>
+      <Button onClick={clean} disabled={!text}>{tr("Clean text")}</Button>
       {output && (
         <div>
           <div className="mb-1.5 flex items-center justify-between">
-            <span className="text-xs font-medium text-ink-2">Result</span>
-            <CopyButton text={output} label="Copy" />
+            <span className="text-xs font-medium text-ink-2">{tr("Result")}</span>
+            <CopyButton text={output} label={tr("Copy")} />
           </div>
           <pre className="max-h-72 overflow-auto whitespace-pre-wrap rounded-md border border-line bg-paper-dim px-3 py-2 text-sm leading-relaxed">
             {output}

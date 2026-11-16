@@ -10,8 +10,14 @@ import '@fontsource/inter/500.css'
 import '@fontsource/inter/600.css'
 import '@fontsource/jetbrains-mono/400.css'
 import '@fontsource/jetbrains-mono/500.css'
+// Arabic interface font (only downloaded when Arabic text is on screen).
+import '@fontsource/noto-sans-arabic/400.css'
+import '@fontsource/noto-sans-arabic/500.css'
+import '@fontsource/noto-sans-arabic/600.css'
+import '@fontsource/noto-sans-arabic/700.css'
 import './index.css'
 import App from './App.tsx'
+import { I18nProvider, loadArabic, storedLang } from './lib/i18n'
 
 // Offline support (production builds only; see sw-template.js).
 if (import.meta.env.PROD && 'serviceWorker' in navigator) {
@@ -33,8 +39,15 @@ window.addEventListener('vite:preloadError', (event) => {
   window.location.reload()
 })
 
-createRoot(document.getElementById('root')!).render(
-  <StrictMode>
-    <App />
-  </StrictMode>,
-)
+// The site opens in English; only a visitor who switched to Arabic gets it on load.
+async function start() {
+  const initialDict = storedLang() === 'ar' ? await loadArabic().catch(() => undefined) : undefined
+  createRoot(document.getElementById('root')!).render(
+    <StrictMode>
+      <I18nProvider initialDict={initialDict}>
+        <App />
+      </I18nProvider>
+    </StrictMode>,
+  )
+}
+void start()

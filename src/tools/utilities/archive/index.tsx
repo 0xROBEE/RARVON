@@ -6,6 +6,7 @@ import ErrorMessage from '../../../components/ErrorMessage';
 import ProgressBar from '../../../components/ProgressBar';
 import { formatBytes } from '../../../lib/imageUtils';
 import { ResultCard, ActionBar } from '../../../components/tool';
+import { tr } from '../../../lib/i18n';
 
 interface Entry {
   id: string;
@@ -87,7 +88,7 @@ export default function ArchiveTool() {
       const name = archiveName.trim() || 'archive.zip';
       setResult({ url: URL.createObjectURL(blob), name: name.endsWith('.zip') ? name : `${name}.zip`, size: blob.size });
     } catch {
-      setError('Could not build the archive. One of the files may be unreadable.');
+      setError(tr("Could not build the archive. One of the files may be unreadable."));
     } finally {
       setBusy(false);
     }
@@ -95,7 +96,7 @@ export default function ArchiveTool() {
 
   return (
     <div className="space-y-4">
-      <FileDropzone multiple onFiles={addFiles} label="Drop files here, or click to browse" hint="Any file type, any number of files" />
+      <FileDropzone multiple onFiles={addFiles} label={tr("Drop files here, or click to browse")} hint={tr("Any file type, any number of files")} />
 
       {entries.length > 0 && (
         <>
@@ -106,10 +107,10 @@ export default function ArchiveTool() {
                   value={e.name}
                   onChange={(ev) => renameEntry(e.id, ev.target.value)}
                   className="min-w-0 flex-1 rounded border border-line bg-paper px-2 py-1 text-sm"
-                  aria-label={`Name for ${e.file.name}`}
+                  aria-label={tr("Name for {0}", { 0: e.file.name })}
                 />
                 <span className="shrink-0 text-xs text-ink-3">{formatBytes(e.file.size)}</span>
-                <button onClick={() => removeEntry(e.id)} className="shrink-0 rounded px-1.5 py-1 text-xs text-warn hover:bg-paper" aria-label={`Remove ${e.file.name}`}>
+                <button onClick={() => removeEntry(e.id)} className="shrink-0 rounded px-1.5 py-1 text-xs text-warn hover:bg-paper" aria-label={tr("Remove {0}", { 0: e.file.name })}>
                   ✕
                 </button>
               </li>
@@ -117,16 +118,16 @@ export default function ArchiveTool() {
           </ul>
 
           <p className="text-xs text-ink-3">
-            {entries.length} file{entries.length !== 1 ? 's' : ''} · {formatBytes(totalInputSize)} total before archiving
+            {entries.length}{' '}{tr("file")}{entries.length !== 1 ? 's' : ''} · {formatBytes(totalInputSize)}{' '}{tr("total before archiving")}
           </p>
 
           <div className="flex flex-wrap items-end gap-3">
             <label className="text-xs text-ink-2">
-              Archive name
+              {tr("Archive name")}
               <input value={archiveName} onChange={(e) => setArchiveName(e.target.value)} className="mt-1 block w-48 rounded-md border border-line bg-paper px-2 py-1.5 text-sm" />
             </label>
             <label className="text-xs text-ink-2">
-              Compression
+              {tr("Compression")}
               <select value={level} onChange={(e) => setLevel(e.target.value as Level)} className="mt-1 block rounded-md border border-line bg-paper px-2 py-1.5 text-sm">
                 {LEVELS.map((l) => (
                   <option key={l.value} value={l.value}>{l.label}</option>
@@ -136,12 +137,11 @@ export default function ArchiveTool() {
           </div>
 
           <p className="text-xs text-ink-3">
-            Already-compressed files (JPG, MP4, another ZIP) won't shrink much no matter the level — ZIP can't
-            compress what's already compressed.
+            {tr("Already-compressed files (JPG, MP4, another ZIP) won't shrink much no matter the level — ZIP can't compress what's already compressed.")}
           </p>
 
-          <ActionBar><Button onClick={createZip} disabled={busy}>{busy ? 'Building archive…' : 'Create ZIP'}</Button></ActionBar>
-          {busy && <ProgressBar value={progress} label="Compressing files" />}
+          <ActionBar><Button onClick={createZip} disabled={busy}>{busy ? tr("Building archive…") : tr("Create ZIP")}</Button></ActionBar>
+          {busy && <ProgressBar value={progress} label={tr("Compressing files")} />}
         </>
       )}
 
@@ -149,8 +149,8 @@ export default function ArchiveTool() {
       {result && (
         <ResultCard url={result.url} filename={result.name}>{result.name} · {formatBytes(result.size)}
             {totalInputSize > 0 && (
-              <span className="ml-1 text-ink-3">
-                ({result.size < totalInputSize ? `-${Math.round((1 - result.size / totalInputSize) * 100)}%` : 'no smaller than the originals combined'})
+              <span className="ms-1 text-ink-3">
+                ({result.size < totalInputSize ? `-${Math.round((1 - result.size / totalInputSize) * 100)}%` : tr("no smaller than the originals combined")})
               </span>
             )}</ResultCard>
       )}

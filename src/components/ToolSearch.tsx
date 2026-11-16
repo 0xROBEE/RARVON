@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { tools, getCategory, actionMeta } from '../lib/toolRegistry';
 import type { ToolMeta, ToolAction } from '../lib/toolRegistry';
+import { tr } from '../lib/i18n';
 
 const actionLabels = new Map(actionMeta.map((a) => [a.value, a.label]));
 
@@ -13,14 +14,14 @@ const actionLabels = new Map(actionMeta.map((a) => [a.value, a.label]));
  * tool happens to have the closest literal name match.
  */
 function scoreTokenAgainstTool(tool: ToolMeta, token: string): number {
-  const name = tool.name.toLowerCase();
+  const name = `${tool.name} ${tr(tool.name)}`.toLowerCase();
   if (name === token) return 100;
-  if (tool.actions.some((a) => a === token || actionLabels.get(a)?.toLowerCase() === token)) return 95;
+  if (tool.actions.some((a) => a === token || actionLabels.get(a)?.toLowerCase() === token || tr(actionLabels.get(a) ?? '') === token)) return 95;
   if (name.startsWith(token)) return 80;
   if (tool.actions.some((a) => a.startsWith(token))) return 75;
   if (name.includes(token)) return 60;
   if (tool.keywords.some((k) => k.toLowerCase().includes(token))) return 40;
-  if (tool.shortDescription.toLowerCase().includes(token)) return 20;
+  if (`${tool.shortDescription} ${tr(tool.shortDescription)}`.toLowerCase().includes(token)) return 20;
   return 0;
 }
 
@@ -92,7 +93,7 @@ export default function ToolSearch({ open, onClose }: { open: boolean; onClose: 
       <div
         role="dialog"
         aria-modal="true"
-        aria-label="Search tools"
+        aria-label={tr('Search tools')}
         onClick={(e) => e.stopPropagation()}
         className="w-full max-w-lg overflow-hidden rounded-lg border border-line bg-elevated shadow-2xl"
       >
@@ -106,14 +107,14 @@ export default function ToolSearch({ open, onClose }: { open: boolean; onClose: 
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             onKeyDown={onKeyDown}
-            placeholder="Search tools… e.g. compress image, merge pdf, json"
+            placeholder={tr('Search tools… e.g. compress image, merge pdf, json')}
             className="w-full bg-transparent text-sm outline-none placeholder:text-ink-3"
-            aria-label="Search tools"
+            aria-label={tr('Search tools')}
           />
-          <kbd className="hidden shrink-0 rounded border border-line px-1.5 py-0.5 text-[10px] text-ink-3 sm:inline">Esc</kbd>
+          <kbd className="hidden shrink-0 rounded border border-line px-1.5 py-0.5 text-[10px] text-ink-3 sm:inline">{tr('Esc')}</kbd>
         </div>
         <ul className="max-h-96 overflow-auto py-1" role="listbox">
-          {results.length === 0 && <li className="px-4 py-6 text-center text-sm text-ink-3">No tools match "{query}"</li>}
+          {results.length === 0 && <li className="px-4 py-6 text-center text-sm text-ink-3">{tr('No tools match “{q}”', { q: query })}</li>}
           {results.map((tool, i) => {
             const category = getCategory(tool.category);
             const action = matchedAction(tool, query);
@@ -122,18 +123,18 @@ export default function ToolSearch({ open, onClose }: { open: boolean; onClose: 
                 <button
                   onMouseEnter={() => setActiveIndex(i)}
                   onClick={() => go(tool)}
-                  className={`flex w-full items-center justify-between gap-3 px-4 py-2.5 text-left text-sm ${i === activeIndex ? 'bg-workshop-dim' : ''}`}
+                  className={`flex w-full items-center justify-between gap-3 px-4 py-2.5 text-start text-sm ${i === activeIndex ? 'bg-workshop-dim' : ''}`}
                 >
                   <span>
-                    <span className="font-medium">{tool.name}</span>
-                    <span className="ml-2 text-xs text-ink-3">{category?.name}</span>
-                    {action && <span className="ml-2 rounded-full bg-workshop-dim px-1.5 py-0.5 text-[10px] font-medium text-workshop">{actionLabels.get(action)}</span>}
+                    <span className="font-medium">{tr(tool.name)}</span>
+                    <span className="ms-2 text-xs text-ink-3">{tr(category?.name ?? '')}</span>
+                    {action && <span className="ms-2 rounded-full bg-workshop-dim px-1.5 py-0.5 text-[10px] font-medium text-workshop">{tr(actionLabels.get(action) ?? '')}</span>}
                   </span>
                   {tool.status === 'coming-soon' && (
-                    <span className="shrink-0 rounded-full border border-line px-2 py-0.5 text-[10px] uppercase text-ink-3">Soon</span>
+                    <span className="shrink-0 rounded-full border border-line px-2 py-0.5 text-[10px] uppercase text-ink-3">{tr('Soon')}</span>
                   )}
                   {tool.status === 'experimental' && (
-                    <span className="shrink-0 rounded-full border border-warn/30 bg-warn-dim px-2 py-0.5 text-[10px] uppercase text-warn">Experimental</span>
+                    <span className="shrink-0 rounded-full border border-warn/30 bg-warn-dim px-2 py-0.5 text-[10px] uppercase text-warn">{tr('Experimental')}</span>
                   )}
                 </button>
               </li>

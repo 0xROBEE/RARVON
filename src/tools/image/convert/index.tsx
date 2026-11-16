@@ -12,6 +12,7 @@ import {
 } from '../../../lib/imageFormatSupport';
 import type { ImageFormatOption } from '../../../lib/imageFormatSupport';
 import { ResultCard, ActionBar } from '../../../components/tool';
+import { tr } from '../../../lib/i18n';
 
 const INPUT_LABELS: Record<string, string> = {
   'image/jpeg': 'JPEG',
@@ -118,12 +119,12 @@ export default function ImageConvert() {
       canvas.width = decoded.width;
       canvas.height = decoded.height;
       const ctx = canvas.getContext('2d');
-      if (!ctx) throw new Error('Canvas is not supported in this browser.');
+      if (!ctx) throw new Error(tr("Canvas is not supported in this browser."));
 
       const img = new Image();
       const loaded = new Promise<void>((resolve, reject) => {
         img.onload = () => resolve();
-        img.onerror = () => reject(new Error('Could not re-read this image for conversion.'));
+        img.onerror = () => reject(new Error(tr("Could not re-read this image for conversion.")));
       });
       img.src = decoded.previewUrl;
       await loaded;
@@ -151,14 +152,14 @@ export default function ImageConvert() {
         <FileDropzone
           accept="image/*,.heic,.heif,.tif,.tiff,.ico"
           onFiles={handleFile}
-          hint="JPG, PNG, WebP, GIF, BMP, ICO, SVG — plus AVIF, TIFF or HEIC where your browser supports opening them"
+          hint={tr("JPG, PNG, WebP, GIF, BMP, ICO, SVG — plus AVIF, TIFF or HEIC where your browser supports opening them")}
         />
       )}
 
       {decodeError && (
         <div className="space-y-3">
           <ErrorMessage>{decodeError}</ErrorMessage>
-          <Button variant="secondary" onClick={() => setDecodeError(null)}>Try a different file</Button>
+          <Button variant="secondary" onClick={() => setDecodeError(null)}>{tr("Try a different file")}</Button>
         </div>
       )}
 
@@ -173,18 +174,18 @@ export default function ImageConvert() {
               onClick={() => { setDecoded(null); setResult(null); }}
               className="text-xs font-medium text-workshop hover:underline"
             >
-              Remove
+              {tr("Remove")}
             </button>
           </div>
 
           {decoded.isAnimatedGif && (
-            <p className="text-xs text-ink-3">If this GIF is animated, only its first frame will be converted — canvas-based conversion can't preserve animation.</p>
+            <p className="text-xs text-ink-3">{tr("If this GIF is animated, only its first frame will be converted — canvas-based conversion can't preserve animation.")}</p>
           )}
 
           {decoded.isSvgInput && (
             <div className="flex flex-wrap items-end gap-3">
               <label className="text-xs text-ink-2">
-                Output width
+                {tr("Output width")}
                 <input
                   type="number" min={1} value={decoded.width}
                   onChange={(e) => setDecoded((d) => (d ? { ...d, width: Math.max(1, Number(e.target.value)) } : d))}
@@ -192,23 +193,23 @@ export default function ImageConvert() {
                 />
               </label>
               <label className="text-xs text-ink-2">
-                Output height
+                {tr("Output height")}
                 <input
                   type="number" min={1} value={decoded.height}
                   onChange={(e) => setDecoded((d) => (d ? { ...d, height: Math.max(1, Number(e.target.value)) } : d))}
                   className="mt-1 block w-24 rounded-md border border-line bg-paper px-2 py-1.5 text-sm"
                 />
               </label>
-              <p className="pb-2 text-xs text-ink-3">SVG has no fixed pixel size — pick the resolution to render at.</p>
+              <p className="pb-2 text-xs text-ink-3">{tr("SVG has no fixed pixel size — pick the resolution to render at.")}</p>
             </div>
           )}
 
           {outputOptions.length === 0 ? (
-            <ErrorMessage>This browser doesn't support encoding to any image format from this tool. Try a recent version of Chrome, Firefox, Edge or Safari.</ErrorMessage>
+            <ErrorMessage>{tr("This browser doesn't support encoding to any image format from this tool. Try a recent version of Chrome, Firefox, Edge or Safari.")}</ErrorMessage>
           ) : (
             <>
               <label className="flex items-center gap-2 text-xs text-ink-2">
-                Convert to
+                {tr("Convert to")}
                 <select
                   value={target?.mime ?? ''}
                   onChange={(e) => setTarget(outputOptions.find((o) => o.mime === e.target.value) ?? null)}
@@ -222,13 +223,13 @@ export default function ImageConvert() {
 
               {(target?.mime === 'image/jpeg' || target?.mime === 'image/webp' || target?.mime === 'image/avif') && (
                 <label className="flex items-center gap-3 text-xs text-ink-2">
-                  Quality
+                  {tr("Quality")}
                   <input type="range" min={0.3} max={1} step={0.05} value={quality} onChange={(e) => setQuality(Number(e.target.value))} className="flex-1 max-w-xs" />
                   {Math.round(quality * 100)}%
                 </label>
               )}
 
-              <ActionBar><Button onClick={convert} disabled={busy || !target}>{busy ? 'Converting…' : 'Convert'}</Button></ActionBar>
+              <ActionBar><Button onClick={convert} disabled={busy || !target}>{busy ? tr("Converting…") : tr("Convert")}</Button></ActionBar>
             </>
           )}
         </>

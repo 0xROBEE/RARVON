@@ -1,4 +1,5 @@
 import { supportLinks, hasAnySupportLink } from '../lib/supportConfig';
+import { tr } from '../lib/i18n';
 
 interface SupportButtonProps {
   variant?: 'inline' | 'footer';
@@ -19,7 +20,7 @@ export default function SupportButton({ variant = 'inline' }: SupportButtonProps
           : 'inline-flex items-center gap-1.5 rounded-md border border-line px-3 py-2 text-xs font-medium hover:border-ink'
       }
     >
-      <span aria-hidden="true">☕</span> Support the project
+      <span aria-hidden="true">☕</span> {tr('Support the project')}
     </a>
   );
 }

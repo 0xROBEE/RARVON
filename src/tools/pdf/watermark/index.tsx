@@ -4,6 +4,7 @@ import FileDropzone from '../../../components/FileDropzone';
 import Button from '../../../components/Button';
 import ErrorMessage from '../../../components/ErrorMessage';
 import { ResultCard, ActionBar } from '../../../components/tool';
+import { tr } from '../../../lib/i18n';
 
 export default function WatermarkTool() {
   const [file, setFile] = useState<File | null>(null);
@@ -63,7 +64,7 @@ export default function WatermarkTool() {
       const base = file.name.replace(/\.pdf$/i, '');
       setResult({ url: URL.createObjectURL(blob), name: `${base}-watermarked.pdf` });
     } catch {
-      setError('Could not add a watermark to this PDF.');
+      setError(tr("Could not add a watermark to this PDF."));
     } finally {
       setBusy(false);
     }
@@ -76,41 +77,41 @@ export default function WatermarkTool() {
       ) : (
         <div className="flex items-center justify-between rounded-md border border-line bg-paper-dim p-3 text-sm">
           <span className="truncate">{file.name}</span>
-          <button onClick={() => { setFile(null); setResult(null); }} className="text-xs font-medium text-workshop hover:underline">Remove</button>
+          <button onClick={() => { setFile(null); setResult(null); }} className="text-xs font-medium text-workshop hover:underline">{tr("Remove")}</button>
         </div>
       )}
 
       {file && (
         <>
           <label className="block text-xs text-ink-2">
-            Watermark text
+            {tr("Watermark text")}
             <input value={text} onChange={(e) => setText(e.target.value)} className="mt-1 block w-full rounded-md border border-line bg-paper px-3 py-2 text-sm" />
           </label>
 
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
             <label className="text-xs text-ink-2">
-              Opacity
+              {tr("Opacity")}
               <input type="range" min={0.05} max={0.8} step={0.05} value={opacity} onChange={(e) => setOpacity(Number(e.target.value))} className="mt-2 block w-full" />
               <span className="text-ink-3">{Math.round(opacity * 100)}%</span>
             </label>
             <label className="text-xs text-ink-2">
-              Angle
+              {tr("Angle")}
               <input type="range" min={0} max={90} step={5} value={angle} onChange={(e) => setAngle(Number(e.target.value))} className="mt-2 block w-full" />
               <span className="text-ink-3">{angle}°</span>
             </label>
             <label className="text-xs text-ink-2">
-              Size
+              {tr("Size")}
               <input type="range" min={20} max={120} step={5} value={fontSize} onChange={(e) => setFontSize(Number(e.target.value))} className="mt-2 block w-full" />
-              <span className="text-ink-3">{fontSize}px</span>
+              <span className="text-ink-3">{fontSize}{tr("px")}</span>
             </label>
           </div>
 
           <label className="flex items-center gap-2 text-xs text-ink-2">
             <input type="checkbox" checked={repeat} onChange={(e) => setRepeat(e.target.checked)} />
-            Tile across the whole page (otherwise centered once)
+            {tr("Tile across the whole page (otherwise centered once)")}
           </label>
 
-          <ActionBar><Button onClick={apply} disabled={busy || !text.trim()}>{busy ? 'Applying…' : 'Add watermark'}</Button></ActionBar>
+          <ActionBar><Button onClick={apply} disabled={busy || !text.trim()}>{busy ? tr("Applying…") : tr("Add watermark")}</Button></ActionBar>
         </>
       )}
       {error && <ErrorMessage>{error}</ErrorMessage>}

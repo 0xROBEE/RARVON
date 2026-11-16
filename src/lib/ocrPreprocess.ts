@@ -1,3 +1,4 @@
+import { tr } from './i18n';
 /**
  * Prepares an image for OCR on a canvas: applies the user's rotation, scales
  * it into the size range Tesseract's LSTM models read best (small screenshots
@@ -21,7 +22,7 @@ export async function decodeImage(file: Blob): Promise<ImageBitmap> {
   try {
     return await createImageBitmap(file, { imageOrientation: 'from-image' });
   } catch {
-    throw new Error('This image couldn’t be opened. Try a PNG, JPEG or WebP file.');
+    throw new Error(tr("This image couldn’t be opened. Try a PNG, JPEG or WebP file."));
   }
 }
 
@@ -41,7 +42,7 @@ export function preprocessForOcr(source: ImageBitmap | HTMLCanvasElement, option
   canvas.width = swap ? h : w;
   canvas.height = swap ? w : h;
   const ctx = canvas.getContext('2d', { willReadFrequently: true });
-  if (!ctx) throw new Error('Canvas is not supported in this browser.');
+  if (!ctx) throw new Error(tr("Canvas is not supported in this browser."));
   ctx.fillStyle = '#ffffff';
   ctx.fillRect(0, 0, canvas.width, canvas.height);
   ctx.imageSmoothingQuality = 'high';

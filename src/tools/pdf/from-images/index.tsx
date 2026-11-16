@@ -5,6 +5,7 @@ import Button from '../../../components/Button';
 import ErrorMessage from '../../../components/ErrorMessage';
 import { formatBytes } from '../../../lib/imageUtils';
 import { ResultCard, ActionBar } from '../../../components/tool';
+import { tr } from '../../../lib/i18n';
 
 export default function FromImages() {
   const [files, setFiles] = useState<File[]>([]);
@@ -47,7 +48,7 @@ export default function FromImages() {
       const blob = new Blob([outBytes as BlobPart], { type: 'application/pdf' });
       setResult({ url: URL.createObjectURL(blob), name: 'images.pdf' });
     } catch {
-      setError('Could not build a PDF from these images. Only JPG and PNG are supported.');
+      setError(tr("Could not build a PDF from these images. Only JPG and PNG are supported."));
     } finally {
       setBusy(false);
     }
@@ -55,7 +56,7 @@ export default function FromImages() {
 
   return (
     <div className="space-y-4">
-      <FileDropzone accept="image/jpeg,image/png" multiple onFiles={addFiles} hint="JPG or PNG, one page per image" />
+      <FileDropzone accept="image/jpeg,image/png" multiple onFiles={addFiles} hint={tr("JPG or PNG, one page per image")} />
 
       {files.length > 0 && (
         <ul className="space-y-2">
@@ -63,16 +64,16 @@ export default function FromImages() {
             <li key={`${f.name}-${i}`} className="flex items-center justify-between gap-2 rounded-md border border-line bg-paper-dim p-2.5 text-sm">
               <span className="truncate">{i + 1}. {f.name} · {formatBytes(f.size)}</span>
               <div className="flex shrink-0 gap-1">
-                <button onClick={() => move(i, -1)} disabled={i === 0} className="rounded px-1.5 py-1 text-xs hover:bg-paper disabled:opacity-30" aria-label="Move up">↑</button>
-                <button onClick={() => move(i, 1)} disabled={i === files.length - 1} className="rounded px-1.5 py-1 text-xs hover:bg-paper disabled:opacity-30" aria-label="Move down">↓</button>
-                <button onClick={() => remove(i)} className="rounded px-1.5 py-1 text-xs text-warn hover:bg-paper" aria-label="Remove">✕</button>
+                <button onClick={() => move(i, -1)} disabled={i === 0} className="rounded px-1.5 py-1 text-xs hover:bg-paper disabled:opacity-30" aria-label={tr("Move up")}>↑</button>
+                <button onClick={() => move(i, 1)} disabled={i === files.length - 1} className="rounded px-1.5 py-1 text-xs hover:bg-paper disabled:opacity-30" aria-label={tr("Move down")}>↓</button>
+                <button onClick={() => remove(i)} className="rounded px-1.5 py-1 text-xs text-warn hover:bg-paper" aria-label={tr("Remove")}>✕</button>
               </div>
             </li>
           ))}
         </ul>
       )}
 
-      <ActionBar><Button onClick={build} disabled={!files.length || busy}>{busy ? 'Building…' : 'Create PDF'}</Button></ActionBar>
+      <ActionBar><Button onClick={build} disabled={!files.length || busy}>{busy ? tr("Building…") : tr("Create PDF")}</Button></ActionBar>
       {error && <ErrorMessage>{error}</ErrorMessage>}
       {result && (
         <ResultCard url={result.url} filename={result.name}>{result.name}</ResultCard>

@@ -1,5 +1,6 @@
 import * as pdfjsLib from 'pdfjs-dist';
 import pdfWorkerUrl from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
+import { tr } from './i18n';
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorkerUrl;
 
@@ -34,7 +35,7 @@ export async function renderPdfPageToCanvas(
     canvas.width = viewport.width;
     canvas.height = viewport.height;
     const ctx = canvas.getContext('2d');
-    if (!ctx) throw new Error('Canvas is not supported in this browser.');
+    if (!ctx) throw new Error(tr("Canvas is not supported in this browser."));
     await page.render({ canvasContext: ctx, viewport, canvas }).promise;
     return canvas;
   } finally {
@@ -61,7 +62,7 @@ export async function openPdfForRendering(data: ArrayBuffer) {
       canvas.width = Math.max(1, Math.round(viewport.width));
       canvas.height = Math.max(1, Math.round(viewport.height));
       const ctx = canvas.getContext('2d');
-      if (!ctx) throw new Error('Canvas is not supported in this browser.');
+      if (!ctx) throw new Error(tr("Canvas is not supported in this browser."));
       await page.render({ canvasContext: ctx, viewport, canvas }).promise;
       page.cleanup();
       return { canvas, widthPt: base.width, heightPt: base.height };
@@ -91,7 +92,7 @@ export async function renderAllThumbnails(data: ArrayBuffer, scale = 0.3): Promi
       canvas.width = viewport.width;
       canvas.height = viewport.height;
       const ctx = canvas.getContext('2d');
-      if (!ctx) throw new Error('Canvas is not supported in this browser.');
+      if (!ctx) throw new Error(tr("Canvas is not supported in this browser."));
       await page.render({ canvasContext: ctx, viewport, canvas }).promise;
       urls.push(canvas.toDataURL('image/png'));
       page.cleanup();

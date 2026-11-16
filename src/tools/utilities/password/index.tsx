@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import Button from '../../../components/Button';
 import { CopyButton } from '../../../components/tool';
+import { tr } from '../../../lib/i18n';
 
 const SETS = {
   lower: 'abcdefghijklmnopqrstuvwxyz',
@@ -72,13 +73,13 @@ export default function PasswordTool() {
         <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-paper-dim">
           <div className={`h-full rounded-full ${strength.color}`} style={{ width: `${Math.min(100, (length / 32) * 100)}%` }} />
         </div>
-        <span className="text-xs font-medium text-ink-2">{strength.label}</span>
+        <span className="text-xs font-medium text-ink-2">{tr(strength.label)}</span>
       </div>
 
       <label className="flex items-center gap-3 text-xs text-ink-2">
-        Length
+        {tr("Length")}
         <input type="range" min={6} max={64} value={length} onChange={(e) => changeLength(Number(e.target.value))} className="flex-1" />
-        <span className="w-6 text-right font-mono">{length}</span>
+        <span className="w-6 text-end font-mono">{length}</span>
       </label>
 
       <div className="grid grid-cols-2 gap-2">
@@ -90,14 +91,14 @@ export default function PasswordTool() {
         ].map(([key, label]) => (
           <label key={key} className="flex items-center gap-2 text-xs text-ink-2">
             <input type="checkbox" checked={sets.includes(key as keyof typeof SETS)} onChange={() => toggle(key as keyof typeof SETS)} />
-            {label}
+            {tr(label)}
           </label>
         ))}
       </div>
 
       <div className="flex gap-2">
-        <Button onClick={regenerate}>Generate new password</Button>
-        <CopyButton variant="button" text={password} label="Copy" disabled={!password} />
+        <Button onClick={regenerate}>{tr("Generate new password")}</Button>
+        <CopyButton variant="button" text={password} label={tr("Copy")} disabled={!password} />
       </div>
     </div>
   );

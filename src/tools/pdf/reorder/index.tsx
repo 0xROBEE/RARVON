@@ -6,6 +6,7 @@ import Button from '../../../components/Button';
 import ErrorMessage from '../../../components/ErrorMessage';
 import { renderAllThumbnails } from '../../../lib/pdfjs';
 import { ResultCard, ActionBar } from '../../../components/tool';
+import { tr } from '../../../lib/i18n';
 
 interface PageItem { originalIndex: number; thumb: string }
 
@@ -37,7 +38,7 @@ export default function ReorderPdf() {
       const thumbs = await renderAllThumbnails(await f.arrayBuffer());
       setPages(thumbs.map((thumb, i) => ({ originalIndex: i, thumb })));
     } catch {
-      setError('Could not read this PDF.');
+      setError(tr("Could not read this PDF."));
     } finally {
       setLoading(false);
     }
@@ -101,7 +102,7 @@ export default function ReorderPdf() {
       const base = file.name.replace(/\.pdf$/i, '');
       setResult({ url: URL.createObjectURL(blob), name: `${base}-reordered.pdf` });
     } catch {
-      setError('Could not reorder this PDF.');
+      setError(tr("Could not reorder this PDF."));
     } finally {
       setBusy(false);
     }
@@ -114,15 +115,15 @@ export default function ReorderPdf() {
       ) : (
         <div className="flex items-center justify-between rounded-md border border-line bg-paper-dim p-3 text-sm">
           <span className="truncate">{file.name}</span>
-          <button onClick={() => { setFile(null); setPages([]); setResult(null); }} className="text-xs font-medium text-workshop hover:underline">Remove</button>
+          <button onClick={() => { setFile(null); setPages([]); setResult(null); }} className="text-xs font-medium text-workshop hover:underline">{tr("Remove")}</button>
         </div>
       )}
 
-      {loading && <p className="text-xs text-ink-3">Rendering pages…</p>}
+      {loading && <p className="text-xs text-ink-3">{tr("Rendering pages…")}</p>}
 
       {pages.length > 0 && (
         <>
-          <p className="text-xs text-ink-3">Drag thumbnails to reorder pages.</p>
+          <p className="text-xs text-ink-3">{tr("Drag thumbnails to reorder pages.")}</p>
           <div className="grid grid-cols-3 gap-3 sm:grid-cols-4">
             {pages.map((p, i) => (
               <div
@@ -133,12 +134,12 @@ export default function ReorderPdf() {
                 onPointerUp={() => onPointerUp(i)}
                 className={`select-none rounded-md border p-1.5 ${draggingIndex === i ? 'touch-none cursor-grabbing opacity-50' : 'cursor-grab border-line'} ${dragOverIndex === i && draggingIndex !== i ? 'border-workshop' : 'border-line bg-paper'}`}
               >
-                <img src={p.thumb} alt={`Page ${p.originalIndex + 1}`} className="pointer-events-none w-full rounded" draggable={false} />
-                <p className="mt-1 text-center text-[10px] text-ink-3">Page {i + 1} (was {p.originalIndex + 1})</p>
+                <img src={p.thumb} alt={tr("Page {0}", { 0: p.originalIndex + 1 })} className="pointer-events-none w-full rounded" draggable={false} />
+                <p className="mt-1 text-center text-[10px] text-ink-3">{tr("Page")}{' '}{i + 1}{' '}{tr("(was")}{' '}{p.originalIndex + 1})</p>
               </div>
             ))}
           </div>
-          <ActionBar><Button onClick={exportPdf} disabled={busy}>{busy ? 'Saving…' : 'Save reordered PDF'}</Button></ActionBar>
+          <ActionBar><Button onClick={exportPdf} disabled={busy}>{busy ? tr("Saving…") : tr("Save reordered PDF")}</Button></ActionBar>
         </>
       )}
       {error && <ErrorMessage>{error}</ErrorMessage>}

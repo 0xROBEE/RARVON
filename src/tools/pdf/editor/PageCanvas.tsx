@@ -4,6 +4,7 @@ import { renderPdfPageToCanvas } from '../../../lib/pdfjs';
 import type { Annotation, EditorTool, PageInstance, ShapeKind } from './types';
 import { NOTE_ICON_PT, UNDERLINE_THICKNESS, newId } from './types';
 import { EDITOR_FONT_STACK } from './exportPdf';
+import { tr } from '../../../lib/i18n';
 
 export interface ImageAsset {
   dataUrl: string;
@@ -357,7 +358,7 @@ export default function PageCanvas({
 
   return (
     <div ref={scrollAreaRef} className="flex h-full items-center justify-center overflow-auto bg-grid-paper p-6">
-      {loading && <p className="text-sm text-ink-3">Rendering page…</p>}
+      {loading && <p className="text-sm text-ink-3">{tr("Rendering page…")}</p>}
       {pageImg && (
         <div
           ref={containerRef}
@@ -374,7 +375,7 @@ export default function PageCanvas({
             cursor: activeTool === 'select' ? (selectedAnnotation ? 'grab' : 'default') : 'crosshair',
           }}
         >
-          <img src={pageImg.url} alt="Page" className="pointer-events-none block h-full w-full" draggable={false} />
+          <img src={pageImg.url} alt={tr("Page")} className="pointer-events-none block h-full w-full" draggable={false} />
 
           {/* Vector overlay for shapes, drawings and underlines, in screen pixels. */}
           <svg className="pointer-events-none absolute inset-0 h-full w-full overflow-visible" viewBox={`0 0 ${pxW} ${pxH}`}>
@@ -448,14 +449,14 @@ export default function PageCanvas({
             if (a.type === 'highlight') return <div key={a.id} style={{ ...pos, width: pct(a.w), height: pct(a.h), background: a.color, opacity: 0.35 }} />;
             if (a.type === 'redact') return <div key={a.id} style={{ ...pos, width: pct(a.w), height: pct(a.h), background: '#000' }} />;
             if (a.type === 'signature' || a.type === 'image') {
-              return <img key={a.id} src={a.dataUrl} alt={a.type === 'image' ? 'Inserted image' : 'Signature'} draggable={false} style={{ ...pos, width: pct(a.w), height: pct(a.h), objectFit: 'contain' }} />;
+              return <img key={a.id} src={a.dataUrl} alt={a.type === 'image' ? tr("Inserted image") : tr("Signature")} draggable={false} style={{ ...pos, width: pct(a.w), height: pct(a.h), objectFit: 'contain' }} />;
             }
             if (a.type === 'note') {
               return (
                 <div
                   key={a.id}
                   title={a.text}
-                  aria-label={`Note: ${a.text}`}
+                  aria-label={tr("Note: {0}", { 0: a.text })}
                   style={{ ...pos, width: pct(noteW), height: pct(noteH), background: a.color }}
                   className="flex items-center justify-center rounded-sm text-[#5a4300] shadow"
                 >
@@ -486,8 +487,8 @@ export default function PageCanvas({
                   onDeleteAnnotation(selectedAnnotation.id);
                   setSelectedId(null);
                 }}
-                title="Delete selected annotation"
-                aria-label="Delete selected annotation"
+                title={tr("Delete selected annotation")}
+                aria-label={tr("Delete selected annotation")}
                 className="absolute flex h-6 w-6 items-center justify-center rounded-full border border-line bg-elevated text-warn shadow hover:bg-warn-dim"
                 style={{
                   left: `calc(${pct(selectedBounds.x + selectedBounds.w + (liveOffset?.dx ?? 0))} + 4px)`,
@@ -519,7 +520,7 @@ export default function PageCanvas({
           {textEditor && textEditor.kind === 'text' && (
             <input
               autoFocus
-              aria-label="Annotation text"
+              aria-label={tr("Annotation text")}
               dir="auto"
               value={textValue}
               onChange={(e) => setTextValue(e.target.value)}
@@ -547,7 +548,7 @@ export default function PageCanvas({
             >
               <textarea
                 autoFocus
-                aria-label="Note text"
+                aria-label={tr("Note text")}
                 dir="auto"
                 rows={4}
                 value={textValue}
@@ -559,12 +560,12 @@ export default function PageCanvas({
                     setEditingId(null);
                   }
                 }}
-                placeholder="Write a note…"
+                placeholder={tr("Write a note…")}
                 className="w-full resize-none bg-transparent text-sm outline-none placeholder:text-[#2a2200]/50"
               />
               <div className="mt-1 flex justify-end gap-2 text-xs">
-                <button onClick={() => { setTextEditor(null); setEditingId(null); }} className="rounded px-2 py-1 hover:bg-black/5">Cancel</button>
-                <button onClick={commitText} className="rounded bg-[#2a2200] px-2 py-1 font-medium text-[#fff8c5]">Save note</button>
+                <button onClick={() => { setTextEditor(null); setEditingId(null); }} className="rounded px-2 py-1 hover:bg-black/5">{tr("Cancel")}</button>
+                <button onClick={commitText} className="rounded bg-[#2a2200] px-2 py-1 font-medium text-[#fff8c5]">{tr("Save note")}</button>
               </div>
             </div>
           )}

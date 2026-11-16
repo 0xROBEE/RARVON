@@ -8,6 +8,7 @@ import ProgressBar from '../../../components/ProgressBar';
 import { formatBytes } from '../../../lib/imageUtils';
 import { useWorkspace } from '../../../lib/workspaceContext';
 import { tools } from '../../../lib/toolRegistry';
+import { tr } from '../../../lib/i18n';
 
 interface Entry {
   path: string;
@@ -106,7 +107,7 @@ export default function UnzipTool() {
       setFile(f);
       setEntries(list);
       setHadNonUtf8(nonUtf8);
-      if (!list.length) setError('This archive is empty.');
+      if (!list.length) setError(tr("This archive is empty."));
     } catch (e) {
       const msg = e instanceof Error ? e.message : '';
       setFile(null);
@@ -134,7 +135,7 @@ export default function UnzipTool() {
     try {
       saveBlob(await blobOf(e), e.name);
     } catch {
-      setError(`Couldn’t extract ${e.path}. The archive may be damaged.`);
+      setError(tr("Couldn’t extract {0}. The archive may be damaged.", { 0: e.path }));
     }
   }
 
@@ -167,7 +168,7 @@ export default function UnzipTool() {
           await w.close();
           setProgress(++done / entries.length);
         }
-        setNotice(`Extracted ${entries.length} file${entries.length === 1 ? '' : 's'} into the folder you chose.`);
+        setNotice(tr("Extracted {0} file{1} into the folder you chose.", { 0: entries.length, 1: entries.length === 1 ? '' : 's' }));
       } else {
         let done = 0;
         for (const e of entries) {
@@ -175,10 +176,10 @@ export default function UnzipTool() {
           setProgress(++done / entries.length);
           await new Promise((r) => setTimeout(r, 150)); // browsers drop rapid-fire downloads
         }
-        setNotice('Your browser saves each file to your Downloads folder (folder structure is kept in the file names).');
+        setNotice(tr("Your browser saves each file to your Downloads folder (folder structure is kept in the file names)."));
       }
     } catch {
-      setError('Extraction stopped: a file couldn’t be written. Check the folder permissions and free space.');
+      setError(tr("Extraction stopped: a file couldn’t be written. Check the folder permissions and free space."));
     } finally {
       setBusy(false);
     }
@@ -198,27 +199,27 @@ export default function UnzipTool() {
   return (
     <div className="space-y-4">
       {!file ? (
-        <FileDropzone accept=".zip,application/zip,application/x-zip-compressed" onFiles={(f) => void open(f[0])} hint="ZIP archives — files are listed and extracted on your device" />
+        <FileDropzone accept=".zip,application/zip,application/x-zip-compressed" onFiles={(f) => void open(f[0])} hint={tr("ZIP archives — files are listed and extracted on your device")} />
       ) : (
         <div className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-line bg-paper-dim p-3 text-sm">
           <span className="truncate">
-            {file.name} · {formatBytes(file.size)} · {entries.length} file{entries.length === 1 ? '' : 's'}
-            {total > 0 && `, ${formatBytes(total)} uncompressed`}
+            {file.name} · {formatBytes(file.size)} · {entries.length}{' '}{tr("file")}{entries.length === 1 ? '' : 's'}
+            {total > 0 && tr(", {0} uncompressed", { 0: formatBytes(total) })}
           </span>
-          <button onClick={() => { setFile(null); setEntries([]); setError(null); setNotice(null); }} className="text-xs font-medium text-workshop hover:underline">Remove</button>
+          <button onClick={() => { setFile(null); setEntries([]); setError(null); setNotice(null); }} className="text-xs font-medium text-workshop hover:underline">{tr("Remove")}</button>
         </div>
       )}
 
       {file && hadNonUtf8 && (
         <label className="flex flex-wrap items-center gap-2 rounded-md border border-line bg-paper-dim px-3 py-2 text-xs text-ink-2">
-          Some file names weren’t stored as Unicode. If they look garbled, choose the language they were written in:
+          {tr("Some file names weren’t stored as Unicode. If they look garbled, choose the language they were written in:")}
           <select
             value={encoding}
             onChange={(e) => {
               setEncoding(e.target.value);
               void open(file, e.target.value);
             }}
-            aria-label="File name encoding"
+            aria-label={tr("File name encoding")}
             className="rounded-md border border-line bg-paper px-2 py-1 text-xs text-ink"
           >
             {ENCODINGS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
@@ -230,21 +231,21 @@ export default function UnzipTool() {
         <>
           <div className="flex flex-wrap items-center gap-2">
             <Button onClick={() => void extractAll()} disabled={busy}>
-              {canPickFolder ? 'Extract all to a folder…' : `Download all ${entries.length} files`}
+              {canPickFolder ? tr("Extract all to a folder…") : tr("Download all {0} files", { 0: entries.length })}
             </Button>
             {entries.length > 8 && (
               <input
                 type="search"
                 value={filter}
                 onChange={(e) => setFilter(e.target.value)}
-                placeholder="Filter files"
-                aria-label="Filter files"
+                placeholder={tr("Filter files")}
+                aria-label={tr("Filter files")}
                 className="min-w-[10rem] flex-1 rounded-md border border-line bg-paper px-3 py-2 text-sm"
               />
             )}
           </div>
-          {busy && progress > 0 && <ProgressBar value={progress * 100} label="Extracting" />}
-          <ul className="divide-y divide-line overflow-hidden rounded-md border border-line" aria-label="Files in the archive">
+          {busy && progress > 0 && <ProgressBar value={progress * 100} label={tr("Extracting")} />}
+          <ul className="divide-y divide-line overflow-hidden rounded-md border border-line" aria-label={tr("Files in the archive")}>
             {visible.map((e) => (
               <li key={e.path} className="flex flex-wrap items-center justify-between gap-2 px-3 py-2 text-sm">
                 <div className="min-w-0 flex-1">
@@ -259,18 +260,18 @@ export default function UnzipTool() {
                       {label}
                     </button>
                   ))}
-                  <button onClick={() => void downloadOne(e)} aria-label={`Download ${e.path}`} className="rounded-md bg-ink px-2.5 py-1 text-xs font-medium text-paper hover:bg-workshop">
-                    Download
+                  <button onClick={() => void downloadOne(e)} aria-label={tr("Download {0}", { 0: e.path })} className="rounded-md bg-ink px-2.5 py-1 text-xs font-medium text-paper hover:bg-workshop">
+                    {tr("Download")}
                   </button>
                 </div>
               </li>
             ))}
-            {!visible.length && <li className="px-3 py-4 text-center text-xs text-ink-3">No files match “{filter}”.</li>}
+            {!visible.length && <li className="px-3 py-4 text-center text-xs text-ink-3">{tr("No files match “")}{filter}”.</li>}
           </ul>
         </>
       )}
 
-      {busy && !entries.length && <p className="text-sm text-ink-3">Reading archive…</p>}
+      {busy && !entries.length && <p className="text-sm text-ink-3">{tr("Reading archive…")}</p>}
       {notice && <p role="status" className="rounded-md border border-signal/30 bg-signal-dim px-4 py-3 text-sm text-signal">{notice}</p>}
       {error && <ErrorMessage>{error}</ErrorMessage>}
     </div>

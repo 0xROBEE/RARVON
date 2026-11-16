@@ -4,6 +4,7 @@ import Button from '../../../components/Button';
 import ErrorMessage from '../../../components/ErrorMessage';
 import { loadImage, canvasToBlob } from '../../../lib/imageUtils';
 import { ResultCard } from '../../../components/tool';
+import { tr } from '../../../lib/i18n';
 
 export default function ImageRotate() {
   const [file, setFile] = useState<File | null>(null);
@@ -22,7 +23,7 @@ export default function ImageRotate() {
       canvas.width = swapped ? img.naturalHeight : img.naturalWidth;
       canvas.height = swapped ? img.naturalWidth : img.naturalHeight;
       const ctx = canvas.getContext('2d');
-      if (!ctx) throw new Error('Canvas is not supported in this browser.');
+      if (!ctx) throw new Error(tr("Canvas is not supported in this browser."));
       ctx.translate(canvas.width / 2, canvas.height / 2);
       ctx.rotate((rotation * Math.PI) / 180);
       ctx.scale(flipH ? -1 : 1, flipV ? -1 : 1);
@@ -45,7 +46,7 @@ export default function ImageRotate() {
         <div className="flex items-center justify-between rounded-md border border-line bg-paper-dim p-3">
           <span className="truncate text-sm">{file.name}</span>
           <button onClick={() => { setFile(null); setResult(null); }} className="text-xs font-medium text-workshop hover:underline">
-            Remove
+            {tr("Remove")}
           </button>
         </div>
       )}
@@ -53,13 +54,13 @@ export default function ImageRotate() {
       {file && (
         <>
           <div className="flex flex-wrap gap-2">
-            <Button variant="secondary" onClick={() => setRotation((r) => (r + 270) % 360)}>Rotate left 90°</Button>
-            <Button variant="secondary" onClick={() => setRotation((r) => (r + 90) % 360)}>Rotate right 90°</Button>
-            <Button variant="secondary" onClick={() => setFlipH((v) => !v)}>Flip horizontal</Button>
-            <Button variant="secondary" onClick={() => setFlipV((v) => !v)}>Flip vertical</Button>
+            <Button variant="secondary" onClick={() => setRotation((r) => (r + 270) % 360)}>{tr("Rotate left 90°")}</Button>
+            <Button variant="secondary" onClick={() => setRotation((r) => (r + 90) % 360)}>{tr("Rotate right 90°")}</Button>
+            <Button variant="secondary" onClick={() => setFlipH((v) => !v)}>{tr("Flip horizontal")}</Button>
+            <Button variant="secondary" onClick={() => setFlipV((v) => !v)}>{tr("Flip vertical")}</Button>
           </div>
-          <p className="text-xs text-ink-3">Current: {rotation}° rotation{flipH ? ', flipped horizontally' : ''}{flipV ? ', flipped vertically' : ''}</p>
-          <Button onClick={apply}>Apply and export</Button>
+          <p className="text-xs text-ink-3">{tr("Current:")}{' '}{rotation}{tr("° rotation")}{flipH ? tr(", flipped horizontally") : ''}{flipV ? tr(", flipped vertically") : ''}</p>
+          <Button onClick={apply}>{tr("Apply and export")}</Button>
         </>
       )}
       {error && <ErrorMessage>{error}</ErrorMessage>}

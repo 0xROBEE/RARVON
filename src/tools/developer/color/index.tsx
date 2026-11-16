@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { tr } from '../../../lib/i18n';
 
 function hexToRgb(hex: string) {
   const clean = hex.replace('#', '');
@@ -44,7 +45,7 @@ export default function ColorTool() {
           value={rgb ? rgbToHex(rgb.r, rgb.g, rgb.b) : '#000000'}
           onChange={(e) => setHex(e.target.value)}
           className="h-14 w-14 cursor-pointer rounded-md border border-line bg-transparent"
-          aria-label="Pick a color"
+          aria-label={tr("Pick a color")}
         />
         <input
           value={hex}
@@ -66,7 +67,7 @@ export default function ColorTool() {
               <button
                 onClick={() => navigator.clipboard.writeText(f.value)}
                 className="mt-1 font-mono text-sm hover:text-workshop"
-                title="Copy"
+                title={tr("Copy")}
               >
                 {f.value}
               </button>
@@ -74,7 +75,7 @@ export default function ColorTool() {
           ))}
         </div>
       ) : (
-        <p className="text-xs text-warn">Enter a valid hex color like #5b56e8.</p>
+        <p className="text-xs text-warn">{tr("Enter a valid hex color like #5b56e8.")}</p>
       )}
     </div>
   );

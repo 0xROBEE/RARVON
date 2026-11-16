@@ -4,6 +4,7 @@ import clsx from 'clsx';
 import type { Aspect } from '../../../lib/videoEditor/types';
 import { ASPECTS } from '../../../lib/videoEditor/types';
 import { browserStorageSupported, folderSaveSupported } from '../../../lib/videoEditor/storage';
+import { tr } from '../../../lib/i18n';
 
 /** A centred dialog. `locked` dialogs can't be closed with Esc or a click outside; a choice must be made. */
 export function Modal({ title, children, onClose, locked, labelledBy = 'modal-title', wide }: {
@@ -41,7 +42,7 @@ export function Modal({ title, children, onClose, locked, labelledBy = 'modal-ti
         <div className="flex items-start justify-between gap-3">
           <h2 id={labelledBy} className="font-display text-lg font-semibold">{title}</h2>
           {!locked && onClose && (
-            <button onClick={onClose} className="-m-1 rounded p-1 text-ink-3 hover:text-ink" aria-label="Close">
+            <button onClick={onClose} className="-m-1 rounded p-1 text-ink-3 hover:text-ink" aria-label={tr("Close")}>
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" /></svg>
             </button>
           )}
@@ -95,14 +96,14 @@ export interface NewProjectChoice {
 }
 
 export function NewProjectDialog({ onCreate, onClose, startingFile }: { onCreate: (c: NewProjectChoice) => void; onClose: () => void; startingFile?: string }) {
-  const [name, setName] = useState(startingFile ? startingFile.replace(/\.[^.]+$/, '') : 'My video');
+  const [name, setName] = useState(startingFile ? startingFile.replace(/\.[^.]+$/, '') : tr('My video'));
   const [aspect, setAspect] = useState<Aspect>('16:9');
   const [browserSave, setBrowserSave] = useState(browserStorageSupported());
   const [folderSave, setFolderSave] = useState(false);
   const folderOk = folderSaveSupported();
   const valid = name.trim() && (browserSave || folderSave);
   return (
-    <Modal title="New video project" onClose={onClose} labelledBy="new-project-title">
+    <Modal title={tr("New video project")} onClose={onClose} labelledBy="new-project-title">
       <form
         className="grid gap-5"
         onSubmit={(e) => {
@@ -110,13 +111,13 @@ export function NewProjectDialog({ onCreate, onClose, startingFile }: { onCreate
           if (valid) onCreate({ name: name.trim(), aspect, browserSave, folderSave });
         }}
       >
-        {startingFile && <p className="rounded-md bg-paper-dim px-3 py-2 text-xs text-ink-2">Starting with <strong className="font-medium text-ink">{startingFile}</strong></p>}
+        {startingFile && <p className="rounded-md bg-paper-dim px-3 py-2 text-xs text-ink-2">{tr("Starting with")}{' '}<strong className="font-medium text-ink">{startingFile}</strong></p>}
         <label className="block">
-          <span className="mb-1.5 block text-xs font-medium text-ink-2">Project name</span>
+          <span className="mb-1.5 block text-xs font-medium text-ink-2">{tr("Project name")}</span>
           <input value={name} onChange={(e) => setName(e.target.value)} className="w-full rounded-md border border-line bg-paper px-3 py-2 text-sm" required />
         </label>
         <fieldset>
-          <legend className="mb-1.5 text-xs font-medium text-ink-2">Frame shape</legend>
+          <legend className="mb-1.5 text-xs font-medium text-ink-2">{tr("Frame shape")}</legend>
           <div className="grid grid-cols-3 gap-2">
             {(Object.keys(ASPECTS) as Aspect[]).map((a) => {
               const { w, h } = ASPECTS[a];
@@ -132,30 +133,30 @@ export function NewProjectDialog({ onCreate, onClose, startingFile }: { onCreate
           </div>
         </fieldset>
         <fieldset className="grid gap-2">
-          <legend className="mb-1.5 text-xs font-medium text-ink-2">How should Bench save your work? You can pick both.</legend>
+          <legend className="mb-1.5 text-xs font-medium text-ink-2">{tr("How should Bench save your work? You can pick both.")}</legend>
           <label className={clsx('flex cursor-pointer items-start gap-3 rounded-lg border p-3', browserSave ? 'border-workshop bg-workshop-dim' : 'border-line')}>
             <input type="checkbox" checked={browserSave} disabled={!browserStorageSupported()} onChange={(e) => setBrowserSave(e.target.checked)} className="mt-0.5 accent-[var(--color-workshop)]" />
             <span>
-              <span className="block text-sm font-semibold">Auto-save in this browser</span>
-              <span className="block text-xs text-ink-2">Every change is saved as you work. Find it under “Your projects” next time.</span>
+              <span className="block text-sm font-semibold">{tr("Auto-save in this browser")}</span>
+              <span className="block text-xs text-ink-2">{tr("Every change is saved as you work. Find it under “Your projects” next time.")}</span>
             </span>
           </label>
           <label className={clsx('flex items-start gap-3 rounded-lg border p-3', folderOk ? 'cursor-pointer' : 'opacity-60', folderSave ? 'border-workshop bg-workshop-dim' : 'border-line')}>
             <input type="checkbox" checked={folderSave} disabled={!folderOk} onChange={(e) => setFolderSave(e.target.checked)} className="mt-0.5 accent-[var(--color-workshop)]" />
             <span>
-              <span className="block text-sm font-semibold">Save to a folder on my computer</span>
+              <span className="block text-sm font-semibold">{tr("Save to a folder on my computer")}</span>
               <span className="block text-xs text-ink-2">
                 {folderOk
-                  ? 'You pick a folder once, and every change is written to it automatically.'
-                  : 'Needs Chrome or Edge. In this browser you can still download a project file at any time.'}
+                  ? tr("You pick a folder once, and every change is written to it automatically.")
+                  : tr("Needs Chrome or Edge. In this browser you can still download a project file at any time.")}
               </span>
             </span>
           </label>
-          {!browserSave && !folderSave && <p className="text-xs text-warn">Pick at least one way to save.</p>}
+          {!browserSave && !folderSave && <p className="text-xs text-warn">{tr("Pick at least one way to save.")}</p>}
         </fieldset>
         <div className="flex justify-end gap-2">
-          <button type="button" onClick={onClose} className="rounded-md border border-line px-4 py-2 text-sm hover:border-ink">Cancel</button>
-          <button type="submit" disabled={!valid} className="rounded-md bg-workshop px-4 py-2 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-50">Create project</button>
+          <button type="button" onClick={onClose} className="rounded-md border border-line px-4 py-2 text-sm hover:border-ink">{tr("Cancel")}</button>
+          <button type="submit" disabled={!valid} className="rounded-md bg-workshop px-4 py-2 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-50">{tr("Create project")}</button>
         </div>
       </form>
     </Modal>
