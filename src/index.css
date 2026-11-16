@@ -273,3 +273,10 @@ body {
 .about-arrow path { animation: about-push 1.6s ease-in-out infinite; }
 @keyframes about-push { 50% { translate: 4px 0; } }
 @media (prefers-reduced-motion: reduce) { .about-arrow path { animation: none; } }
+
+/* Top bar: About / Privacy pill. The name slides out on hover or keyboard focus, and stays out on its own page. */
+.info-label { max-width: 0; opacity: 0; overflow: hidden; white-space: nowrap; margin-inline-start: 0;
+  transition: max-width 320ms cubic-bezier(0.22, 1, 0.36, 1), opacity 200ms, margin 320ms; }
+.info-link:hover .info-label, .info-link:focus-visible .info-label, .info-link.is-on .info-label {
+  max-width: 6rem; opacity: 1; margin-inline-start: 0.375rem; }
+@media (prefers-reduced-motion: reduce) { .info-label { transition: none; } }

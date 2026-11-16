@@ -20,6 +20,23 @@ test.describe('every page renders without errors', () => {
     await expect(page.getByRole('button', { name: 'Share Bench with a friend' })).toBeVisible();
   });
 
+  test('About and Privacy sit in the top bar on wide screens and in the menu on phones', async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 800 });
+    await page.goto('/');
+    const pill = page.getByTestId('info-links');
+    await pill.getByRole('link', { name: 'Privacy' }).click();
+    await expect(page).toHaveURL(/\/privacy$/);
+    await expect(pill.getByRole('link', { name: 'Privacy' })).toHaveAttribute('aria-current', 'page');
+    await pill.getByRole('link', { name: 'About' }).click();
+    await expect(page).toHaveURL(/\/about$/);
+
+    await page.setViewportSize({ width: 375, height: 800 });
+    await expect(pill).toBeHidden();
+    await page.getByRole('button', { name: 'All tools' }).click();
+    await page.getByRole('menuitem', { name: 'Privacy', exact: true }).click();
+    await expect(page).toHaveURL(/\/privacy$/);
+  });
+
   test('the Privacy page has a summary, the full sections and a working contents list', async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 860 });
     await page.goto('/privacy');

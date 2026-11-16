@@ -56,6 +56,7 @@ export const arUi: Record<string, string> = {
   "AI models and offline files": "نماذج الذكاء الاصطناعي وملفات العمل دون اتصال",
   "About": "عن Bench",
   "About Bench": "عن Bench",
+  "About and privacy": "حول Bench والخصوصية",
   "About half the size": "حوالي نصف الحجم",
   "Add": "إضافة",
   "Add a hole": "إضافة فتحة",

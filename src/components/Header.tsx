@@ -4,6 +4,7 @@ import { useToolSearch } from '../lib/searchContext';
 import ThemeToggle from './ThemeToggle';
 import LanguageToggle from './LanguageToggle';
 import AllToolsMenu from './AllToolsMenu';
+import InfoLinks from './InfoLinks';
 import { LogoMark } from './Logo';
 import { tr } from '../lib/i18n';
 
@@ -36,6 +37,7 @@ export default function Header() {
           <kbd className="ms-auto hidden shrink-0 rounded border border-line px-1.5 font-mono text-[10px] sm:inline">⌘K</kbd>
         </button>
         <span className="hidden flex-1 md:block" aria-hidden="true" />
+        <InfoLinks />
         <Link
           to="/support"
           className="heart-beat inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full border border-heart/50 bg-heart-dim px-2.5 text-sm font-semibold text-heart transition-colors hover:border-heart sm:px-3.5"

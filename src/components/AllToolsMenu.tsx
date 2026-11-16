@@ -96,10 +96,13 @@ export default function AllToolsMenu() {
               </ul>
             </div>
           </div>
-          <div className="border-t border-line px-5 py-3">
-            <Link role="menuitem" to="/tools" className="text-sm font-medium text-workshop hover:underline">
+          <div className="flex flex-wrap items-center gap-x-5 gap-y-2 border-t border-line px-5 py-3">
+            <Link role="menuitem" to="/tools" className="me-auto text-sm font-medium text-workshop hover:underline">
               {tr('See every tool on one page →')}
             </Link>
+            {/* On smaller screens the top bar has no room for About and Privacy, so they live here. */}
+            <Link role="menuitem" to="/about" className="text-sm font-medium text-ink-2 hover:text-ink lg:hidden">{tr('About')}</Link>
+            <Link role="menuitem" to="/privacy" className="text-sm font-medium text-ink-2 hover:text-ink lg:hidden">{tr('Privacy')}</Link>
           </div>
         </div>
       )}
