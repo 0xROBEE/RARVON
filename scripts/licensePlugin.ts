@@ -45,7 +45,13 @@ function readPkg(root: string, name: string): PkgInfo | null {
  * /licenses/third-party.txt with each package's license text and refreshes the
  * summary table in THIRD_PARTY_LICENSES.md.
  */
-export function licenseReport(extraPackages: () => string[]): Plugin {
+export interface ModelLicense {
+  id: string
+  license: string
+  revision: string
+}
+
+export function licenseReport(extraPackages: () => string[], models: () => ModelLicense[] = () => []): Plugin {
   const root = resolve(import.meta.dirname, '..')
   return {
     name: 'bench-licenses',
@@ -81,6 +87,14 @@ export function licenseReport(extraPackages: () => string[]): Plugin {
           '-'.repeat(72),
           '',
         ]),
+        ...(models().length
+          ? [
+              'AI models (Background Remover), served from this site',
+              '='.repeat(52),
+              '',
+              ...models().flatMap((m) => [`${m.id} @ ${m.revision.slice(0, 10)}`, `License: ${m.license}  ·  https://huggingface.co/${m.id}`, '']),
+            ]
+          : []),
       ].join('\n')
       this.emitFile({ type: 'asset', fileName: 'licenses/third-party.txt', source: txt })
 
@@ -99,6 +113,18 @@ export function licenseReport(extraPackages: () => string[]): Plugin {
         '|---|---|---|',
         ...pkgs.map((p) => `| ${p.repository ? `[${p.name}](${p.repository.replace(/^git:\/\//, 'https://')})` : p.name} | ${p.version} | ${p.license} |`),
         '',
+        ...(models().length
+          ? [
+              '## AI models',
+              '',
+              'Used by the Background Remover. Downloaded by `scripts/fetch-ai-models.mjs` (pinned in `ai-models.lock.json`) and served from the site itself.',
+              '',
+              '| Model | Revision | License |',
+              '|---|---|---|',
+              ...models().map((m) => `| [${m.id}](https://huggingface.co/${m.id}) | ${m.revision.slice(0, 10)} | ${m.license} |`),
+              '',
+            ]
+          : []),
       ].join('\n')
       writeFileSync(mdPath, `${head}\n\n${table}`)
     },

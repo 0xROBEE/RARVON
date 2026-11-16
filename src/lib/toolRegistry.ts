@@ -230,6 +230,19 @@ export const tools: ToolMeta[] = [
   },
 
   {
+    slug: 'remove-background', category: 'image', name: 'Background Remover',
+    shortDescription: 'Cut out a person or object and get a transparent PNG.',
+    description: 'Background Remover cuts the main object out of a photo automatically, or keeps exactly what you click, with a brush to fix edges by hand. Download a transparent PNG, put the object on a solid colour, or crop to it. The AI runs on your device; the picture is never uploaded.',
+    status: 'experimental', layout: 'wide',
+    keywords: ['remove background', 'background remover', 'transparent background', 'cut out', 'cutout', 'remove bg', 'png transparent', 'object extractor', 'إزالة الخلفية', 'حذف خلفية الصورة'],
+    actions: ['edit'],
+    faq: [
+      { q: 'Is my picture uploaded?', a: 'No. The AI models run in your browser. The first time you use the tool, Bench downloads its model files from this site once and keeps them for offline use.' },
+      { q: 'What is “High quality”?', a: 'A larger model that handles hair, fur and fine edges better. It downloads once (about 110 MB) and needs a browser and graphics card with WebGPU half-precision support, such as a recent Chrome or Edge on most computers. Where it isn’t available, the regular mode and the brush still work.' },
+      { q: 'Which AI models does it use?', a: 'SlimSAM (a compact Segment Anything model, Apache-2.0) for automatic and click-to-select cut-outs, and BiRefNet lite (MIT) for high quality. Both are listed on the open-source licenses page.' },
+    ],
+  },
+  {
     slug: 'to-text', category: 'image', name: 'Image to Text (OCR)',
     shortDescription: 'Extract editable text from screenshots, scans and photos — Arabic, English and 15 more languages.',
     description: 'Image to Text reads the text in a screenshot, scanned page or photo of a document and gives it back as editable text you can review, search, copy or download. Arabic is fully supported, including right-to-left paragraphs mixed with English. Recognition runs on your device — the image is never uploaded.',

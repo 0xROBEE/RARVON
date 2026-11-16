@@ -1,7 +1,7 @@
 /** The tools shown per category on the home page (the rest are behind "+N more"). */
 export const HOME_TOP_TOOLS: Record<string, string[]> = {
   pdf: ['editor', 'merge', 'compress', 'to-text'],
-  image: ['to-text', 'compress', 'convert', 'resize'],
+  image: ['remove-background', 'to-text', 'compress', 'convert'],
   video: ['editor', 'compress', 'trim', 'convert'],
   audio: ['convert', 'compress', 'trim', 'extract'],
   developer: ['json-formatter', 'base64', 'hash', 'jwt-decoder'],

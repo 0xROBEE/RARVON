@@ -78,6 +78,8 @@ self.addEventListener('fetch', (event) => {
   if (request.method !== 'GET') return;
   const url = new URL(request.url);
   if (url.origin !== self.location.origin) return;
+  // AI models (/ai/) are large; the page caches them itself (src/lib/aiAssets.ts).
+  if (url.pathname.startsWith('/ai/')) return;
 
   if (request.mode === 'navigate') {
     event.respondWith(networkFirstShell(request));

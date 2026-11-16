@@ -6,6 +6,15 @@ import { createReadStream, existsSync, readdirSync, readFileSync } from 'node:fs
 import { join, resolve } from 'node:path'
 import { createHash } from 'node:crypto'
 import { licenseReport } from './scripts/licensePlugin.ts'
+import type { ModelLicense } from './scripts/licensePlugin.ts'
+import { aiAssets } from './scripts/aiAssetsPlugin.ts'
+
+function aiModelLicenses(): ModelLicense[] {
+  const lock = resolve(import.meta.dirname, 'ai-models.lock.json')
+  if (!existsSync(lock)) return []
+  const data = JSON.parse(readFileSync(lock, 'utf8')) as Record<string, { revision: string; license: string }>
+  return Object.entries(data).map(([id, m]) => ({ id, license: m.license, revision: m.revision }))
+}
 
 /**
  * Self-hosts everything the Image → Text (OCR) tool needs under /ocr/, so OCR
@@ -110,7 +119,7 @@ ${paths.map((p) => `  <url><loc>${origin}${p}</loc></url>`).join('\n')}
 }
 
 export default defineConfig(({ mode }) => ({
-  plugins: [react(), tailwindcss(), ocrAssets(), benchPwa(), licenseReport(() => ocrPackages), seoFiles(loadEnv(mode, process.cwd(), 'VITE_').VITE_SITE_URL ?? '')],
+  plugins: [react(), tailwindcss(), ocrAssets(), aiAssets(), benchPwa(), licenseReport(() => [...ocrPackages, 'onnxruntime-web'], aiModelLicenses), seoFiles(loadEnv(mode, process.cwd(), 'VITE_').VITE_SITE_URL ?? '')],
   worker: {
     format: 'es',
   },

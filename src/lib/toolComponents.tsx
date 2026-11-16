@@ -28,6 +28,7 @@ export const toolComponents: Record<string, ReturnType<typeof lazy>> = {
   'image/metadata': lazy(() => import('../tools/image/metadata')),
   'image/remove-metadata': lazy(() => import('../tools/image/remove-metadata')),
   'image/to-text': lazy(() => import('../tools/image/to-text')),
+  'image/remove-background': lazy(() => import('../tools/image/remove-background')),
 
   'developer/json-formatter': lazy(() => import('../tools/developer/json-formatter')),
   'developer/json-minifier': lazy(() => import('../tools/developer/json-minifier')),
