@@ -1,15 +1,14 @@
 import { useEffect, useRef, useState } from 'react';
 import FileDropzone from '../../../components/FileDropzone';
 import Button from '../../../components/Button';
-import DownloadButton from '../../../components/DownloadButton';
 import ErrorMessage from '../../../components/ErrorMessage';
-import ProgressBar from '../../../components/ProgressBar';
 import { formatDuration } from '../../../lib/audioUtils';
 import { formatBytes } from '../../../lib/imageUtils';
 import { AUDIO_TARGETS, CancelledError, convertAudio, encodableAudioTargets, probeAudio } from '../../../lib/audioEngine';
 import type { AudioInfo, AudioTarget } from '../../../lib/audioEngine';
 import { extractAudioFromVideo } from '../../../lib/videoAudioCapture';
-import { ActionBar, OptionCards } from '../../../components/tool';
+import { ActionBar } from '../../../components/tool';
+import { ConvertFlow, FormatPills, IconTile, VideoThumb } from '../../../components/tool/ConvertFlow';
 import { tr } from '../../../lib/i18n';
 
 const supportsCaptureStream =
@@ -17,6 +16,9 @@ const supportsCaptureStream =
   ('captureStream' in HTMLVideoElement.prototype || 'mozCaptureStream' in HTMLVideoElement.prototype);
 
 type Choice = AudioTarget | 'original';
+
+/** File extension the original audio track is saved with. */
+const ORIGINAL_EXT: Record<string, string> = { aac: 'm4a', opus: 'ogg', vorbis: 'ogg', mp3: 'mp3', flac: 'flac' };
 
 export default function ExtractAudioTool() {
   const [file, setFile] = useState<File | null>(null);
@@ -30,6 +32,8 @@ export default function ExtractAudioTool() {
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<{ url: string; name: string; size: number; note?: string } | null>(null);
   const abortRef = useRef<AbortController | null>(null);
+  const [srcUrl, setSrcUrl] = useState<string | null>(null);
+  useEffect(() => () => { if (srcUrl) URL.revokeObjectURL(srcUrl); }, [srcUrl]);
 
   useEffect(() => {
     void encodableAudioTargets().then(setTargets);
@@ -42,11 +46,13 @@ export default function ExtractAudioTool() {
     setUseCapture(false);
     setResult(null);
     setError(null);
+    setSrcUrl(null);
   }
 
   async function handleFile(files: File[]) {
     const f = files[0];
     reset();
+    setSrcUrl(URL.createObjectURL(f));
     try {
       setInfo(await probeAudio(f));
       setFile(f);
@@ -95,48 +101,76 @@ export default function ExtractAudioTool() {
   }
 
   const options: { value: Choice; label: string }[] = [
-    { value: 'original', label: 'Original audio — no re-encoding, instant, best quality' },
+    { value: 'original', label: 'Original — no re-encoding, instant, best quality' },
     ...AUDIO_TARGETS.filter((t) => targets.has(t.value)).map((t) => ({ value: t.value as Choice, label: t.label })),
   ];
 
+  const target = AUDIO_TARGETS.find((t) => t.value === choice);
+  const dur = info?.durationSec ?? 0;
+  const ext = useCapture ? 'webm' : choice === 'original' ? ORIGINAL_EXT[info?.codec ?? ''] ?? 'm4a' : target?.extension ?? 'wav';
+  const format = useCapture ? 'WEBM' : choice === 'original' ? (info?.codec ?? '').toUpperCase() || tr('Original') : target?.label.split(' ')[0] ?? '';
+  const estimate = !info ? null
+    : choice === 'original' ? (info.bitrate * dur) / 8
+    : target?.lossless ? dur * info.sampleRate * info.channels * 2 + 44
+    : (dur * 160_000) / 8;
+  const base = file ? file.name.replace(/\.[^.]+$/, '') : '';
+  const pick = (c: Choice) => { setChoice(c); setResult(null); };
+
   return (
     <div className="space-y-4">
-      {!file ? (
-        <FileDropzone accept="video/*,.mkv,.mov" onFiles={handleFile} hint={tr("MP4, MOV, WebM, MKV or any video your browser can play")} />
-      ) : (
-        <div className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-line bg-paper-dim p-3 text-sm">
-          <span className="truncate">{file.name} · {formatBytes(file.size)}{info && ` · ${formatDuration(info.durationSec)} · ${info.codec?.toUpperCase() ?? 'audio'}`}</span>
-          <button onClick={reset} className="text-xs font-medium text-workshop hover:underline">{tr("Remove")}</button>
-        </div>
-      )}
+      {!file && <FileDropzone accept="video/*,.mkv,.mov" onFiles={handleFile} hint={tr("MP4, MOV, WebM, MKV or any video your browser can play")} />}
 
-      {file && !useCapture && (
-        <OptionCards legend={tr("Save as")} name="extract-format" disabled={busy} value={choice} onChange={setChoice} options={options.map((o) => { const [label, hint] = o.label.split(' — '); return { value: o.value, label, hint }; })} />
-      )}
-      {file && useCapture && (
-        <p className="text-xs text-ink-3">
-          {tr("This video’s format can’t be read directly, so its audio is captured while it plays in the background — this takes about as long as the video itself.")}
-        </p>
-      )}
       {file && (
-        <>
+        <div className="slide-in space-y-4">
+          <ConvertFlow
+            from={{
+              preview: srcUrl ? <VideoThumb url={srcUrl} /> : <IconTile kind="video" />,
+              name: file.name,
+              detail: info ? `${formatBytes(file.size)} · ${formatDuration(info.durationSec)}` : formatBytes(file.size),
+              format: tr('Video'),
+            }}
+            to={{
+              preview: <IconTile kind="audio" tone={result ? 'signal' : 'workshop'} />,
+              name: result?.name ?? `${base}-audio.${ext}`,
+              detail: result ? formatBytes(result.size) : estimate ? tr('about {size}', { size: formatBytes(estimate) }) : tr('Audio only'),
+              format,
+            }}
+            state={busy ? 'busy' : result ? 'done' : 'idle'}
+            progress={progress}
+            onRemove={reset}
+            result={result ? { url: result.url, filename: result.name } : undefined}
+          />
+          {result?.note && (
+            <p className="slide-in flex items-center gap-1.5 text-xs text-signal">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M5 12l5 5L20 7" /></svg>
+              {tr(result.note)}
+            </p>
+          )}
+
+          {!useCapture ? (
+            <div className="grid gap-3 rounded-xl border border-line bg-elevated p-3 sm:p-4">
+              <p className="text-xs font-medium text-ink-2">{tr("Save as")}</p>
+              <FormatPills
+                label="Save as"
+                options={options.map((o) => { const [label, hint] = o.label.split(' — '); return { value: o.value, label: tr(label), hint }; })}
+                value={choice}
+                onChange={pick}
+                disabled={busy}
+              />
+            </div>
+          ) : (
+            <p className="rounded-xl border border-line bg-elevated p-3 text-xs text-ink-2">
+              {tr("This video’s format can’t be read directly, so its audio is captured while it plays in the background — this takes about as long as the video itself.")}
+            </p>
+          )}
+
           <ActionBar>
-            <Button onClick={extract} disabled={busy}>{busy ? tr("Extracting…") : tr("Extract audio")}</Button>
-            {busy && !useCapture && <Button variant="secondary" onClick={() => abortRef.current?.abort()}>{tr("Cancel")}</Button>}
+            {busy && !useCapture && <Button variant="secondary" onClick={() => abortRef.current?.abort()} className="sm:ms-auto">{tr("Cancel")}</Button>}
+            <Button onClick={extract} disabled={busy} className={busy && !useCapture ? undefined : 'sm:ms-auto'}>{busy ? tr("Extracting…") : tr("Extract audio")}</Button>
           </ActionBar>
-          {busy && <ProgressBar value={progress * 100} label={useCapture ? tr("Capturing audio") : tr("Extracting… {0}%", { 0: Math.round(progress * 100) })} />}
-        </>
+        </div>
       )}
       {error && <ErrorMessage>{error}</ErrorMessage>}
-      {result && (
-        <div className="space-y-1 rounded-md border border-line bg-paper-dim p-3">
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <span className="text-sm">{result.name} · {formatBytes(result.size)}</span>
-            <DownloadButton url={result.url} filename={result.name} />
-          </div>
-          {result.note && <p className="text-xs text-ink-3">{result.note}</p>}
-        </div>
-      )}
     </div>
   );
 }
