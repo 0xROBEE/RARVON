@@ -2,12 +2,13 @@ import { useEffect, useRef, useState } from 'react';
 import FileDropzone from '../../../components/FileDropzone';
 import Button from '../../../components/Button';
 import ErrorMessage from '../../../components/ErrorMessage';
-import ProgressBar from '../../../components/ProgressBar';
 import { formatDuration } from '../../../lib/audioUtils';
 import { formatBytes } from '../../../lib/imageUtils';
 import { CancelledError, convertAudio, encodableAudioTargets, probeAudio } from '../../../lib/audioEngine';
 import type { AudioInfo, AudioTarget } from '../../../lib/audioEngine';
-import { ActionBar, OptionCards, ResultCard, SizeDelta } from '../../../components/tool';
+import { ActionBar, OptionCards, SizeDelta } from '../../../components/tool';
+import { CompressFlow, LevelSlider, MoreOptions } from '../../../components/tool/CompressFlow';
+import { IconTile } from '../../../components/tool/ConvertFlow';
 import { tr } from '../../../lib/i18n';
 
 const PRESETS = [
@@ -16,6 +17,13 @@ const PRESETS = [
   { bitrate: 64_000, label: 'Small', hint: '64 kb/s — speech, voice notes' },
   { bitrate: 32_000, label: 'Smallest', hint: '32 kb/s — speech only' },
 ];
+
+const LEVELS = [
+  { value: 128_000, label: 'Light', hint: 'Music, sounds the same' },
+  { value: 96_000, label: 'Balanced', hint: 'Music and podcasts' },
+  { value: 64_000, label: 'Strong', hint: 'Speech, voice notes' },
+];
+const EXT: Record<string, string> = { opus: 'ogg', aac: 'm4a', mp3: 'mp3' };
 
 export default function AudioCompressTool() {
   const [file, setFile] = useState<File | null>(null);
@@ -84,51 +92,62 @@ export default function AudioCompressTool() {
     return <ErrorMessage>{tr("This browser can’t encode compressed audio (Opus or AAC). Try a recent version of Chrome, Edge, Firefox or Safari.")}</ErrorMessage>;
   }
 
+  const smaller = result && file ? result.size < file.size : true;
+  const pickBitrate = (b: number) => { setBitrate(b); setResult(null); };
+
   return (
     <div className="space-y-4">
-      {!file ? (
-        <FileDropzone accept="audio/*,.mp3,.m4a,.flac,.ogg,.opus,.wav,.aac" onFiles={handleFile} hint={tr("MP3, WAV, OGG, FLAC, M4A or Opus")} />
-      ) : (
-        <div className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-line bg-paper-dim p-3 text-sm">
-          <span className="truncate">{file.name} · {formatBytes(file.size)}{info && tr(" · {0} · ~{1} kb/s", { 0: formatDuration(info.durationSec), 1: Math.round(info.bitrate / 1000) })}</span>
-          <button onClick={reset} className="text-xs font-medium text-workshop hover:underline">{tr("Remove")}</button>
+      {!file && <FileDropzone accept="audio/*,.mp3,.m4a,.flac,.ogg,.opus,.wav,.aac" onFiles={handleFile} hint={tr("MP3, WAV, OGG, FLAC, M4A or Opus")} />}
+
+      {file && info && (
+        <div className="slide-in space-y-4">
+          <CompressFlow
+            from={{ preview: <IconTile kind="audio" />, name: file.name, detail: tr("{0} · {1} · ~{2} kb/s", { 0: formatBytes(file.size), 1: formatDuration(info.durationSec), 2: Math.round(info.bitrate / 1000) }), format: '' }}
+            to={{
+              preview: <IconTile kind="audio" tone={result && smaller ? 'signal' : 'workshop'} />,
+              name: result?.name ?? `${file.name.replace(/\.[^.]+$/, '')}-compressed.${EXT[codec] ?? codec}`,
+              detail: result
+                ? <>{formatBytes(result.size)}<SizeDelta before={file.size} after={result.size} /></>
+                : tr('about {size}', { size: formatBytes(estimate) }),
+              format: '',
+            }}
+            before={file.size}
+            after={result ? result.size : estimate}
+            state={busy ? 'busy' : result ? (smaller ? 'done' : 'warn') : 'idle'}
+            progress={progress}
+            onRemove={reset}
+            result={result ? { url: result.url, filename: result.name } : undefined}
+          />
+          {result && !smaller && (
+            <p className="slide-in text-xs text-ink-2">
+              {tr("This file is already smaller than that quality setting (")}{formatBytes(result.size)}{' '}{tr("vs.")}{' '}{formatBytes(file.size)}{tr("), so keep your original or pick a lower quality.")}
+            </p>
+          )}
+
+          <div className="grid gap-3 rounded-xl border border-line bg-elevated p-3 sm:p-4">
+            <LevelSlider options={LEVELS} value={LEVELS.some((l) => l.value === bitrate) ? bitrate : null} onChange={pickBitrate} disabled={busy} />
+            <MoreOptions>
+              <OptionCards legend={tr("Quality")} name="bitrate" disabled={busy} value={bitrate} onChange={pickBitrate} options={PRESETS.map((p) => ({ value: p.bitrate, label: p.label, hint: p.hint }))} />
+              {codecs.length > 1 && (
+                <label className="flex items-center gap-2 text-xs text-ink-2">
+                  {tr("Format")}
+                  <select value={codec} disabled={busy} onChange={(e) => { setCodec(e.target.value as AudioTarget); setResult(null); }} className="rounded-md border border-line bg-paper px-2 py-1 text-xs text-ink">
+                    {codecs.includes('opus') && <option value="opus">{tr("Opus (.ogg) — best quality for its size")}</option>}
+                    {codecs.includes('aac') && <option value="aac">{tr("AAC (.m4a) — plays everywhere")}</option>}
+                    {codecs.includes('mp3') && <option value="mp3">{tr("MP3 — the most compatible")}</option>}
+                  </select>
+                </label>
+              )}
+            </MoreOptions>
+          </div>
+
+          <ActionBar>
+            {busy && <Button variant="secondary" onClick={() => abortRef.current?.abort()} className="sm:ms-auto">{tr("Cancel")}</Button>}
+            <Button onClick={compress} disabled={busy} className={busy ? undefined : 'sm:ms-auto'}>{busy ? tr("Compressing…") : tr("Compress")}</Button>
+          </ActionBar>
         </div>
       )}
-
-      {info && (
-        <>
-          <OptionCards legend={tr("Quality")} name="bitrate" disabled={busy} value={bitrate} onChange={setBitrate} options={PRESETS.map((p) => ({ value: p.bitrate, label: p.label, hint: p.hint }))} />
-          {codecs.length > 1 && (
-            <label className="flex items-center gap-2 text-xs text-ink-2">
-              {tr("Format")}
-              <select value={codec} disabled={busy} onChange={(e) => setCodec(e.target.value as AudioTarget)} className="rounded-md border border-line bg-paper px-2 py-1 text-xs text-ink">
-                {codecs.includes('opus') && <option value="opus">{tr("Opus (.ogg) — best quality for its size")}</option>}
-                {codecs.includes('aac') && <option value="aac">{tr("AAC (.m4a) — plays everywhere")}</option>}
-                {codecs.includes('mp3') && <option value="mp3">{tr("MP3 — the most compatible")}</option>}
-              </select>
-            </label>
-          )}
-          <p className="text-xs text-ink-3">{tr("Estimated result: about")}{' '}{formatBytes(estimate)}{' '}{tr("(now")}{' '}{formatBytes(file!.size)}).</p>
-          <ActionBar>
-            <Button onClick={compress} disabled={busy}>{busy ? tr("Compressing…") : tr("Compress")}</Button>
-            {busy && <Button variant="secondary" onClick={() => abortRef.current?.abort()}>{tr("Cancel")}</Button>}
-          </ActionBar>
-          {busy && <ProgressBar value={progress * 100} label={tr("Encoding… {0}%", { 0: Math.round(progress * 100) })} />}
-        </>
-      )}
       {error && <ErrorMessage>{error}</ErrorMessage>}
-      {result && file && (
-        result.size < file.size ? (
-          <ResultCard url={result.url} filename={result.name}>
-            {result.name} · {formatBytes(result.size)}
-            <SizeDelta before={file.size} after={result.size} />
-          </ResultCard>
-        ) : (
-          <ErrorMessage>
-            {tr("This file is already smaller than that quality setting (")}{formatBytes(result.size)}{' '}{tr("vs.")}{' '}{formatBytes(file.size)}{tr("), so keep your original or pick a lower quality.")}
-          </ErrorMessage>
-        )
-      )}
     </div>
   );
 }

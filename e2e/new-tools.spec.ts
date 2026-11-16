@@ -104,6 +104,7 @@ test.describe('PNG compression', () => {
     });
     const src = { name: 'screenshot.png', mimeType: 'image/png', buffer: Buffer.from(b64, 'base64') };
     await upload(page, src);
+    await page.getByText('More options').click();
     await expect(page.getByText('PNG compression')).toBeVisible();
     await page.getByRole('button', { name: 'Compress', exact: true }).click();
     const out = await download(page);
@@ -147,7 +148,7 @@ test.describe('PNG compression', () => {
       return btoa(s);
     });
     await upload(page, { name: 'art.webp', mimeType: 'image/webp', buffer: Buffer.from(b64, 'base64') });
-    await page.getByLabel('Quality').fill('0.5');
+    await page.getByRole('radio', { name: /^Strong —/ }).click();
     await page.getByRole('button', { name: 'Compress', exact: true }).click();
     const out = await download(page);
     expect(out.name).toBe('art-compressed.webp');

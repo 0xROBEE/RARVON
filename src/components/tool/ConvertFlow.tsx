@@ -61,8 +61,11 @@ export function ConvertFlow({
   );
 }
 
-function FlowCard({ side, label, action, target, state, progress }: { side: FlowSide; label: string; action?: ReactNode; target?: boolean; state?: 'idle' | 'busy' | 'done'; progress?: number }) {
+export type FlowState = 'idle' | 'busy' | 'done' | 'warn';
+
+export function FlowCard({ side, label, action, target, state, progress }: { side: FlowSide; label: string; action?: ReactNode; target?: boolean; state?: FlowState; progress?: number }) {
   const done = state === 'done';
+  const warn = state === 'warn';
   return (
     <div
       role={target && done ? 'group' : undefined}
@@ -70,7 +73,8 @@ function FlowCard({ side, label, action, target, state, progress }: { side: Flow
       className={clsx(
         'flex min-w-0 flex-col gap-3 rounded-xl border p-3 transition-all duration-300',
         !target && 'border-line bg-elevated',
-        target && !done && 'border-dashed border-workshop/50 bg-paper',
+        target && !done && !warn && 'border-dashed border-workshop/50 bg-paper',
+        target && warn && 'border-warn/50 bg-warn-dim',
         target && done && 'flow-done border-signal/60 bg-signal-dim',
       )}
     >
@@ -82,12 +86,14 @@ function FlowCard({ side, label, action, target, state, progress }: { side: Flow
           <p className="text-[10px] font-semibold uppercase tracking-wide text-ink-3">{label}</p>
           <p className="truncate text-sm font-medium" title={side.name}>{side.name}</p>
           <div className="mt-1 flex flex-wrap items-center gap-2">
-            <span
-              key={side.format}
-              className={clsx('flow-pill rounded-md border px-1.5 py-0.5 font-mono text-[11px] font-semibold', target ? (done ? 'border-signal/50 text-signal' : 'border-workshop/50 text-workshop') : 'border-line text-ink-2')}
-            >
-              {side.format}
-            </span>
+            {side.format && (
+              <span
+                key={side.format}
+                className={clsx('flow-pill rounded-md border px-1.5 py-0.5 font-mono text-[11px] font-semibold', target ? (done ? 'border-signal/50 text-signal' : warn ? 'border-warn/50 text-warn' : 'border-workshop/50 text-workshop') : 'border-line text-ink-2')}
+              >
+                {side.format}
+              </span>
+            )}
             <span className="text-xs text-ink-2">{side.detail}</span>
           </div>
         </div>

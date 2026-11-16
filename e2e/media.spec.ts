@@ -48,8 +48,11 @@ test.describe('image tools with real files', () => {
     await openTool(page, '/tools/image/compress');
     const src = await makeImage(page, { width: 1600, height: 1200 });
     await upload(page, src);
-    await page.locator('main input[type=range]').fill('0.4');
+    // The ring shows an estimate before compressing.
+    await expect(page.getByTestId('savings-ring')).toHaveAttribute('aria-label', /~\d+% smaller/);
+    await page.getByRole('radio', { name: /^Strong —/ }).click();
     await page.getByRole('button', { name: 'Compress', exact: true }).click();
+    await expect(page.getByTestId('savings-ring')).toHaveAttribute('aria-label', /^\d+% smaller/);
     const out = await download(page);
     expect(out.buffer.length).toBeLessThan(src.buffer.length);
     expect(await imageSize(page, out.buffer, 'image/jpeg')).toEqual({ width: 1600, height: 1200 });
@@ -172,16 +175,18 @@ test.describe('video tools (WebCodecs via Mediabunny)', () => {
     await openTool(page, '/tools/video/compress');
     const src = await makeWebm(page, 3);
     await upload(page, src);
-    await expect(page.getByText(/Estimated result/)).toBeVisible();
+    await expect(page.getByTestId('savings-ring')).toHaveAttribute('aria-label', /~\d+% smaller/);
     await page.getByRole('button', { name: 'Compress video' }).click();
     const out = await download(page);
     expect(out.buffer.length).toBeLessThan(src.buffer.length * 0.8);
     expect((await mediaInfo(page, out.buffer, 'video/webm')).duration).toBeGreaterThan(2.5);
 
-    await page.getByLabel(/Strong/).check();
+    await page.getByRole('radio', { name: /^Strong —/ }).click();
+    await page.getByText('More options').click();
     await page.getByLabel('Maximum resolution').selectOption('240');
+    await expect(page.getByRole('button', { name: /Download/ })).toHaveCount(0);
     await page.getByRole('button', { name: 'Compress video' }).click();
-    await expect(page.getByText(/compressed\.webm .*−/)).toBeVisible({ timeout: 60_000 });
+    await expect(page.getByRole('button', { name: /Download/ })).toBeVisible({ timeout: 60_000 });
     const small = await download(page);
     expect(small.buffer.length).toBeLessThan(out.buffer.length);
     const info = await mediaInfo(page, small.buffer, 'video/webm');
@@ -237,7 +242,7 @@ test.describe('audio tools', () => {
     await openTool(page, '/tools/audio/compress');
     const src = makeWav(10);
     await upload(page, src);
-    await page.getByRole('radio', { name: /^Small —/ }).check();
+    await page.getByRole('radio', { name: /^Strong —/ }).click();
     await page.getByRole('button', { name: 'Compress', exact: true }).click();
     const out = await download(page);
     // 64 kb/s × 10 s ≈ 80 KB (+ container overhead)
