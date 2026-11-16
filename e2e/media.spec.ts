@@ -33,9 +33,9 @@ test.describe('image tools with real files', () => {
   test('convert JPEG to PNG and WebP', async ({ page }) => {
     await openTool(page, '/tools/image/convert');
     const src = await makeImage(page, { width: 900, height: 600 });
-    for (const [mime, ext] of [['image/png', 'png'], ['image/webp', 'webp']] as const) {
+    for (const [mime, ext, label] of [['image/png', 'png', 'PNG'], ['image/webp', 'webp', 'WebP']] as const) {
       await upload(page, src);
-      await page.getByLabel('Convert to').selectOption(mime);
+      await page.getByRole('radio', { name: label, exact: true }).click();
       await page.getByRole('button', { name: 'Convert', exact: true }).click();
       const out = await download(page);
       expect(out.name).toMatch(new RegExp(`\\.${ext}$`));

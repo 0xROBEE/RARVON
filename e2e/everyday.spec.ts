@@ -263,7 +263,7 @@ test.describe('remaining format and interaction gaps', () => {
     await upload(page, { name: 'logo.svg', mimeType: 'image/svg+xml', buffer: svg });
     await page.getByLabel('Output width').fill('400');
     await page.getByLabel('Output height').fill('200');
-    await page.getByLabel('Convert to').selectOption('image/png');
+    await page.getByRole('radio', { name: 'PNG', exact: true }).click();
     await page.getByRole('button', { name: 'Convert', exact: true }).click();
     let out = await download(page);
     expect(await imageSize(page, out.buffer, 'image/png')).toEqual({ width: 400, height: 200 });
@@ -274,13 +274,12 @@ test.describe('remaining format and interaction gaps', () => {
     for (const [name, mimeType, buffer] of [['a.gif', 'image/gif', gif], ['b.bmp', 'image/bmp', bmp]] as const) {
       await page.getByRole('button', { name: 'Remove' }).click();
       await upload(page, { name, mimeType, buffer });
-      await page.getByLabel('Convert to').selectOption('image/png');
+      await page.getByRole('radio', { name: 'PNG', exact: true }).click();
       await page.getByRole('button', { name: 'Convert', exact: true }).click();
       out = await download(page);
       expect(await imageSize(page, out.buffer, 'image/png'), name).toEqual({ width: 2, height: 2 });
     }
-    const options = await page.getByLabel('Convert to').locator('option').allInnerTexts();
-    expect(options.join(' ')).toMatch(/WebP/i);
+    await expect(page.getByRole('radiogroup', { name: 'Convert to' }).getByRole('radio', { name: 'WebP', exact: true })).toBeVisible();
   });
 
   test('reorder PDF pages by dragging', async ({ page }) => {
