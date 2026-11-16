@@ -25,12 +25,15 @@ export function ConvertFlow({
   state,
   onRemove,
   result,
+  progress,
 }: {
   from: FlowSide;
   to: FlowSide;
   state: 'idle' | 'busy' | 'done';
   onRemove: () => void;
   result?: { url: string; filename: string };
+  /** 0–1 while busy, for conversions that report progress. */
+  progress?: number;
 }) {
   return (
     <div className="grid items-stretch gap-2 sm:grid-cols-[minmax(0,1fr)_3rem_minmax(0,1fr)]" data-testid="convert-flow">
@@ -51,13 +54,14 @@ export function ConvertFlow({
         label={state === 'done' ? tr('Ready') : tr('To')}
         target
         state={state}
+        progress={state === 'busy' ? progress : undefined}
         action={result && state === 'done' ? <DownloadButton url={result.url} filename={result.filename} label={tr('Download')} /> : null}
       />
     </div>
   );
 }
 
-function FlowCard({ side, label, action, target, state }: { side: FlowSide; label: string; action?: ReactNode; target?: boolean; state?: 'idle' | 'busy' | 'done' }) {
+function FlowCard({ side, label, action, target, state, progress }: { side: FlowSide; label: string; action?: ReactNode; target?: boolean; state?: 'idle' | 'busy' | 'done'; progress?: number }) {
   const done = state === 'done';
   return (
     <div
@@ -88,6 +92,14 @@ function FlowCard({ side, label, action, target, state }: { side: FlowSide; labe
           </div>
         </div>
       </div>
+      {progress !== undefined && (
+        <div className="grid gap-1" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(progress * 100)} aria-label={tr('Converting')}>
+          <div className="h-1.5 overflow-hidden rounded-full bg-paper-dim">
+            <div className="h-full rounded-full bg-workshop transition-[width] duration-300" style={{ width: `${Math.max(3, progress * 100)}%` }} />
+          </div>
+          <span className="text-end font-mono text-[11px] text-ink-3">{Math.round(progress * 100)}%</span>
+        </div>
+      )}
       {action && <div className="flex justify-end">{action}</div>}
     </div>
   );
@@ -130,4 +142,20 @@ export function FormatPills<T extends string>({
       })}
     </div>
   );
+}
+
+/** A tinted tile with an icon, for files without a picture (audio). */
+export function IconTile({ kind, tone = 'workshop' }: { kind: 'audio' | 'video'; tone?: 'workshop' | 'signal' }) {
+  return (
+    <div className={clsx('grid h-full w-full place-items-center', tone === 'signal' ? 'bg-signal-dim text-signal' : 'bg-workshop-dim text-workshop')}>
+      <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+        {kind === 'audio' ? <path d="M9 18V5l12-2v13M9 18a3 3 0 11-6 0 3 3 0 016 0zM21 16a3 3 0 11-6 0 3 3 0 016 0z" /> : <path d="M4 5h16v14H4zM10 9l5 3-5 3z" />}
+      </svg>
+    </div>
+  );
+}
+
+/** The first frame of a video, as a still picture. */
+export function VideoThumb({ url }: { url: string }) {
+  return <video src={`${url}#t=0.1`} muted playsInline preload="metadata" className="h-full w-full object-cover" aria-hidden="true" />;
 }
