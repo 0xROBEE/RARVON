@@ -30,3 +30,9 @@ export function hasAnySupportLink(): boolean {
  * "Report a bug or ask for a tool" and "Star it on GitHub".
  */
 export const projectRepo: string = (import.meta.env.VITE_PROJECT_REPO_URL ?? '').replace(/\/+$/, '');
+
+/** Who makes Bench, shown on the About page. */
+export const maker = {
+  name: 'ROBEE',
+  url: 'https://github.com/ROBEE404',
+};

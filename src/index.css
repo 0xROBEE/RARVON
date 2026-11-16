@@ -268,3 +268,8 @@ body {
 .float-in { animation: float-in 520ms cubic-bezier(0.22, 1, 0.36, 1) both; }
 @keyframes float-in { from { opacity: 0; transform: translateY(14px); } }
 @media (prefers-reduced-motion: reduce) { .heart-beat:hover .heart, .float-in { animation: none; } }
+
+/* About: the arrows in "How it works" gently push forward. */
+.about-arrow path { animation: about-push 1.6s ease-in-out infinite; }
+@keyframes about-push { 50% { translate: 4px 0; } }
+@media (prefers-reduced-motion: reduce) { .about-arrow path { animation: none; } }
