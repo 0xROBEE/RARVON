@@ -8,6 +8,8 @@
  * - text and audio: clips sit at a free `start` time and may overlap the video.
  */
 
+import type { ExportSettings } from './exportSettings';
+
 export type Aspect = '16:9' | '9:16' | '1:1';
 export type MediaType = 'video' | 'image' | 'audio';
 
@@ -85,6 +87,8 @@ export interface Project {
   pendingChoice: boolean;
   media: MediaItem[];
   timeline: Timeline;
+  /** Last settings used on the Export tab. */
+  export?: ExportSettings;
 }
 
 export type TrackKind = keyof Timeline;

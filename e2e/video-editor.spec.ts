@@ -1,4 +1,5 @@
 import type { Page } from '@playwright/test';
+import { readFile } from 'node:fs/promises';
 import { test, expect, download, makeMp4, makeWav, makeImage, makeWebm, mediaInfo } from './helpers';
 
 async function newProject(page: Page, name = 'Test edit') {
@@ -52,11 +53,13 @@ test.describe('Video Editor', () => {
     await expect(page.getByTestId('save-status')).toHaveText('Saved to this browser');
 
     // Export.
-    await page.getByRole('button', { name: 'Export', exact: true }).click();
-    const exportDialog = page.getByRole('dialog', { name: 'Export video' });
-    await exportDialog.getByLabel('720p').check();
-    await exportDialog.getByRole('button', { name: 'Export MP4' }).click();
-    const out = await download(page, 'Download MP4');
+    await page.locator('header').getByRole('button', { name: 'Export', exact: true }).click();
+    await page.getByRole('button', { name: /^720p \(HD\)/ }).click();
+    await page.getByRole('button', { name: 'Export now' }).click();
+    const done = page.getByTestId('queue-item').first().getByRole('link', { name: 'Download' });
+    await expect(done).toBeVisible({ timeout: 60_000 });
+    const [dl] = await Promise.all([page.waitForEvent('download'), done.click()]);
+    const out = { name: dl.suggestedFilename(), buffer: await readFile((await dl.path())!) };
     expect(out.name).toBe('Test edit.mp4');
     const info = await mediaInfo(page, out.buffer, 'video/mp4');
     expect(info.width).toBe(1280);
@@ -64,7 +67,7 @@ test.describe('Video Editor', () => {
     expect(info.duration).toBeGreaterThan(6.5);
     expect(info.duration).toBeLessThan(7.6);
     expect(out.buffer.includes(Buffer.from('soun')), 'MP4 has an audio track').toBe(true);
-    await exportDialog.getByRole('button', { name: 'Close' }).last().click();
+    await page.getByTestId('tab-button-edit').click();
 
     // Leaving asks what to do; keeping it lists the project.
     await page.getByRole('button', { name: 'Exit' }).click();
@@ -222,5 +225,46 @@ test.describe('Video Editor', () => {
     await expect(page.locator('[data-clip=video]')).toHaveCount(5);
     await expect(page.locator('[data-clip=video]').nth(1)).toContainText('Muted');
     await expect(page.getByTestId('time-display')).toHaveText(/\/ 0:07\./);
+  });
+  test('Export tab: named export, preset, size estimate, and a queue with audio only', async ({ page }) => {
+    const clip = await makeMp4(page, 3);
+    await newProject(page, 'Exports');
+    await page.getByTestId('editor-import').setInputFiles([clip]);
+    await page.getByRole('button', { name: 'Add clip.mp4 to the timeline' }).click();
+
+    // The top bar's Export button opens the Export tab.
+    await page.locator('header').getByRole('button', { name: 'Export', exact: true }).click();
+    await expect(page.getByTestId('export-tab')).toBeVisible();
+    await expect(page.getByTestId('export-name')).toHaveValue('Exports');
+    await expect(page.getByTestId('export-estimate')).not.toHaveText('');
+
+    // A custom name and 720p, exported right away.
+    await page.getByTestId('export-name').fill('My first export');
+    await page.getByRole('button', { name: /^720p \(HD\)/ }).click();
+    await page.getByRole('button', { name: 'Export now' }).click();
+    const first = page.getByTestId('queue-item').first();
+    await expect(first.getByRole('link', { name: 'Download' })).toBeVisible({ timeout: 60_000 });
+    await expect(first).toContainText('My first export.mp4');
+    await page.screenshot({ path: 'test-results/export-tab.png' });
+    const [dl] = await Promise.all([page.waitForEvent('download'), first.getByRole('link', { name: 'Download' }).click()]);
+    expect(dl.suggestedFilename()).toBe('My first export.mp4');
+    const info = await mediaInfo(page, await readFile((await dl.path())!), 'video/mp4');
+    expect(info.width).toBe(1280);
+    expect(info.height).toBe(720);
+
+    // Queue an audio-only version and run the queue.
+    await page.getByRole('button', { name: /^Audio only/ }).click();
+    await page.getByTestId('export-name').fill('Just the sound');
+    await page.getByRole('button', { name: '+ Add to queue' }).click();
+    await expect(page.getByTestId('queue-item')).toHaveCount(2);
+    await page.getByRole('button', { name: /Export all/ }).click();
+    const second = page.getByTestId('queue-item').nth(1);
+    await expect(second.getByRole('link', { name: 'Download' })).toBeVisible({ timeout: 60_000 });
+    await expect(second).toContainText('Just the sound.mp3');
+
+    // Switching tabs keeps the queue.
+    await page.getByTestId('tab-button-edit').click();
+    await page.getByTestId('tab-button-export').click();
+    await expect(page.getByTestId('queue-item')).toHaveCount(2);
   });
 });

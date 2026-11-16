@@ -7,8 +7,6 @@ import {
   totalDuration, uid, videoStarts, visualDuration,
 } from '../../../lib/videoEditor/types';
 import { deleteProject, projectFileBlob, safeFileName, PROJECT_EXT, requestPersistence } from '../../../lib/videoEditor/storage';
-import { exportProject, ExportCancelled } from '../../../lib/videoEditor/exporter';
-import { formatBytes } from '../../../lib/imageUtils';
 import { usePageMeta } from '../../../lib/usePageMeta';
 import { useEditor } from './useEditor';
 import Preview from './Preview';
@@ -16,6 +14,8 @@ import Timeline from './Timeline';
 import type { Selection } from './Timeline';
 import Inspector from './Inspector';
 import AudioTab from './AudioTab';
+import ExportTab from './ExportTab';
+import { useExportQueue } from './useExportQueue';
 import MediaBin from './MediaBin';
 import { ChoiceButton, ICONS, Modal } from './dialogs';
 import { handoff } from './openLock';
@@ -24,6 +24,15 @@ import LanguageToggle from '../../../components/LanguageToggle';
 import { tr } from '../../../lib/i18n';
 
 const HOME = '/tools/video/editor';
+
+type Tab = 'edit' | 'audio' | 'export';
+const TABS: Tab[] = ['edit', 'audio', 'export'];
+const TAB_LABELS: Record<Tab, string> = { edit: 'Edit', audio: 'Audio', export: 'Export' };
+const TAB_ICONS: Record<Tab, string> = {
+  edit: 'M4 6h11v12H4zM15 10l5-3v10l-5-3',
+  audio: 'M3 12h2M7 8v8M11 5v14M15 9v6M19 7v10M21 12h0',
+  export: 'M12 15V3m0 0l-4 4m4-4l4 4M5 13v6a2 2 0 002 2h10a2 2 0 002-2v-6',
+};
 
 function downloadBlob(blob: Blob, name: string) {
   const url = URL.createObjectURL(blob);
@@ -49,13 +58,18 @@ export default function Workspace() {
   const [pps, setPps] = useState(40);
   const [exitOpen, setExitOpen] = useState(false);
   // Bottom tabs (Edit / Audio); `tabDir` picks the slide direction of the animation.
-  const [tab, setTab] = useState<'edit' | 'audio'>('edit');
+  const [tab, setTab] = useState<Tab>('edit');
   const [tabDir, setTabDir] = useState<'next' | 'prev'>('next');
-  const [exportOpen, setExportOpen] = useState(false);
+  const queue = useExportQueue(ed.files);
+  const goTab = (t: Tab) => {
+    if (t === tab) return;
+    setPlaying(false);
+    setTabDir(TABS.indexOf(t) > TABS.indexOf(tab) ? 'next' : 'prev');
+    setTab(t);
+  };
   const [busy, setBusy] = useState<string | null>(null);
   const [confirmDiscard, setConfirmDiscard] = useState(false);
   const leaving = useRef(false);
-  const exitAfterExport = useRef(false);
 
   const total = project ? totalDuration(project.timeline) : 0;
   // A choice is needed when the timeline has content and was changed in this visit (or left unsettled last time).
@@ -151,7 +165,7 @@ export default function Workspace() {
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       const el = e.target as HTMLElement;
-      if (el.closest('input, textarea, select, [contenteditable=true]') || exitOpen || exportOpen || tab !== 'edit') return;
+      if (el.closest('input, textarea, select, [contenteditable=true]') || exitOpen || tab !== 'edit') return;
       const mod = e.ctrlKey || e.metaKey;
       if (e.key === ' ') {
         e.preventDefault();
@@ -184,7 +198,7 @@ export default function Workspace() {
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [ed, split, del, selection, total, exitOpen, exportOpen, tab]);
+  }, [ed, split, del, selection, total, exitOpen, tab]);
 
   // ---- Leaving
   const leave = useCallback(() => {
@@ -305,10 +319,7 @@ export default function Workspace() {
             {tr("Project file")}
           </button>
           <button
-            onClick={() => {
-              setPlaying(false);
-              setExportOpen(true);
-            }}
+            onClick={() => goTab('export')}
             disabled={total <= 0}
             className="inline-flex items-center gap-1.5 rounded-md bg-workshop px-3 py-1.5 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-40"
           >
@@ -422,6 +433,10 @@ export default function Workspace() {
             </div>
           </div>
           </>
+        ) : tab === 'export' ? (
+          <div className="min-h-0 flex-1 bg-paper">
+            <ExportTab project={project} urls={ed.urls} queue={queue} onSaveSettings={(settings) => ed.update((p) => ({ ...p, export: settings }), { edit: false })} />
+          </div>
         ) : (
           <div className="min-h-0 flex-1 bg-paper">
             <AudioTab project={project} files={ed.files} onTimeline={(tl) => ed.setTimeline(tl)} initialClipId={selection?.id} />
@@ -431,15 +446,10 @@ export default function Workspace() {
 
       {/* Bottom tabs, like the page buttons in a desktop editor */}
       <nav className="flex shrink-0 justify-center gap-1 border-t border-line bg-elevated px-3 py-2" aria-label={tr('Editor tabs')}>
-        {(['edit', 'audio'] as const).map((t, i) => (
+        {TABS.map((t) => (
           <button
             key={t}
-            onClick={() => {
-              if (t === tab) return;
-              setPlaying(false);
-              setTabDir(i > (['edit', 'audio'] as const).indexOf(tab) ? 'next' : 'prev');
-              setTab(t);
-            }}
+            onClick={() => goTab(t)}
             aria-pressed={tab === t}
             data-testid={`tab-button-${t}`}
             className={clsx(
@@ -448,9 +458,9 @@ export default function Workspace() {
             )}
           >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-              <path d={t === 'edit' ? 'M4 6h11v12H4zM15 10l5-3v10l-5-3' : 'M3 12h2M7 8v8M11 5v14M15 9v6M19 7v10M21 12h0'} />
+              <path d={TAB_ICONS[t]} />
             </svg>
-            {t === 'edit' ? tr('Edit') : tr('Audio')}
+            {tr(TAB_LABELS[t])}
             {tab === t && <span className="tab-underline absolute inset-x-4 -bottom-2 h-0.5 rounded-full bg-workshop" aria-hidden="true" />}
           </button>
         ))}
@@ -488,11 +498,10 @@ export default function Workspace() {
               <ChoiceButton
                 icon={ICONS.film}
                 title={tr("Export the video")}
-                detail="Make the MP4 first. You’ll come back here afterwards."
+                detail="Opens the Export tab. Press Exit again when you’re done."
                 onClick={() => {
                   setExitOpen(false);
-                  setExportOpen(true);
-                  exitAfterExport.current = true;
+                  goTab('export');
                 }}
               />
               <ChoiceButton tone="danger" icon={ICONS.trash} title={tr("Discard project")} detail="Delete it and everything in it." onClick={() => setConfirmDiscard(true)} />
@@ -504,19 +513,6 @@ export default function Workspace() {
         </Modal>
       )}
 
-      {exportOpen && (
-        <ExportDialog
-          onClose={() => {
-            setExportOpen(false);
-            if (exitAfterExport.current) {
-              exitAfterExport.current = false;
-              setExitOpen(true);
-            }
-          }}
-          run={(quality, onProgress, signal) => exportProject(ed.current()!, ed.files, { quality, fps: 30, onProgress, signal })}
-          fileName={`${safeFileName(project.name)}.mp4`}
-        />
-      )}
       {busy && !exitOpen && (
         <div className="fixed bottom-4 left-1/2 z-50 -translate-x-1/2 rounded-full bg-ink px-4 py-2 text-xs text-paper shadow-lg" role="status">{busy}</div>
       )}
@@ -537,85 +533,5 @@ function ToolButton({ label, shortcut, onClick, disabled, icon, text }: { label:
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d={icon} /></svg>
       {text && <span className="hidden sm:inline">{label}</span>}
     </button>
-  );
-}
-
-function ExportDialog({ onClose, run, fileName }: {
-  onClose: () => void;
-  run: (q: '720p' | '1080p', onProgress: (f: number, stage: string) => void, signal: AbortSignal) => Promise<Blob>;
-  fileName: string;
-}) {
-  const [quality, setQuality] = useState<'720p' | '1080p'>('1080p');
-  const [state, setState] = useState<{ kind: 'idle' } | { kind: 'running'; f: number; stage: string } | { kind: 'done'; blob: Blob; url: string } | { kind: 'error'; message: string }>({ kind: 'idle' });
-  const ctrl = useRef<AbortController | null>(null);
-
-  useEffect(() => () => {
-    ctrl.current?.abort();
-    if (state.kind === 'done') URL.revokeObjectURL(state.url);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  const start = async () => {
-    ctrl.current = new AbortController();
-    setState({ kind: 'running', f: 0, stage: 'Starting' });
-    try {
-      const blob = await run(quality, (f, stage) => setState({ kind: 'running', f, stage }), ctrl.current.signal);
-      setState({ kind: 'done', blob, url: URL.createObjectURL(blob) });
-    } catch (e) {
-      if (e instanceof ExportCancelled) setState({ kind: 'idle' });
-      else setState({ kind: 'error', message: e instanceof Error ? e.message : 'The export failed.' });
-    }
-  };
-
-  return (
-    <Modal title={tr("Export video")} onClose={state.kind === 'running' ? undefined : onClose} locked={state.kind === 'running'} labelledBy="export-title" wide>
-      {state.kind === 'idle' || state.kind === 'error' ? (
-        <div className="grid gap-4">
-          <fieldset>
-            <legend className="mb-1.5 text-xs font-medium text-ink-2">{tr("Quality")}</legend>
-            <div className="grid grid-cols-2 gap-2">
-              {(['1080p', '720p'] as const).map((q) => (
-                <label key={q} className={clsx('relative cursor-pointer rounded-lg border p-3', quality === q ? 'border-workshop bg-workshop-dim' : 'border-line hover:border-ink')}>
-                  <input type="radio" name="export-quality" checked={quality === q} onChange={() => setQuality(q)} className="absolute inset-0 cursor-pointer opacity-0" aria-label={q} />
-                  <span className="block text-sm font-semibold">{q === '1080p' ? tr("Full HD (1080p)") : tr("HD (720p)")}</span>
-                  <span className="block text-xs text-ink-3">{q === '1080p' ? tr("Best quality") : tr("Smaller and faster")}</span>
-                </label>
-              ))}
-            </div>
-          </fieldset>
-          <p className="text-xs text-ink-3">{tr("MP4 (H.264 and AAC) at 30 frames per second. It plays everywhere.")}</p>
-          {state.kind === 'error' && <p className="rounded-md bg-warn-dim p-2 text-sm text-warn" role="alert">{state.message}</p>}
-          <div className="flex justify-end gap-2">
-            <button onClick={onClose} className="rounded-md border border-line px-4 py-2 text-sm hover:border-ink">{tr("Cancel")}</button>
-            <button onClick={() => void start()} className="rounded-md bg-workshop px-4 py-2 text-sm font-semibold text-white hover:opacity-90">{tr("Export MP4")}</button>
-          </div>
-        </div>
-      ) : state.kind === 'running' ? (
-        <div className="grid gap-3" role="status">
-          <div className="flex justify-between text-sm">
-            <span className="text-ink-2">{tr(state.stage)}…</span>
-            <span className="font-mono">{Math.round(state.f * 100)}%</span>
-          </div>
-          <div className="h-2 overflow-hidden rounded-full bg-paper-dim">
-            <div className="h-full rounded-full bg-workshop transition-[width]" style={{ width: `${Math.round(state.f * 100)}%` }} />
-          </div>
-          <p className="text-xs text-ink-3">{tr("Keep this tab open. Longer videos take a while.")}</p>
-          <div className="flex justify-end">
-            <button onClick={() => ctrl.current?.abort()} className="rounded-md border border-line px-4 py-2 text-sm hover:border-warn hover:text-warn">{tr("Cancel export")}</button>
-          </div>
-        </div>
-      ) : (
-        <div className="grid gap-4">
-          <video src={state.url} controls className="max-h-[50vh] w-full rounded-md bg-black" />
-          <div className="flex items-center justify-between gap-3">
-            <span className="text-sm text-ink-2">{fileName} · {formatBytes(state.blob.size)}</span>
-            <div className="flex gap-2">
-              <button onClick={onClose} className="rounded-md border border-line px-4 py-2 text-sm hover:border-ink">{tr("Close")}</button>
-              <button onClick={() => downloadBlob(state.blob, fileName)} className="rounded-md bg-workshop px-4 py-2 text-sm font-semibold text-white hover:opacity-90">{tr("Download MP4")}</button>
-            </div>
-          </div>
-        </div>
-      )}
-    </Modal>
   );
 }

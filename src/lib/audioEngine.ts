@@ -119,7 +119,7 @@ let mp3Ready: Promise<void> | null = null;
  * lazily-loaded chunk, fetched only the first time someone exports MP3, and is
  * used unmodified — see THIRD_PARTY_LICENSES.md.
  */
-function ensureMp3Encoder(): Promise<void> {
+export function ensureMp3Encoder(): Promise<void> {
   mp3Ready ??= (async () => {
     if (await canEncodeAudio('mp3').catch(() => false)) return; // a browser with native MP3 encoding
     const { registerMp3Encoder } = await import('@mediabunny/mp3-encoder');

@@ -1,17 +1,19 @@
 import {
-  Input, Output, BlobSource, BufferTarget, ALL_FORMATS, Mp4OutputFormat,
+  Input, Output, BlobSource, BufferTarget, ALL_FORMATS, Mp4OutputFormat, WebMOutputFormat, Mp3OutputFormat, WavOutputFormat,
   CanvasSink, AudioBufferSink, CanvasSource, AudioBufferSource,
-  canEncodeVideo, canEncodeAudio, QUALITY_HIGH, QUALITY_MEDIUM,
+  canEncodeVideo, canEncodeAudio,
 } from 'mediabunny';
-import type { InputVideoTrack } from 'mediabunny';
+import type { AudioCodec, InputVideoTrack } from 'mediabunny';
 import type { Project, VisualClip } from './types';
 import { totalDuration, videoStarts, visualDuration, fadeAlpha } from './types';
-import { drawFrame, outputSize, textsAt } from './compositor';
+import { drawFrame, textsAt } from './compositor';
+import type { ExportSettings } from './exportSettings';
+import { audioBitrate, cropTimeline, isAudioOnly, sizeFor, videoBitrate } from './exportSettings';
+import { ensureMp3Encoder } from '../audioEngine';
 import { tr } from '../i18n';
 
 export interface ExportOptions {
-  quality: '720p' | '1080p';
-  fps: 30;
+  settings: ExportSettings;
   onProgress: (fraction: number, stage: string) => void;
   signal: AbortSignal;
 }
@@ -24,29 +26,36 @@ export class ExportCancelled extends Error {
 
 const SAMPLE_RATE = 48000;
 
-/** Renders the whole project to an MP4 (H.264 video, AAC audio) in the browser. */
-export async function exportProject(project: Project, files: Map<string, File>, opts: ExportOptions): Promise<Blob> {
+/**
+ * Renders the project with the Export tab's settings: MP4 (H.264 + AAC) or
+ * WebM (VP9 + Opus) at any size and frame rate, or only the sound as MP3,
+ * M4A or WAV. A range exports a cropped copy of the timeline.
+ */
+export async function exportProject(source: Project, files: Map<string, File>, opts: ExportOptions): Promise<Blob> {
+  const s = opts.settings;
+  const project = s.range ? { ...source, timeline: cropTimeline(source.timeline, s.range.from, s.range.to) } : source;
   const tl = project.timeline;
   const duration = totalDuration(tl);
   if (duration <= 0) throw new Error(tr("The timeline is empty. Add a clip first."));
-  const { width: W, height: H } = outputSize(project.aspect, opts.quality);
-  const fps = opts.fps;
+  if (isAudioOnly(s.format)) return exportAudioOnly(project, files, duration, opts);
+  const { width: W, height: H } = sizeFor(s.aspect, s.short);
+  const fps = s.fps;
+  const webm = s.format === 'webm';
   const check = () => {
     if (opts.signal.aborted) throw new ExportCancelled();
   };
 
-  const videoCodec = (await canEncodeVideo('avc', { width: W, height: H }).catch(() => false))
-    ? 'avc'
-    : (await canEncodeVideo('vp9', { width: W, height: H }).catch(() => false)) ? 'vp9' : null;
-  if (!videoCodec) throw new Error(tr("This browser can't encode video. Try the latest Chrome, Edge or Safari."));
+  const can = (c: 'avc' | 'vp9' | 'vp8') => canEncodeVideo(c, { width: W, height: H }).catch(() => false);
+  const videoCodec = webm ? ((await can('vp9')) ? 'vp9' : (await can('vp8')) ? 'vp8' : null) : (await can('avc')) ? 'avc' : null;
+  if (!videoCodec) throw new Error(tr("This device can't encode video at this size. Choose a lower resolution or another format."));
 
   // ---- Audio: mix every audible clip with the Web Audio API, offline (faster than real time).
   opts.onProgress(0, 'Mixing audio');
   const mixed = await mixAudio(project, files, duration, opts.signal);
   check();
-  const audioCodec = mixed
-    ? (await canEncodeAudio('aac', { sampleRate: SAMPLE_RATE, numberOfChannels: 2 }).catch(() => false)) ? 'aac'
-      : (await canEncodeAudio('opus', { sampleRate: SAMPLE_RATE, numberOfChannels: 2 }).catch(() => false)) ? 'opus' : null
+  const canAudio = (c: AudioCodec) => canEncodeAudio(c, { sampleRate: SAMPLE_RATE, numberOfChannels: 2 }).catch(() => false);
+  const audioCodec: AudioCodec | null = mixed
+    ? webm ? ((await canAudio('opus')) ? 'opus' : null) : (await canAudio('aac')) ? 'aac' : (await canAudio('opus')) ? 'opus' : null
     : null;
 
   // ---- Output
@@ -55,10 +64,10 @@ export async function exportProject(project: Project, files: Map<string, File>, 
   canvas.height = H;
   const ctx = canvas.getContext('2d', { alpha: false })!;
   const target = new BufferTarget();
-  const output = new Output({ format: new Mp4OutputFormat({ fastStart: 'in-memory' }), target });
-  const videoSource = new CanvasSource(canvas, { codec: videoCodec, bitrate: opts.quality === '1080p' ? QUALITY_HIGH : QUALITY_MEDIUM, keyFrameInterval: 2 });
+  const output = new Output({ format: webm ? new WebMOutputFormat() : new Mp4OutputFormat({ fastStart: 'in-memory' }), target });
+  const videoSource = new CanvasSource(canvas, { codec: videoCodec, bitrate: videoBitrate(W, H, fps, s.quality), keyFrameInterval: 2 });
   output.addVideoTrack(videoSource, { frameRate: fps });
-  const audioSource = mixed && audioCodec ? new AudioBufferSource({ codec: audioCodec, bitrate: QUALITY_HIGH }) : null;
+  const audioSource = mixed && audioCodec ? new AudioBufferSource({ codec: audioCodec, bitrate: audioBitrate(s.quality, s.format) }) : null;
   if (audioSource) output.addAudioTrack(audioSource);
   await output.start();
 
@@ -157,7 +166,46 @@ export async function exportProject(project: Project, files: Map<string, File>, 
   }
   if (!target.buffer) throw new Error(tr("The export finished but produced no file."));
   opts.onProgress(1, 'Done');
-  return new Blob([target.buffer], { type: 'video/mp4' });
+  return new Blob([target.buffer], { type: webm ? 'video/webm' : 'video/mp4' });
+}
+
+/** Only the mixed sound, as MP3, M4A (AAC) or WAV. */
+async function exportAudioOnly(project: Project, files: Map<string, File>, duration: number, opts: ExportOptions): Promise<Blob> {
+  const s = opts.settings;
+  opts.onProgress(0, 'Mixing audio');
+  const mixed = await mixAudio(project, files, duration, opts.signal);
+  if (opts.signal.aborted) throw new ExportCancelled();
+  if (!mixed) throw new Error(tr("There's no sound in this project to export."));
+  let codec: AudioCodec = s.format === 'wav' ? 'pcm-s16' : s.format === 'mp3' ? 'mp3' : 'aac';
+  if (codec === 'mp3') await ensureMp3Encoder();
+  else if (codec === 'aac' && !(await canEncodeAudio('aac').catch(() => false))) throw new Error(tr("This browser can't encode AAC audio. Choose MP3 or WAV."));
+  const target = new BufferTarget();
+  const format = s.format === 'wav' ? new WavOutputFormat() : s.format === 'mp3' ? new Mp3OutputFormat() : new Mp4OutputFormat({ fastStart: 'in-memory' });
+  const output = new Output({ format, target });
+  const source = new AudioBufferSource({ codec, bitrate: audioBitrate(s.quality, s.format) });
+  output.addAudioTrack(source);
+  await output.start();
+  const abort = () => void output.cancel();
+  opts.signal.addEventListener('abort', abort);
+  try {
+    for (let t = 0; t < duration; t += 10) {
+      await source.add(sliceBuffer(mixed, t, Math.min(duration, t + 10)));
+      opts.onProgress(0.3 + 0.65 * Math.min(1, (t + 10) / duration), 'Encoding audio');
+      if (opts.signal.aborted) throw new ExportCancelled();
+    }
+    source.close();
+    await output.finalize();
+  } catch (e) {
+    if (opts.signal.aborted) throw new ExportCancelled();
+    await output.cancel().catch(() => undefined);
+    throw e;
+  } finally {
+    opts.signal.removeEventListener('abort', abort);
+  }
+  if (!target.buffer) throw new Error(tr("The export finished but produced no file."));
+  opts.onProgress(1, 'Done');
+
+  return new Blob([target.buffer], { type: s.format === 'wav' ? 'audio/wav' : s.format === 'mp3' ? 'audio/mpeg' : 'audio/mp4' });
 }
 
 async function renderVideoClip(

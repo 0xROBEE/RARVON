@@ -71,8 +71,8 @@ export function ChoiceButton({ title, detail, onClick, tone = 'default', disable
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d={icon} /></svg>
       </span>
       <span className="min-w-0">
-        <span className={clsx('block text-sm font-semibold', tone === 'danger' && 'text-warn')}>{title}</span>
-        {detail && <span className="mt-0.5 block text-xs text-ink-2">{detail}</span>}
+        <span className={clsx('block text-sm font-semibold', tone === 'danger' && 'text-warn')}>{tr(title)}</span>
+        {detail && <span className="mt-0.5 block text-xs text-ink-2">{tr(detail)}</span>}
       </span>
     </button>
   );
