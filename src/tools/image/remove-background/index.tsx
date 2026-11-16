@@ -12,6 +12,13 @@ import { drawOutlineBand, drawOutlineMask, hasClosedOutline, insertPoint, neares
 import OutlineLayer from './OutlineLayer';
 
 type Tool = 'select' | 'brush-add' | 'brush-erase' | 'outline';
+type Panel = 'auto' | 'select' | 'outline' | 'brush';
+const RAIL: { id: Panel; label: string; short: string; icon: string }[] = [
+  { id: 'auto', label: 'Automatic', short: 'Auto', icon: 'M12 3l1.9 4.6L18.5 9l-4.6 1.9L12 15.5l-1.9-4.6L5.5 9l4.6-1.4zM19 15l.8 2 2 .8-2 .8-.8 2-.8-2-2-.8 2-.8z' },
+  { id: 'select', label: 'Select by clicking', short: 'Click', icon: 'M5 3l14 8-6 2-2 6z' },
+  { id: 'outline', label: 'Manual outline', short: 'Outline', icon: 'M3 21l3-1 11-11-2-2L4 18zM14 6l2-2 4 4-2 2' },
+  { id: 'brush', label: 'Fix by hand', short: 'Brush', icon: 'M18 3l3 3-9 9-3-3zM9 12l-4 4a2.5 2.5 0 103 3l4-4' },
+];
 interface Point { x: number; y: number; positive: boolean }
 interface Stroke { erase: boolean; size: number; pts: [number, number][] }
 interface Snapshot {
@@ -49,6 +56,8 @@ export default function RemoveBackground() {
   const future = useRef<Snapshot[]>([]);
   const [hist, setHist] = useState({ undo: 0, redo: 0 });
   const [tool, setTool] = useState<Tool>('select');
+  // Layout A: the icon column picks which tool's options the panel shows.
+  const [panel, setPanel] = useState<Panel>('auto');
   const [selectAdd, setSelectAdd] = useState(true);
   const [brush, setBrush] = useState(30);
   const [softness, setSoftness] = useState(1);
@@ -78,6 +87,7 @@ export default function RemoveBackground() {
   const maskRef = useRef<HTMLCanvasElement | null>(null);
   const workImgRef = useRef<HTMLCanvasElement | null>(null);
   const drawing = useRef<Stroke | null>(null);
+  const toolRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     void detectHqSupport().then(setHqSupported);
@@ -122,6 +132,8 @@ export default function RemoveBackground() {
       setResult(null);
       setShowBefore(false);
       setZoom(1);
+      // Bring the whole work area (tools, picture, output) onto the screen.
+      requestAnimationFrame(() => toolRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }));
     } catch {
       setError(tr("“{0}” couldn't be opened as a picture.", { 0: f.name }));
     }
@@ -305,6 +317,18 @@ export default function RemoveBackground() {
   }, [snap, work, renderMaskTo]);
 
   const editingOutline = tool === 'outline' && !snap.outlineCut;
+
+  const choosePanel = (p: Panel) => {
+    setPanel(p);
+    if (p === 'outline') {
+      setTool('outline');
+      if (snapRef.current.outlineCut) {
+        liveSet({ ...snapRef.current, outlineCut: false });
+        endLive();
+      }
+    } else if (p === 'brush') setTool((t) => (t === 'brush-erase' ? t : 'brush-add'));
+    else setTool('select');
+  };
 
   const draw = useCallback(() => {
     const view = viewRef.current;
@@ -660,133 +684,148 @@ export default function RemoveBackground() {
   const brushCursor = (tool === 'brush-add' || tool === 'brush-erase') && cursor && !showBefore ? brush : null;
 
   return (
-    <div className="space-y-4" data-testid="bg-remover">
+    <div ref={toolRef} className="scroll-mt-20 space-y-4" data-testid="bg-remover">
       <div className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-line bg-paper-dim px-3 py-2 text-sm">
         <span className="truncate">{file.name} · {img.width}×{img.height} · {formatBytes(file.size)}</span>
         <button onClick={reset} className="text-xs font-medium text-workshop hover:underline">{tr("Remove")}</button>
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-[190px_minmax(0,1fr)_230px]">
-        {/* Tools */}
-        <div className="grid content-start gap-3 sm:grid-cols-2 lg:grid-cols-1" role="toolbar" aria-label={tr("Cut-out tools")}>
-          <Section title={tr("Automatic")}>
+      <div className="grid gap-3 lg:grid-cols-[52px_230px_minmax(0,1fr)_230px] lg:gap-4">
+        {/* Tool icons (a row on phones, a column on wide screens) */}
+        <div className="flex gap-1.5 lg:flex-col" role="tablist" aria-label={tr("Cut-out tools")}>
+          {RAIL.map((r) => (
             <button
-              onClick={() => void autoQuick()}
-              disabled={pending}
-              className="w-full rounded-md bg-workshop px-3 py-2 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-50"
+              key={r.id}
+              role="tab"
+              aria-selected={panel === r.id}
+              aria-label={tr(r.label)}
+              title={tr(r.label)}
+              onClick={() => choosePanel(r.id)}
+              data-testid={`rail-${r.id}`}
+              className={clsx(
+                'group relative flex h-12 flex-1 flex-col items-center justify-center gap-0.5 rounded-xl border transition-all lg:h-[52px] lg:w-[52px] lg:flex-none',
+                panel === r.id ? 'border-workshop bg-workshop-dim text-workshop shadow-[0_0_0_3px_color-mix(in_srgb,var(--color-workshop)_15%,transparent)]' : 'border-line bg-elevated text-ink-2 hover:border-ink hover:text-ink',
+              )}
             >
-              {tr("Remove background")}
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d={r.icon} /></svg>
+              <span className="text-[9px] font-semibold leading-none">{tr(r.short)}</span>
             </button>
-            <button
-              onClick={() => void autoHq()}
-              disabled={pending || hqSupported === false}
-              className="w-full rounded-md border border-line px-3 py-1.5 text-xs font-medium hover:border-ink disabled:cursor-not-allowed disabled:opacity-50"
-              title={hqSupported === false ? tr("Needs a graphics card with WebGPU half-precision support") : undefined}
-            >
-              {tr("High quality (hair, fine edges)")}
-            </button>
-            <p className="text-[11px] leading-snug text-ink-3">
-              {hqSupported === false
-                ? tr("High quality needs a newer graphics card and browser (WebGPU). Use the brush to fine-tune edges instead.")
-                : sizes && sizes.hq > 0
-                  ? tr("High quality downloads {0} once.", { 0: formatBytes(sizes.hq) })
-                  : tr("Best for hair, fur and detailed edges.")}
-            </p>
-          </Section>
+          ))}
+        </div>
 
-          <Section title={tr("Select by clicking")}>
-            <ToolButton active={tool === 'select'} onClick={() => setTool('select')} icon="M5 3l14 8-6 2-2 6z">{tr("Click the object")}</ToolButton>
-            {tool === 'select' && (
-              <div className="grid grid-cols-2 gap-1">
-                <Seg active={selectAdd} onClick={() => setSelectAdd(true)}>{tr("+ Add")}</Seg>
-                <Seg active={!selectAdd} onClick={() => setSelectAdd(false)}>{tr("− Remove")}</Seg>
-              </div>
-            )}
-            {snap.points.length > 0 && (
-              <button onClick={() => commit({ ...snap, points: [], base: null })} className="text-start text-[11px] text-ink-3 hover:text-ink">{tr("Clear clicks")}</button>
-            )}
-          </Section>
-
-          <Section title={tr('Manual outline')}>
-            <ToolButton active={tool === 'outline'} onClick={() => { setTool('outline'); if (snap.outlineCut) liveSet({ ...snapRef.current, outlineCut: false }); endLive(); }} icon="M3 21l3-1 11-11-2-2L4 18zM14 6l2-2 4 4-2 2">{tr('Draw an outline')}</ToolButton>
-            {tool === 'outline' && (
-              <div className="grid gap-2 outline-panel-in">
-                <div className="grid grid-cols-2 gap-1">
-                  <Seg active={outlineMode === 'pen'} onClick={() => setOutlineMode('pen')}>{tr('Pen')}</Seg>
-                  <Seg active={outlineMode === 'lasso'} onClick={() => setOutlineMode('lasso')}>{tr('Lasso')}</Seg>
-                </div>
-                <button
-                  onClick={outlineFromSelection}
-                  disabled={pending || (!snap.base && !snap.strokes.length)}
-                  className="w-full rounded-md border border-workshop/50 bg-workshop-dim px-2.5 py-1.5 text-xs font-semibold text-workshop hover:opacity-90 disabled:opacity-40"
-                  data-testid="outline-from-selection"
+        {/* Options of the chosen tool; Edges pinned at the bottom */}
+        <div className="flex min-h-0 flex-col rounded-xl border border-line bg-elevated lg:h-[max(420px,calc(100vh-12rem))]" data-testid="tool-panel">
+          <div key={panel} className="tool-panel-in grid min-h-0 flex-1 content-start gap-2.5 overflow-y-auto p-3">
+            {panel === 'auto' && (
+              <>
+                <PanelTitle>{tr("Automatic")}</PanelTitle>
+                <ActionButton variant="primary" onClick={() => void autoQuick()} disabled={pending} icon="M12 3l1.9 4.6L18.5 9l-4.6 1.9L12 15.5l-1.9-4.6L5.5 9l4.6-1.4z">{tr("Remove background")}</ActionButton>
+                <ActionButton
+                  onClick={() => void autoHq()}
+                  disabled={pending || hqSupported === false}
+                  title={hqSupported === false ? tr("Needs a graphics card with WebGPU half-precision support") : undefined}
+                  icon="M4 17l5-5 4 4 7-8M15 8h5v5"
                 >
+                  {tr("High quality (hair, fine edges)")}
+                </ActionButton>
+                <p className="text-[11px] leading-snug text-ink-3">
+                  {hqSupported === false
+                    ? tr("High quality needs a newer graphics card and browser (WebGPU). Use the brush to fine-tune edges instead.")
+                    : sizes && sizes.hq > 0
+                      ? tr("High quality downloads {0} once.", { 0: formatBytes(sizes.hq) })
+                      : tr("Best for hair, fur and detailed edges.")}
+                </p>
+              </>
+            )}
+
+            {panel === 'select' && (
+              <>
+                <PanelTitle>{tr("Select by clicking")}</PanelTitle>
+                <div className="grid grid-cols-2 gap-1.5">
+                  <ActionButton active={selectAdd} onClick={() => setSelectAdd(true)} icon="M12 5v14M5 12h14">{tr("+ Add")}</ActionButton>
+                  <ActionButton active={!selectAdd} onClick={() => setSelectAdd(false)} icon="M5 12h14">{tr("− Remove")}</ActionButton>
+                </div>
+                <ActionButton variant="danger" onClick={() => commit({ ...snap, points: [], base: null })} disabled={!snap.points.length} icon="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13">{tr("Clear clicks")}</ActionButton>
+                <p className="text-[11px] leading-snug text-ink-3">{tr("Click the object to keep it. Click more parts to add them. Right-click (or choose “− Remove”) to take parts away.")}</p>
+              </>
+            )}
+
+            {panel === 'outline' && (
+              <>
+                <PanelTitle>{tr('Manual outline')}</PanelTitle>
+                <div className="grid grid-cols-2 gap-1.5">
+                  <ActionButton active={outlineMode === 'pen'} onClick={() => setOutlineMode('pen')} icon="M3 21l3-1 11-11-2-2L4 18zM14 6l2-2 4 4-2 2">{tr('Pen')}</ActionButton>
+                  <ActionButton active={outlineMode === 'lasso'} onClick={() => setOutlineMode('lasso')} icon="M12 4c5 0 8 2.5 8 5.5S16.5 15 12 15c-3 0-5-1-5.5-2.5M7 17a2 2 0 100-4 2 2 0 000 4zM7 17c0 2 1 3 3 4">{tr('Lasso')}</ActionButton>
+                </div>
+                <ActionButton variant="primary" onClick={outlineFromSelection} disabled={pending || (!snap.base && !snap.strokes.length)} icon="M4 4h6v6H4zM14 14h6v6h-6zM10 7h4a3 3 0 013 3v4" testId="outline-from-selection">
                   {tr('Outline from selection')}
-                </button>
-                <label className="flex cursor-pointer items-center gap-2 text-xs text-ink-2">
-                  <input type="checkbox" checked={nextHole} onChange={(e) => setNextHole(e.target.checked)} className="accent-[var(--color-workshop)]" />
-                  {tr('Next shape is a hole')}
-                </label>
-                {openOutline && openOutline.points.length >= 3 && (
-                  <button onClick={() => { commit(withOutline(snapRef.current, { ...openOutline, closed: true })); setSelPt(null); }} className="text-start text-xs font-medium text-workshop hover:underline">{tr('Close the shape')}</button>
-                )}
-                {selPt && (
-                  <button onClick={deleteSelectedPoint} className="text-start text-xs text-ink-3 hover:text-warn">{tr('Delete selected point')}</button>
-                )}
-                {snap.outlines.length > 0 && (
-                  <button onClick={() => { commit({ ...snapRef.current, outlines: [], outlineCut: false }); setSelPt(null); }} className="text-start text-xs text-ink-3 hover:text-warn">{tr('Clear outline')}</button>
-                )}
+                </ActionButton>
+                <div className="grid grid-cols-2 gap-1.5">
+                  <ActionButton
+                    onClick={() => { if (openOutline) { commit(withOutline(snapRef.current, { ...openOutline, closed: true })); setSelPt(null); } }}
+                    disabled={!openOutline || openOutline.points.length < 3}
+                    icon="M5 12l5 5L20 7"
+                  >
+                    {tr('Close the shape')}
+                  </ActionButton>
+                  <ActionButton active={nextHole} onClick={() => setNextHole((v) => !v)} icon="M12 3a9 9 0 100 18 9 9 0 000-18zM12 9a3 3 0 100 6 3 3 0 000-6z">{tr('Add a hole')}</ActionButton>
+                  <ActionButton variant="danger" onClick={deleteSelectedPoint} disabled={!selPt} icon="M6 6l12 12M18 6L6 18">{tr('Delete point')}</ActionButton>
+                  <ActionButton variant="danger" onClick={() => { commit({ ...snapRef.current, outlines: [], outlineCut: false }); setSelPt(null); }} disabled={!snap.outlines.length} icon="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13">{tr('Clear outline')}</ActionButton>
+                </div>
                 <p className="text-[11px] leading-snug text-ink-3">
                   {outlineMode === 'pen'
                     ? tr('Click to place points around the object; drag while clicking to curve. Click the first point to close. Click a line to add a point, drag points to reshape, double-click a point to curve it, Delete removes it.')
                     : tr('Drag around the object to draw its shape freely. Then drag points to fix it.')}
                 </p>
-              </div>
+                {hasClosedOutline(snap.outlines) && (
+                  <div className="grid gap-2.5 rounded-lg border border-workshop/30 bg-workshop-dim/40 p-2.5">
+                    <PanelTitle>{tr('Refine edges')}</PanelTitle>
+                    <Range label={tr('Smooth')} value={refine.smooth} min={0} max={1} step={0.05} onChange={(v) => setRefine((r) => ({ ...r, smooth: v }))} format={(v) => `${Math.round(v * 100)}%`} />
+                    <Range label={tr('Move edge')} value={refine.offset} min={-10} max={10} step={0.5} onChange={(v) => setRefine((r) => ({ ...r, offset: v }))} format={(v) => (v > 0 ? `+${v}px` : `${v}px`)} />
+                    <label className={clsx('flex items-center gap-2 text-xs', snap.base ? 'cursor-pointer text-ink-2' : 'text-ink-3')}>
+                      <input type="checkbox" checked={refine.hair && Boolean(snap.base)} disabled={!snap.base} onChange={(e) => setRefine((r) => ({ ...r, hair: e.target.checked }))} className="accent-[var(--color-workshop)]" />
+                      {tr('Refine hair and fine edges')}
+                    </label>
+                    {refine.hair && snap.base && (
+                      <Range label={tr('Edge band')} value={refine.hairWidth} min={4} max={60} step={1} onChange={(v) => setRefine((r) => ({ ...r, hairWidth: v }))} format={(v) => `${v}px`} />
+                    )}
+                    {!snap.base && <p className="text-[11px] text-ink-3">{tr('Hair refinement uses the AI selection. Run “Remove background” or click the object first.')}</p>}
+                    {editingOutline ? (
+                      <ActionButton variant="primary" onClick={() => { commit({ ...snapRef.current, outlineCut: true }); setSelPt(null); }} icon="M6 6l12 12M9 6a3 3 0 11-6 0 3 3 0 016 0zM9 18a3 3 0 11-6 0 3 3 0 016 0zM20 4L8.5 15.5" testId="outline-cut">{tr('Cut out')}</ActionButton>
+                    ) : (
+                      <ActionButton onClick={() => { liveSet({ ...snapRef.current, outlineCut: false }); endLive(); }} icon="M3 21l3-1 11-11-2-2L4 18z">{tr('Edit outline')}</ActionButton>
+                    )}
+                  </div>
+                )}
+              </>
             )}
-          </Section>
 
-          {hasClosedOutline(snap.outlines) && (
-            <Section title={tr('Refine edges')}>
-              <Range label={tr('Smooth')} value={refine.smooth} min={0} max={1} step={0.05} onChange={(v) => setRefine((r) => ({ ...r, smooth: v }))} format={(v) => `${Math.round(v * 100)}%`} />
-              <Range label={tr('Move edge')} value={refine.offset} min={-10} max={10} step={0.5} onChange={(v) => setRefine((r) => ({ ...r, offset: v }))} format={(v) => (v > 0 ? `+${v}px` : `${v}px`)} />
-              <label className={clsx('flex items-center gap-2 text-xs', snap.base ? 'cursor-pointer text-ink-2' : 'text-ink-3')}>
-                <input type="checkbox" checked={refine.hair && Boolean(snap.base)} disabled={!snap.base} onChange={(e) => setRefine((r) => ({ ...r, hair: e.target.checked }))} className="accent-[var(--color-workshop)]" />
-                {tr('Refine hair and fine edges')}
-              </label>
-              {refine.hair && snap.base && (
-                <Range label={tr('Edge band')} value={refine.hairWidth} min={4} max={60} step={1} onChange={(v) => setRefine((r) => ({ ...r, hairWidth: v }))} format={(v) => `${v}px`} />
-              )}
-              {!snap.base && <p className="text-[11px] text-ink-3">{tr('Hair refinement uses the AI selection. Run “Remove background” or click the object first.')}</p>}
-              {editingOutline ? (
-                <button onClick={() => { commit({ ...snapRef.current, outlineCut: true }); setSelPt(null); }} className="w-full rounded-md bg-workshop px-3 py-2 text-sm font-semibold text-white hover:opacity-90" data-testid="outline-cut">
-                  {tr('Cut out')}
-                </button>
-              ) : (
-                <button onClick={() => { setTool('outline'); liveSet({ ...snapRef.current, outlineCut: false }); endLive(); }} className="w-full rounded-md border border-line px-3 py-2 text-sm font-medium hover:border-ink">
-                  {tr('Edit outline')}
-                </button>
-              )}
-            </Section>
-          )}
+            {panel === 'brush' && (
+              <>
+                <PanelTitle>{tr("Fix by hand")}</PanelTitle>
+                <div className="grid grid-cols-2 gap-1.5">
+                  <ActionButton active={tool === 'brush-add'} onClick={() => setTool('brush-add')} icon="M12 5v14M5 12h14">{tr("Brush: keep")}</ActionButton>
+                  <ActionButton active={tool === 'brush-erase'} onClick={() => setTool('brush-erase')} icon="M5 12h14">{tr("Brush: erase")}</ActionButton>
+                </div>
+                <Range label={tr("Brush size")} value={brush} min={4} max={150} onChange={setBrush} format={(v) => `${v}px`} />
+                <p className="text-[11px] leading-snug text-ink-3">{tr("Paint over the picture to keep or erase parts. Zoom in for small details.")}</p>
+              </>
+            )}
+          </div>
 
-          <Section title={tr("Fix by hand")}>
-            <ToolButton active={tool === 'brush-add'} onClick={() => setTool('brush-add')} icon="M12 5v14M5 12h14">{tr("Brush: keep")}</ToolButton>
-            <ToolButton active={tool === 'brush-erase'} onClick={() => setTool('brush-erase')} icon="M5 12h14">{tr("Brush: erase")}</ToolButton>
-            <Range label={tr("Brush size")} value={brush} min={4} max={150} onChange={setBrush} format={(v) => `${v}px`} />
-          </Section>
-
-          <Section title={tr("Edges")}>
-            <Range label={tr("Softness")} value={softness} min={0} max={10} step={0.5} onChange={setSoftness} format={(v) => (v === 0 ? 'Sharp' : `${v}`)} />
-          </Section>
+          {/* Always visible */}
+          <div className="border-t border-line p-3">
+            <Range label={tr("Edge softness")} value={softness} min={0} max={10} step={0.5} onChange={setSoftness} format={(v) => (v === 0 ? tr('Sharp') : `${v}`)} />
+          </div>
         </div>
 
         {/* Canvas */}
         <div className="order-first min-w-0 lg:order-none">
           <div
-            className="relative grid max-h-[70vh] min-h-[320px] place-items-center overflow-auto rounded-xl border border-line"
+            className="relative grid max-h-[max(420px,calc(100vh-12rem))] min-h-[320px] place-items-center overflow-auto rounded-xl border border-line"
             style={{ background: 'repeating-conic-gradient(var(--color-paper-dim) 0% 25%, var(--color-elevated) 0% 50%) 50% / 20px 20px' }}
           >
-            <div className="relative" style={{ width: `calc(${zoom} * min(100%, calc((70vh - 2px) * ${viewSize.w / viewSize.h})))`, maxWidth: zoom === 1 ? `${viewSize.w}px` : undefined }}>
+            <div className="relative" style={{ width: `calc(${zoom} * min(100%, calc((max(420px, 100vh - 12rem) - 2px) * ${viewSize.w / viewSize.h})))`, maxWidth: zoom === 1 ? `${viewSize.w}px` : undefined }}>
               <canvas
                 ref={viewRef}
                 width={viewSize.w}
@@ -975,33 +1014,40 @@ function maskBounds(mask: HTMLCanvasElement) {
   return x2 < 0 ? null : { x: x1, y: y1, w: x2 - x1 + 1, h: y2 - y1 + 1 };
 }
 
+function PanelTitle({ children }: { children: ReactNode }) {
+  return <p className="text-[11px] font-semibold uppercase tracking-wide text-ink-3">{children}</p>;
+}
+
+/** Every action in the tool panel is a real, bordered button with an icon. */
+function ActionButton({ children, onClick, icon, active, disabled, variant = 'default', title, testId }: {
+  children: ReactNode; onClick: () => void; icon: string; active?: boolean; disabled?: boolean; variant?: 'default' | 'primary' | 'danger'; title?: string; testId?: string;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      disabled={disabled}
+      title={title}
+      aria-pressed={active}
+      data-testid={testId}
+      className={clsx(
+        'flex min-h-9 w-full items-center justify-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-center text-xs font-semibold leading-tight transition-all active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-40',
+        variant === 'primary' && 'border-workshop bg-workshop text-white hover:opacity-90',
+        variant === 'danger' && 'border-warn/40 bg-warn-dim text-warn hover:border-warn',
+        variant === 'default' && (active ? 'border-workshop bg-workshop-dim text-workshop' : 'border-line bg-paper text-ink hover:border-ink'),
+      )}
+    >
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" className="shrink-0"><path d={icon} /></svg>
+      <span>{children}</span>
+    </button>
+  );
+}
+
 function Section({ title, children }: { title: string; children: ReactNode }) {
   return (
     <div className="grid gap-2 rounded-xl border border-line bg-elevated p-3">
       <p className="text-xs font-semibold text-ink-2">{title}</p>
       {children}
     </div>
-  );
-}
-
-function ToolButton({ active, onClick, icon, children }: { active: boolean; onClick: () => void; icon: string; children: ReactNode }) {
-  return (
-    <button
-      onClick={onClick}
-      aria-pressed={active}
-      className={clsx('flex w-full items-center gap-2 rounded-md border px-2.5 py-1.5 text-sm', active ? 'border-workshop bg-workshop-dim text-workshop' : 'border-line hover:border-ink')}
-    >
-      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d={icon} /></svg>
-      {children}
-    </button>
-  );
-}
-
-function Seg({ active, onClick, children }: { active: boolean; onClick: () => void; children: ReactNode }) {
-  return (
-    <button onClick={onClick} aria-pressed={active} className={clsx('rounded-md border px-2 py-1 text-xs font-medium', active ? 'border-workshop bg-workshop-dim text-workshop' : 'border-line hover:border-ink')}>
-      {children}
-    </button>
   );
 }
 

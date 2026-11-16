@@ -93,12 +93,15 @@ test('one click on an object selects the whole object, and the brush and undo fi
   expect(await alphaAt(page, 100, 100), 'sky removed').toBe(0);
 
   // Erase a stripe with the brush, then undo it.
+  await page.getByTestId('rail-brush').click();
   await page.getByRole('button', { name: 'Brush: erase' }).click();
+  // Measure again: the page scrolls the tool into view after the picture loads.
+  const now = (await canvas.boundingBox())!;
   const a = at(480, 620);
   const b = at(720, 620);
-  await page.mouse.move(box.x + a.x, box.y + a.y);
+  await page.mouse.move(now.x + a.x, now.y + a.y);
   await page.mouse.down();
-  await page.mouse.move(box.x + b.x, box.y + b.y, { steps: 8 });
+  await page.mouse.move(now.x + b.x, now.y + b.y, { steps: 8 });
   await page.mouse.up();
   expect(await alphaAt(page, 600, 620)).toBe(0);
   await page.getByRole('button', { name: 'Undo' }).click();
@@ -109,7 +112,7 @@ test('manual outline: draw with the Pen, reshape a point, and cut out exactly al
   await page.goto('/tools/image/remove-background');
   await page.locator('input[type=file]').first().setInputFiles(await bottlePicture(page));
   const canvas = page.getByTestId('bg-canvas');
-  await page.getByRole('button', { name: 'Draw an outline' }).click();
+  await page.getByTestId('rail-outline').click();
   const box = (await canvas.boundingBox())!;
   const at = (x: number, y: number) => ({ x: box.x + (x / 1200) * box.width, y: box.y + (y / 900) * box.height });
 
@@ -152,7 +155,7 @@ test('outline from the AI selection becomes editable points', async ({ page }) =
   await page.locator('input[type=file]').first().setInputFiles(await bottlePicture(page));
   await page.getByRole('button', { name: 'Remove background' }).click();
   await waitIdle(page);
-  await page.getByRole('button', { name: 'Draw an outline' }).click();
+  await page.getByTestId('rail-outline').click();
   await page.getByTestId('outline-from-selection').click();
   const points = page.getByTestId('outline-layer').locator('circle[data-point]');
   expect(await points.count()).toBeGreaterThan(5);
