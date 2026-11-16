@@ -248,14 +248,14 @@ test.describe('audio tools', () => {
   test('extract copies the soundtrack out of a video without re-encoding', async ({ page }) => {
     const cases = [['webm', 'ogg'], ['mp4', 'm4a']] as const;
     for (const [container, ext] of cases) {
-      const clip = container === 'mp4' ? await makeMp4(page, 2) : await makeWebm(page, 2);
+      const clip = container === 'mp4' ? await makeMp4(page, 3) : await makeWebm(page, 3);
       await openTool(page, '/tools/audio/extract');
       await upload(page, clip);
       await page.getByRole('button', { name: 'Extract audio' }).click();
       await expect(page.getByText('Copied without re-encoding')).toBeVisible();
       const out = await download(page);
       expect(out.name.endsWith(`.${ext}`)).toBe(true);
-      expect((await mediaInfo(page, out.buffer, ext === 'ogg' ? 'audio/ogg' : 'audio/mp4')).duration).toBeGreaterThan(1.5);
+      expect((await mediaInfo(page, out.buffer, ext === 'ogg' ? 'audio/ogg' : 'audio/mp4')).duration).toBeGreaterThan(2.2);
     }
   });
 });

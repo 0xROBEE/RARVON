@@ -33,6 +33,7 @@ export default function RemoveBackground() {
   const [snap, setSnap] = useState<Snapshot>({ base: null, points: [], strokes: [] });
   const past = useRef<Snapshot[]>([]);
   const future = useRef<Snapshot[]>([]);
+  const [hist, setHist] = useState({ undo: 0, redo: 0 });
   const [tool, setTool] = useState<Tool>('select');
   const [selectAdd, setSelectAdd] = useState(true);
   const [brush, setBrush] = useState(30);
@@ -91,6 +92,7 @@ export default function RemoveBackground() {
       imageSent.current = false;
       past.current = [];
       future.current = [];
+      setHist({ undo: 0, redo: 0 });
       setSnap({ base: null, points: [], strokes: [] });
       setImg(bmp);
       setWork({ w, h });
@@ -113,12 +115,15 @@ export default function RemoveBackground() {
   };
 
   // ---- History
+  const snapRef = useRef(snap);
+  snapRef.current = snap;
+  const syncHist = () => setHist({ undo: past.current.length, redo: future.current.length });
   const commit = useCallback((next: Snapshot) => {
-    setSnap((cur) => {
-      past.current = [...past.current.slice(-50), cur];
-      future.current = [];
-      return next;
-    });
+    past.current = [...past.current.slice(-50), snapRef.current];
+    future.current = [];
+    snapRef.current = next;
+    setSnap(next);
+    setHist({ undo: past.current.length, redo: 0 });
     setResult(null);
   }, []);
   const undo = () => {
@@ -126,6 +131,7 @@ export default function RemoveBackground() {
     if (!prev) return;
     future.current.push(snap);
     setSnap(prev);
+    syncHist();
     setResult(null);
   };
   const redo = () => {
@@ -133,6 +139,7 @@ export default function RemoveBackground() {
     if (!next) return;
     past.current.push(snap);
     setSnap(next);
+    syncHist();
     setResult(null);
   };
 
@@ -460,8 +467,8 @@ export default function RemoveBackground() {
 
           {/* Bottom bar */}
           <div className="mt-2 flex flex-wrap items-center gap-2">
-            <IconBtn label="Undo" onClick={undo} disabled={!past.current.length || pending} icon="M9 14L4 9l5-5M4 9h11a5 5 0 010 10h-3" />
-            <IconBtn label="Redo" onClick={redo} disabled={!future.current.length || pending} icon="M15 14l5-5-5-5M20 9H9a5 5 0 000 10h3" />
+            <IconBtn label="Undo" onClick={undo} disabled={!hist.undo || pending} icon="M9 14L4 9l5-5M4 9h11a5 5 0 010 10h-3" />
+            <IconBtn label="Redo" onClick={redo} disabled={!hist.redo || pending} icon="M15 14l5-5-5-5M20 9H9a5 5 0 000 10h3" />
             <button
               onClick={() => setShowBefore((v) => !v)}
               aria-pressed={showBefore}

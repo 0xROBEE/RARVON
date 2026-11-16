@@ -132,6 +132,9 @@ export async function makeWebm(page: Page, seconds = 3) {
     const dst = ac.createMediaStreamDestination();
     osc.connect(dst);
     osc.start();
+    // Under load the audio clock can start late; record only once sound is flowing.
+    await ac.resume();
+    while (ac.state !== 'running' || ac.currentTime === 0) await new Promise((r) => setTimeout(r, 20));
     const stream = c.captureStream(30);
     dst.stream.getAudioTracks().forEach((t) => stream.addTrack(t));
     const candidates = ['video/webm;codecs=vp9,opus', 'video/webm;codecs=vp8,opus', 'video/webm'];

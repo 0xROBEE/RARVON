@@ -26,7 +26,7 @@ export function useEditor(projectId: string) {
   const [importErrors, setImportErrors] = useState<string[]>([]);
   const past = useRef<Timeline[]>([]);
   const future = useRef<Timeline[]>([]);
-  const [, bump] = useState(0);
+  const [hist, setHist] = useState({ undo: 0, redo: 0 });
   const folder = useRef<FileSystemDirectoryHandle | null>(null);
   const projectRef = useRef<Project | null>(null);
   projectRef.current = project;
@@ -139,7 +139,7 @@ export function useEditor(projectId: string) {
       }
     }
     update((p) => ({ ...p, timeline: tl }));
-    bump((n) => n + 1);
+    setHist({ undo: past.current.length, redo: future.current.length });
   }, [update]);
 
   const undo = useCallback(() => {
@@ -148,7 +148,7 @@ export function useEditor(projectId: string) {
     if (!cur || !prev) return;
     future.current.push(cur.timeline);
     update((p) => ({ ...p, timeline: prev }));
-    bump((n) => n + 1);
+    setHist({ undo: past.current.length, redo: future.current.length });
   }, [update]);
 
   const redo = useCallback(() => {
@@ -157,7 +157,7 @@ export function useEditor(projectId: string) {
     if (!cur || !next) return;
     past.current.push(cur.timeline);
     update((p) => ({ ...p, timeline: next }));
-    bump((n) => n + 1);
+    setHist({ undo: past.current.length, redo: future.current.length });
   }, [update]);
 
   // ---- Media import
@@ -230,7 +230,7 @@ export function useEditor(projectId: string) {
 
   return {
     project, files, urls, loadError, saveStatus, folderStatus, dirty, importing, importErrors,
-    canUndo: past.current.length > 0, canRedo: future.current.length > 0,
+    canUndo: hist.undo > 0, canRedo: hist.redo > 0,
     update, setTimeline, undo, redo, importFiles, removeMedia, connectFolder, flush,
     setImportErrors,
     /** The latest project, including edits made earlier in the same event. */
