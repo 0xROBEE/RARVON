@@ -239,7 +239,7 @@ export const tools: ToolMeta[] = [
     faq: [
       { q: 'Is my picture uploaded?', a: 'No. The AI models run in your browser. The first time you use the tool, Bench downloads its model files from this site once and keeps them for offline use.' },
       { q: 'What is “High quality”?', a: 'A larger model that handles hair, fur and fine edges better. It downloads once (about 110 MB) and needs a browser and graphics card with WebGPU half-precision support, such as a recent Chrome or Edge on most computers. Where it isn’t available, the regular mode and the brush still work.' },
-      { q: 'Which AI models does it use?', a: 'SlimSAM (a compact Segment Anything model, Apache-2.0) for automatic and click-to-select cut-outs, and BiRefNet lite (MIT) for high quality. Both are listed on the open-source licenses page.' },
+      { q: 'Which AI models does it use?', a: 'SlimSAM (a compact Segment Anything model, Apache-2.0) for automatic and click-to-select cut-outs, and BiRefNet lite (MIT) for high quality. Both are listed under Credits and licenses at the bottom of every page.' },
     ],
   },
   {

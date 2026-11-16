@@ -258,6 +258,7 @@ export const arUi: Record<string, string> = {
   "Create PDF": "أنشئ PDF",
   "Create ZIP": "أنشئ ملف ZIP",
   "Create project": "أنشئ المشروع",
+  "Credits and licenses": "الشكر والتراخيص",
   "Crop": "قصّ",
   "Crop to fill": "قصّ للملء",
   "Crop to the object": "قصّ حول العنصر",

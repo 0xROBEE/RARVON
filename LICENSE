@@ -1,21 +1,37 @@
-MIT License
+Bench
+Copyright (c) 2026 ROBEE (https://github.com/ROBEE404). All rights reserved.
 
-Copyright (c) 2026 Bench contributors
+This repository is public so that people can see how Bench works and report
+bugs or ask for new tools. That does not make it open source.
 
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
+WHAT YOU MAY DO
 
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
+  - Use the Bench website and its tools, for free, for any purpose.
+  - Read the source code in this repository.
+  - Open issues to report bugs, security problems or ideas for new tools.
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
+WHAT YOU MAY NOT DO WITHOUT WRITTEN PERMISSION FROM THE COPYRIGHT HOLDER
+
+  - Copy, modify, or create works based on this code or its design.
+  - Publish, host, distribute, sell or sublicense this code, in whole or in
+    part, including as your own website or app.
+  - Use this code to train or build another product.
+
+Viewing and forking this repository on GitHub is allowed only to the extent
+GitHub's Terms of Service require; it gives no other rights.
+
+Changes to Bench are made only by the copyright holder. Pull requests are not
+accepted; please open an issue instead.
+
+THIRD-PARTY SOFTWARE
+
+Bench includes open-source software by other people. Those parts remain under
+their own licenses, listed in THIRD_PARTY_LICENSES.md and shipped with the
+site at /licenses/third-party.txt. Nothing in this notice limits the rights
+those licenses give you for those parts.
+
+NO WARRANTY
+
+Bench is provided "as is", without warranty of any kind, express or implied.
+The copyright holder is not liable for any claim, damages or other liability
+arising from the use of Bench.

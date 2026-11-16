@@ -1,8 +1,20 @@
-# Contributing
+# Bugs, ideas and changes
 
-Thanks for considering contributing.
+Bench is free to use, but it is not open source: all rights are reserved (see [LICENSE](LICENSE)), and changes are
+made only by its maintainer, ROBEE. Pull requests are not accepted.
 
-## Adding a tool
+You can still help a lot:
+
+- **Report a bug:** open an issue with what you did, what you expected, and what happened (browser and device
+  help too).
+- **Ask for a tool:** open an issue describing the job you want to do and the files involved.
+- **Security problems:** see [SECURITY.md](SECURITY.md).
+
+---
+
+## Maintainer notes
+
+### Adding a tool
 
 1. Create `src/tools/<category>/<slug>/index.tsx` with a default-exported component.
 2. Add its metadata (name, description, keywords, **actions**, status) to `src/lib/toolRegistry.ts`.
@@ -15,16 +27,14 @@ Thanks for considering contributing.
 4. If it's genuinely impossible to run client-side, set `status: 'coming-soon'` and give a real,
    specific `comingSoonReason` — never a fake button or a silent upload.
 
-## Ground rules
+### Ground rules
 
 - **No uploads.** If a tool touches user files, it processes them in the browser. If that's not
   possible, it's Coming Soon, not faked.
 - **No dark patterns.** No donation nags, no fake urgency, no gating basic tools.
 - **Keep the homepage light.** Don't import a tool's processing library outside its own folder.
-- **Check licenses.** Any new dependency should be MIT/Apache-2.0/BSD-compatible with a future
-  commercial version.
-
-## Reporting bugs / suggesting tools
-
-Open an issue with steps to reproduce (for bugs) or a short description of the workflow you're
-missing (for tool suggestions).
+- **Check licenses.** Bench is closed source, so a new dependency must allow use in a closed product
+  (MIT, Apache-2.0, BSD, ISC, MPL-2.0 unmodified, or LGPL loaded as a separate replaceable file) and
+  must be added to the credits.
+- **Keep the Privacy page true.** If a change affects what Bench stores or loads, update `/privacy`
+  and its date in the same change.

@@ -101,8 +101,9 @@ up; connect it to a backend endpoint and the UI needs no changes.
 
 ## Support / donations
 
-Optional, never required. Configure links in `src/lib/supportConfig.ts` — if none are set, the support button
-and page hide themselves automatically. See `/support` for the philosophy in full.
+Optional, never required, and it never unlocks anything. Set `VITE_SUPPORT_KOFI_URL` (your Ko-fi page) and,
+optionally, `VITE_PROJECT_REPO_URL` (this repository, for "Report a bug" and "Ask for a tool") — see
+`.env.example`. Without a Ko-fi link the Support page shows a calm "coming soon" note instead of a button.
 
 ## Local development
 
@@ -146,8 +147,11 @@ npm run build      # runs tsc -b, then vite build
 npm run preview
 ```
 
-## Future paid / cloud tier
+## License
 
-Nothing in this repo depends on payments or a backend. If a paid tier is ever added (large-file cloud
-processing, batch jobs, API access), it should sit behind a `ToolProcessor` abstraction with `LocalProcessor`
-(what exists today) and an optional `CloudProcessor`, without changing how the free, local tools work.
+Bench is free to use, but it is **not open source**. Copyright (c) 2026 ROBEE — all rights reserved; see
+[LICENSE](LICENSE). The code is public so people can see how it works and report bugs or ask for tools in the
+issues; it may not be copied, modified or republished without permission, and pull requests are not accepted.
+
+Bench is built on open-source libraries, which keep their own licenses: see
+[THIRD_PARTY_LICENSES.md](THIRD_PARTY_LICENSES.md) (also shipped at `/licenses/third-party.txt`).
