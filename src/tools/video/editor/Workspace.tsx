@@ -15,6 +15,7 @@ import Preview from './Preview';
 import Timeline from './Timeline';
 import type { Selection } from './Timeline';
 import Inspector from './Inspector';
+import AudioTab from './AudioTab';
 import MediaBin from './MediaBin';
 import { ChoiceButton, ICONS, Modal } from './dialogs';
 import { handoff } from './openLock';
@@ -47,6 +48,9 @@ export default function Workspace() {
   const [selection, setSelection] = useState<Selection | null>(null);
   const [pps, setPps] = useState(40);
   const [exitOpen, setExitOpen] = useState(false);
+  // Bottom tabs (Edit / Audio); `tabDir` picks the slide direction of the animation.
+  const [tab, setTab] = useState<'edit' | 'audio'>('edit');
+  const [tabDir, setTabDir] = useState<'next' | 'prev'>('next');
   const [exportOpen, setExportOpen] = useState(false);
   const [busy, setBusy] = useState<string | null>(null);
   const [confirmDiscard, setConfirmDiscard] = useState(false);
@@ -147,7 +151,7 @@ export default function Workspace() {
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       const el = e.target as HTMLElement;
-      if (el.closest('input, textarea, select, [contenteditable=true]') || exitOpen || exportOpen) return;
+      if (el.closest('input, textarea, select, [contenteditable=true]') || exitOpen || exportOpen || tab !== 'edit') return;
       const mod = e.ctrlKey || e.metaKey;
       if (e.key === ' ') {
         e.preventDefault();
@@ -180,7 +184,7 @@ export default function Workspace() {
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [ed, split, del, selection, total, exitOpen, exportOpen]);
+  }, [ed, split, del, selection, total, exitOpen, exportOpen, tab]);
 
   // ---- Leaving
   const leave = useCallback(() => {
@@ -313,106 +317,144 @@ export default function Workspace() {
         </div>
       </header>
 
-      {/* Media | Preview | Settings */}
-      <div className="min-h-0 flex-1 max-lg:contents lg:grid lg:grid-cols-[260px_minmax(0,1fr)_300px]">
-        <aside className="order-3 min-h-0 border-line bg-elevated lg:order-none lg:border-e" aria-label={tr("Media")}>
-          <MediaBin
-            project={project}
-            importing={ed.importing}
-            errors={ed.importErrors}
-            onDismissErrors={() => ed.setImportErrors([])}
-            onImport={(f) => void ed.importFiles(f)}
-            onAdd={(m) => add(m)}
-            onRemove={(m) => {
-              const inUse = project.timeline.video.some((c) => c.mediaId === m.id) || project.timeline.audio.some((c) => c.mediaId === m.id);
-              if (inUse && !confirm(`“${m.name}” is used on the timeline. Remove it and its clips?`)) return;
-              ed.removeMedia(m.id);
-              setSelection(null);
-            }}
-          />
-        </aside>
-
-        <section className="flex min-h-[260px] flex-col bg-paper-dim max-lg:order-1" aria-label={tr("Preview")}>
-          <div className="relative flex min-h-0 flex-1 items-center justify-center p-4">
-            <Preview project={project} urls={ed.urls} time={time} playing={playing} onTime={setTime} onEnded={() => setPlaying(false)} />
-          </div>
-          <div className="flex items-center justify-center gap-3 border-t border-line bg-elevated px-3 py-2">
-            <button onClick={() => { setPlaying(false); setTime(0); }} className="grid h-8 w-8 place-items-center rounded-md text-ink-2 hover:bg-paper-dim" aria-label={tr("Go to start")}>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M6 5h2v14H6zM20 5v14L9 12z" /></svg>
-            </button>
-            <button
-              onClick={() => setPlaying((p) => !p)}
-              disabled={total <= 0}
-              className="grid h-9 w-9 place-items-center rounded-full bg-ink text-paper hover:opacity-90 disabled:opacity-40"
-              aria-label={playing ? tr("Pause") : tr("Play")}
-            >
-              {playing
-                ? <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M6 4h4v16H6zM14 4h4v16h-4z" /></svg>
-                : <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 4l13 8-13 8z" /></svg>}
-            </button>
-            <span className="min-w-[110px] font-mono text-xs text-ink-2" data-testid="time-display">{formatTime(time)} / {formatTime(total)}</span>
-          </div>
-        </section>
-
-        <aside className="order-4 min-h-0 overflow-y-auto border-line bg-elevated lg:order-none lg:border-s" aria-label={tr("Clip settings")}>
-          <Inspector
-            project={project}
-            selection={selection}
-            onTimeline={(tl, commit) => ed.setTimeline(tl, commit)}
-            onProject={(patch) => ed.update((p) => ({ ...p, ...patch }))}
-            onDelete={del}
-          />
-        </aside>
-      </div>
-
-      {/* Timeline */}
-      <div className="order-2 shrink-0 border-t border-line bg-elevated">
-        <div className="flex flex-wrap items-center gap-1 border-b border-line px-2 py-1.5" role="toolbar" aria-label={tr("Timeline tools")}>
-          <ToolButton label={tr("Undo")} shortcut="Ctrl+Z" onClick={ed.undo} disabled={!ed.canUndo} icon="M9 14L4 9l5-5M4 9h11a5 5 0 010 10h-3" />
-          <ToolButton label={tr("Redo")} shortcut="Ctrl+Shift+Z" onClick={ed.redo} disabled={!ed.canRedo} icon="M15 14l5-5-5-5M20 9H9a5 5 0 000 10h3" />
-          <span className="mx-1 h-5 w-px bg-line" aria-hidden="true" />
-          <ToolButton label={tr("Split")} shortcut="S" onClick={split} disabled={total <= 0} icon="M12 3v18M7 8l-4 4 4 4M17 8l4 4-4 4" text />
-          <ToolButton label={tr("Delete")} shortcut="Del" onClick={del} disabled={!selection} icon={ICONS.trash} text />
-          <ToolButton label={tr("Add text")} onClick={addText} icon="M5 6V4h14v2M12 4v16M9 20h6" text />
-          {selection?.kind === 'video' && (() => {
-            const c = project.timeline.video.find((x) => x.id === selection.id);
-            const m = c && project.media.find((x) => x.id === c.mediaId);
-            if (!c || m?.type !== 'video' || !m.hasAudio) return null;
-            return (
-              <ToolButton
-                label={c.muted ? tr("Restore audio") : tr("Remove audio")}
-                onClick={() => ed.setTimeline({ ...project.timeline, video: project.timeline.video.map((x) => (x.id === c.id ? { ...x, muted: !x.muted } : x)) })}
-                icon={c.muted ? 'M11 5L6 9H3v6h3l5 4zM15.5 8.5a5 5 0 010 7M18.5 5.5a9 9 0 010 13' : 'M11 5L6 9H3v6h3l5 4zM22 9l-6 6M16 9l6 6'}
-                text
+      {/* Tab content: slides in from the side of the tab you came from */}
+      <div key={tab} className={clsx('flex min-h-0 flex-1 flex-col', tabDir === 'next' ? 'tab-enter-next' : 'tab-enter-prev')} data-testid={`tab-${tab}`}>
+        {tab === 'edit' ? (
+          <>
+          {/* Media | Preview | Settings */}
+          <div className="min-h-0 flex-1 max-lg:contents lg:grid lg:grid-cols-[260px_minmax(0,1fr)_300px]">
+            <aside className="order-3 min-h-0 border-line bg-elevated lg:order-none lg:border-e" aria-label={tr("Media")}>
+              <MediaBin
+                project={project}
+                importing={ed.importing}
+                errors={ed.importErrors}
+                onDismissErrors={() => ed.setImportErrors([])}
+                onImport={(f) => void ed.importFiles(f)}
+                onAdd={(m) => add(m)}
+                onRemove={(m) => {
+                  const inUse = project.timeline.video.some((c) => c.mediaId === m.id) || project.timeline.audio.some((c) => c.mediaId === m.id);
+                  if (inUse && !confirm(`“${m.name}” is used on the timeline. Remove it and its clips?`)) return;
+                  ed.removeMedia(m.id);
+                  setSelection(null);
+                }}
               />
-            );
-          })()}
-          <div className="ms-auto flex items-center gap-2">
-            <label className="flex items-center gap-2 text-xs text-ink-3">
-              <span className="hidden sm:inline">{tr("Zoom")}</span>
-              <input type="range" min={8} max={240} value={pps} onChange={(e) => setPps(Number(e.target.value))} className="w-24 accent-[var(--color-workshop)]" aria-label={tr("Timeline zoom")} />
-            </label>
+            </aside>
+
+            <section className="flex min-h-[260px] flex-col bg-paper-dim max-lg:order-1" aria-label={tr("Preview")}>
+              <div className="relative flex min-h-0 flex-1 items-center justify-center p-4">
+                <Preview project={project} urls={ed.urls} time={time} playing={playing} onTime={setTime} onEnded={() => setPlaying(false)} />
+              </div>
+              <div className="flex items-center justify-center gap-3 border-t border-line bg-elevated px-3 py-2">
+                <button onClick={() => { setPlaying(false); setTime(0); }} className="grid h-8 w-8 place-items-center rounded-md text-ink-2 hover:bg-paper-dim" aria-label={tr("Go to start")}>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M6 5h2v14H6zM20 5v14L9 12z" /></svg>
+                </button>
+                <button
+                  onClick={() => setPlaying((p) => !p)}
+                  disabled={total <= 0}
+                  className="grid h-9 w-9 place-items-center rounded-full bg-ink text-paper hover:opacity-90 disabled:opacity-40"
+                  aria-label={playing ? tr("Pause") : tr("Play")}
+                >
+                  {playing
+                    ? <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M6 4h4v16H6zM14 4h4v16h-4z" /></svg>
+                    : <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 4l13 8-13 8z" /></svg>}
+                </button>
+                <span className="min-w-[110px] font-mono text-xs text-ink-2" data-testid="time-display">{formatTime(time)} / {formatTime(total)}</span>
+              </div>
+            </section>
+
+            <aside className="order-4 min-h-0 overflow-y-auto border-line bg-elevated lg:order-none lg:border-s" aria-label={tr("Clip settings")}>
+              <Inspector
+                project={project}
+                selection={selection}
+                onTimeline={(tl, commit) => ed.setTimeline(tl, commit)}
+                onProject={(patch) => ed.update((p) => ({ ...p, ...patch }))}
+                onDelete={del}
+              />
+            </aside>
           </div>
-        </div>
-        <div className="h-[176px]">
-          <Timeline
-            project={project}
-            time={time}
-            pps={pps}
-            selection={selection}
-            onSelect={setSelection}
-            onSeek={(t) => {
-              setPlaying(false);
-              setTime(Math.min(t, Math.max(total, 0)));
-            }}
-            onChange={(tl, commit) => ed.setTimeline(tl, commit)}
-            onDropMedia={(mediaId, kind, at) => {
-              const m = project.media.find((x) => x.id === mediaId);
-              if (m) add(m, kind, at);
-            }}
-          />
-        </div>
+
+          {/* Timeline */}
+          <div className="order-2 shrink-0 border-t border-line bg-elevated">
+            <div className="flex flex-wrap items-center gap-1 border-b border-line px-2 py-1.5" role="toolbar" aria-label={tr("Timeline tools")}>
+              <ToolButton label={tr("Undo")} shortcut="Ctrl+Z" onClick={ed.undo} disabled={!ed.canUndo} icon="M9 14L4 9l5-5M4 9h11a5 5 0 010 10h-3" />
+              <ToolButton label={tr("Redo")} shortcut="Ctrl+Shift+Z" onClick={ed.redo} disabled={!ed.canRedo} icon="M15 14l5-5-5-5M20 9H9a5 5 0 000 10h3" />
+              <span className="mx-1 h-5 w-px bg-line" aria-hidden="true" />
+              <ToolButton label={tr("Split")} shortcut="S" onClick={split} disabled={total <= 0} icon="M12 3v18M7 8l-4 4 4 4M17 8l4 4-4 4" text />
+              <ToolButton label={tr("Delete")} shortcut="Del" onClick={del} disabled={!selection} icon={ICONS.trash} text />
+              <ToolButton label={tr("Add text")} onClick={addText} icon="M5 6V4h14v2M12 4v16M9 20h6" text />
+              {selection?.kind === 'video' && (() => {
+                const c = project.timeline.video.find((x) => x.id === selection.id);
+                const m = c && project.media.find((x) => x.id === c.mediaId);
+                if (!c || m?.type !== 'video' || !m.hasAudio) return null;
+                return (
+                  <ToolButton
+                    label={c.muted ? tr("Restore audio") : tr("Remove audio")}
+                    onClick={() => ed.setTimeline({ ...project.timeline, video: project.timeline.video.map((x) => (x.id === c.id ? { ...x, muted: !x.muted } : x)) })}
+                    icon={c.muted ? 'M11 5L6 9H3v6h3l5 4zM15.5 8.5a5 5 0 010 7M18.5 5.5a9 9 0 010 13' : 'M11 5L6 9H3v6h3l5 4zM22 9l-6 6M16 9l6 6'}
+                    text
+                  />
+                );
+              })()}
+              <div className="ms-auto flex items-center gap-2">
+                <label className="flex items-center gap-2 text-xs text-ink-3">
+                  <span className="hidden sm:inline">{tr("Zoom")}</span>
+                  <input type="range" min={8} max={240} value={pps} onChange={(e) => setPps(Number(e.target.value))} className="w-24 accent-[var(--color-workshop)]" aria-label={tr("Timeline zoom")} />
+                </label>
+              </div>
+            </div>
+            <div className="h-[176px]">
+              <Timeline
+                project={project}
+                time={time}
+                pps={pps}
+                selection={selection}
+                onSelect={setSelection}
+                onSeek={(t) => {
+                  setPlaying(false);
+                  setTime(Math.min(t, Math.max(total, 0)));
+                }}
+                onChange={(tl, commit) => ed.setTimeline(tl, commit)}
+                onDropMedia={(mediaId, kind, at) => {
+                  const m = project.media.find((x) => x.id === mediaId);
+                  if (m) add(m, kind, at);
+                }}
+              />
+            </div>
+          </div>
+          </>
+        ) : (
+          <div className="min-h-0 flex-1 bg-paper">
+            <AudioTab project={project} files={ed.files} onTimeline={(tl) => ed.setTimeline(tl)} initialClipId={selection?.id} />
+          </div>
+        )}
       </div>
+
+      {/* Bottom tabs, like the page buttons in a desktop editor */}
+      <nav className="flex shrink-0 justify-center gap-1 border-t border-line bg-elevated px-3 py-2" aria-label={tr('Editor tabs')}>
+        {(['edit', 'audio'] as const).map((t, i) => (
+          <button
+            key={t}
+            onClick={() => {
+              if (t === tab) return;
+              setPlaying(false);
+              setTabDir(i > (['edit', 'audio'] as const).indexOf(tab) ? 'next' : 'prev');
+              setTab(t);
+            }}
+            aria-pressed={tab === t}
+            data-testid={`tab-button-${t}`}
+            className={clsx(
+              'relative inline-flex h-9 min-w-28 items-center justify-center gap-2 rounded-lg px-4 text-sm font-medium transition-colors',
+              tab === t ? 'bg-workshop-dim text-workshop' : 'text-ink-2 hover:bg-paper-dim hover:text-ink',
+            )}
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d={t === 'edit' ? 'M4 6h11v12H4zM15 10l5-3v10l-5-3' : 'M3 12h2M7 8v8M11 5v14M15 9v6M19 7v10M21 12h0'} />
+            </svg>
+            {t === 'edit' ? tr('Edit') : tr('Audio')}
+            {tab === t && <span className="tab-underline absolute inset-x-4 -bottom-2 h-0.5 rounded-full bg-workshop" aria-hidden="true" />}
+          </button>
+        ))}
+      </nav>
 
       {exitOpen && (
         <Modal title={tr("Before you leave")} locked labelledBy="exit-title">
