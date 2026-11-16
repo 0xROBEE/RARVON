@@ -164,15 +164,13 @@ test.describe('text tools', () => {
   test('text cleaner', async ({ page }) => {
     await page.goto('/tools/text/text-cleaner');
     await page.locator('main textarea').fill('  a   b​ \n\n\n\n  c  ');
-    await page.getByRole('button', { name: 'Clean text' }).click();
     await expect(result(page)).toHaveText('a b\n\nc');
   });
 
   test('remove duplicate lines', async ({ page }) => {
     await page.goto('/tools/text/dedupe');
     await page.locator('main textarea').fill('apple\nBanana\napple \nbanana\ncherry');
-    await page.getByLabel('Ignore case').check();
-    await page.getByRole('button', { name: 'Remove duplicates' }).click();
+    await page.getByRole('switch', { name: 'Ignore case' }).click();
     await expect(result(page)).toHaveText('apple\nBanana\ncherry');
     await expect(main(page)).toContainText('2 duplicate lines removed');
   });
@@ -180,11 +178,9 @@ test.describe('text tools', () => {
   test('line sorter uses natural order', async ({ page }) => {
     await page.goto('/tools/text/sort-lines');
     await page.locator('main textarea').fill('item10\nitem2\nItem1\n\nbanana');
-    await page.getByRole('button', { name: 'Sort' }).click();
     await expect(result(page)).toHaveText('banana\nItem1\nitem2\nitem10');
-    await page.locator('main select').selectOption('numeric');
+    await page.getByRole('radio', { name: 'Numeric' }).click();
     await page.locator('main textarea').fill('10\n9.5\n-2\n100');
-    await page.getByRole('button', { name: 'Sort' }).click();
     await expect(result(page)).toHaveText('-2\n9.5\n10\n100');
   });
 });

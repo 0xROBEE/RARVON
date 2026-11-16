@@ -1,6 +1,5 @@
-import { useState } from 'react';
-import Button from '../../../components/Button';
-import { CopyButton } from '../../../components/tool';
+import { useMemo, useState } from 'react';
+import { ChoicePills, InputPane, OutputPane, TextWorkspace, ToggleChip, textStats } from '../../../components/tool/TextPanes';
 import { tr } from '../../../lib/i18n';
 
 type Mode = 'alpha' | 'alpha-desc' | 'numeric' | 'length' | 'random';
@@ -9,9 +8,11 @@ export default function SortLinesTool() {
   const [text, setText] = useState('');
   const [mode, setMode] = useState<Mode>('alpha');
   const [removeEmpty, setRemoveEmpty] = useState(true);
-  const [output, setOutput] = useState('');
+  // Bumping this reshuffles.
+  const [shuffle, setShuffle] = useState(0);
 
-  function run() {
+  const output = useMemo(() => {
+    if (!text) return '';
     const collator = new Intl.Collator(undefined, { numeric: true, sensitivity: 'base' });
     let lines = text.split('\n');
     if (removeEmpty) lines = lines.filter((l) => l.trim() !== '');
@@ -35,43 +36,36 @@ export default function SortLinesTool() {
         }
         break;
     }
-    setOutput(lines.join('\n'));
-  }
+    return lines.join('\n');
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [text, mode, removeEmpty, shuffle]);
 
   return (
-    <div className="space-y-4">
-      <textarea
-        value={text}
-        onChange={(e) => setText(e.target.value)}
-        rows={8}
-        placeholder={tr("One item per line…")}
-        className="w-full rounded-md border border-line bg-paper px-3 py-2 font-mono text-xs leading-relaxed focus:border-workshop"
-      />
-      <div className="flex flex-wrap items-center gap-3">
-        <select value={mode} onChange={(e) => setMode(e.target.value as Mode)} className="rounded-md border border-line bg-paper px-2 py-2 text-xs">
-          <option value="alpha">A → Z</option>
-          <option value="alpha-desc">Z → A</option>
-          <option value="numeric">{tr("Numeric")}</option>
-          <option value="length">{tr("By length")}</option>
-          <option value="random">{tr("Shuffle")}</option>
-        </select>
-        <label className="flex items-center gap-2 text-xs text-ink-2">
-          <input type="checkbox" checked={removeEmpty} onChange={(e) => setRemoveEmpty(e.target.checked)} />
-          {tr("Remove empty lines")}
-        </label>
-        <Button onClick={run} disabled={!text}>{tr("Sort")}</Button>
-      </div>
-      {output !== '' && (
-        <div>
-          <div className="mb-1.5 flex items-center justify-between">
-            <span className="text-xs font-medium text-ink-2">{tr("Result")}</span>
-            <CopyButton text={output} label={tr("Copy")} />
-          </div>
-          <pre className="max-h-72 overflow-auto whitespace-pre-wrap rounded-md border border-line bg-paper-dim px-3 py-2 font-mono text-xs leading-relaxed">
-            {output}
-          </pre>
-        </div>
-      )}
-    </div>
+    <TextWorkspace
+      options={
+        <>
+          <ChoicePills
+            label={tr('Sort order')}
+            value={mode}
+            onChange={setMode}
+            options={[
+              { value: 'alpha', label: 'A → Z' },
+              { value: 'alpha-desc', label: 'Z → A' },
+              { value: 'numeric', label: tr("Numeric") },
+              { value: 'length', label: tr("By length") },
+              { value: 'random', label: tr("Shuffle") },
+            ]}
+          />
+          <ToggleChip on={removeEmpty} onChange={setRemoveEmpty}>{tr("Remove empty lines")}</ToggleChip>
+          {mode === 'random' && text && (
+            <button type="button" onClick={() => setShuffle((n) => n + 1)} className="slide-in rounded-full border border-line bg-paper px-3 py-1.5 text-xs font-semibold hover:border-ink">
+              {tr('Shuffle again')}
+            </button>
+          )}
+        </>
+      }
+      input={<InputPane value={text} onChange={setText} placeholder={tr("One item per line…")} mono footer={textStats(text)} />}
+      output={<OutputPane title={tr("Result")} text={output} mono filename="sorted.txt" footer={output ? textStats(output) : null} />}
+    />
   );
 }

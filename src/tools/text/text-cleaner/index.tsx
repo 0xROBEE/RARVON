@@ -1,74 +1,70 @@
-import { useState } from 'react';
-import Button from '../../../components/Button';
-import { CopyButton } from '../../../components/tool';
+import { useMemo, useState } from 'react';
+import { InputPane, OutputPane, TextWorkspace, ToggleChip, textStats } from '../../../components/tool/TextPanes';
+import type { Mark } from '../../../components/tool/TextPanes';
 import { tr } from '../../../lib/i18n';
+
+type Options = { trimLines: boolean; collapseSpaces: boolean; collapseBlankLines: boolean; removeInvisible: boolean };
+
+const RULES: { key: keyof Options; label: string }[] = [
+  { key: 'trimLines', label: 'Trim line edges' },
+  { key: 'collapseSpaces', label: 'Collapse extra spaces' },
+  { key: 'collapseBlankLines', label: 'Collapse blank lines' },
+  { key: 'removeInvisible', label: 'Remove invisible characters' },
+];
+
+function clean(text: string, o: Options) {
+  let result = text;
+  if (o.removeInvisible) result = result.replace(/[​-‍﻿]/g, '');
+  if (o.trimLines) result = result.split('\n').map((l) => l.trim()).join('\n');
+  if (o.collapseSpaces) result = result.replace(/[ \t]{2,}/g, ' ');
+  if (o.collapseBlankLines) result = result.replace(/\n{3,}/g, '\n\n');
+  return result.trim();
+}
+
+/** What each rule would remove from the original text, for the highlight. */
+function findMarks(text: string, o: Options): Mark[] {
+  const marks: Mark[] = [];
+  const add = (re: RegExp, keep = 0) => {
+    for (const m of text.matchAll(re)) if (m[0].length > keep) marks.push({ start: m.index! + keep, end: m.index! + m[0].length });
+  };
+  if (o.trimLines) add(/^[ \t]+|[ \t]+$/gm);
+  if (o.collapseSpaces) add(/[ \t]{2,}/g, 1);
+  if (o.collapseBlankLines) add(/\n{3,}/g, 2);
+  if (o.removeInvisible) add(/[​-‍﻿]/g);
+  // Merge overlaps so each character is marked once.
+  marks.sort((a, b) => a.start - b.start);
+  const merged: Mark[] = [];
+  for (const m of marks) {
+    const last = merged[merged.length - 1];
+    if (last && m.start <= last.end) last.end = Math.max(last.end, m.end);
+    else merged.push({ ...m });
+  }
+  return merged;
+}
 
 export default function TextCleaner() {
   const [text, setText] = useState('');
-  const [options, setOptions] = useState({
-    trimLines: true,
-    collapseSpaces: true,
-    collapseBlankLines: true,
-    removeInvisible: true,
-  });
-  const [output, setOutput] = useState('');
+  const [options, setOptions] = useState<Options>({ trimLines: true, collapseSpaces: true, collapseBlankLines: true, removeInvisible: true });
 
-  function clean() {
-    let result = text;
-    if (options.removeInvisible) {
-      result = result.replace(/[\u200B-\u200D\uFEFF]/g, '');
-    }
-    if (options.trimLines) {
-      result = result
-        .split('\n')
-        .map((l) => l.trim())
-        .join('\n');
-    }
-    if (options.collapseSpaces) {
-      result = result.replace(/[ \t]{2,}/g, ' ');
-    }
-    if (options.collapseBlankLines) {
-      result = result.replace(/\n{3,}/g, '\n\n');
-    }
-    setOutput(result.trim());
-  }
-
-  const toggle = (key: keyof typeof options) => setOptions((o) => ({ ...o, [key]: !o[key] }));
+  const output = useMemo(() => (text ? clean(text, options) : ''), [text, options]);
+  const marks = useMemo(() => findMarks(text, options), [text, options]);
+  const removed = text.length - output.length;
 
   return (
-    <div className="space-y-4">
-      <textarea
-        value={text}
-        onChange={(e) => setText(e.target.value)}
-        rows={8}
-        placeholder={tr("Paste messy text here…")}
-        className="w-full rounded-md border border-line bg-paper px-3 py-2 text-sm leading-relaxed focus:border-workshop"
-      />
-      <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-        {[
-          ['trimLines', 'Trim line edges'],
-          ['collapseSpaces', 'Collapse extra spaces'],
-          ['collapseBlankLines', 'Collapse blank lines'],
-          ['removeInvisible', 'Remove invisible characters'],
-        ].map(([key, label]) => (
-          <label key={key} className="flex items-center gap-2 text-xs text-ink-2">
-            <input type="checkbox" checked={options[key as keyof typeof options]} onChange={() => toggle(key as keyof typeof options)} />
-            {tr(label)}
-          </label>
-        ))}
-      </div>
-      <Button onClick={clean} disabled={!text}>{tr("Clean text")}</Button>
-      {output && (
-        <div>
-          <div className="mb-1.5 flex items-center justify-between">
-            <span className="text-xs font-medium text-ink-2">{tr("Result")}</span>
-            <CopyButton text={output} label={tr("Copy")} />
-          </div>
-          <pre className="max-h-72 overflow-auto whitespace-pre-wrap rounded-md border border-line bg-paper-dim px-3 py-2 text-sm leading-relaxed">
-            {output}
-          </pre>
-        </div>
-      )}
-    </div>
+    <TextWorkspace
+      options={RULES.map((r) => (
+        <ToggleChip key={r.key} on={options[r.key]} onChange={(v) => setOptions((o) => ({ ...o, [r.key]: v }))}>{tr(r.label)}</ToggleChip>
+      ))}
+      input={<InputPane value={text} onChange={setText} placeholder={tr("Paste messy text here…")} marks={marks} footer={<>{textStats(text)}{marks.length > 0 && <span className="text-warn"> · {tr('{n} spots to fix (highlighted)', { n: marks.length })}</span>}</>} />}
+      output={
+        <OutputPane
+          title={tr("Result")}
+          text={output}
+          filename="cleaned.txt"
+          tone={removed > 0 ? 'good' : undefined}
+          footer={text ? (removed > 0 ? tr('{n} characters removed', { n: removed.toLocaleString() }) : tr('Already clean')) : null}
+        />
+      }
+    />
   );
 }
