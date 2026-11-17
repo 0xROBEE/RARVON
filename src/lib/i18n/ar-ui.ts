@@ -1216,6 +1216,7 @@ export const arUi: Record<string, string> = {
   "fewer colours": "ألوانًا أقل",
   "file": "ملف",
   "file — see": "— راجع",
+  "files sent to a server": "ملفات أُرسلت إلى خادم",
   "for the number and": "للرقم و",
   "for the page count, e.g. \"Page": "لعدد الصفحات، مثلًا \"صفحة",
   "image": "الصورة",

@@ -113,7 +113,7 @@ export default function About() {
             [toolCount, tr('tools')],
             [categories.length, tr('categories')],
             [2, tr('languages')],
-            [0, tr('uploads')],
+            [0, tr('files sent to a server')],
           ] as const).map(([value, label]) => (
             <div key={label} className="rounded-xl border border-line bg-elevated p-4 text-center">
               <p className="font-display text-4xl font-semibold text-workshop"><CountUp to={value} /></p>
