@@ -3,7 +3,7 @@ import { tools, categories } from '../src/lib/toolRegistry';
 
 test.describe('every page renders without errors', () => {
   test('home, static pages, categories and action pages', async ({ page }) => {
-    for (const path of ['/', '/about', '/privacy', '/support', '/credits', '/compress', '/convert', ...categories.map((c) => `/tools/${c.slug}`)]) {
+    for (const path of ['/', '/about', '/privacy', '/support', '/credits', '/app', '/compress', '/convert', ...categories.map((c) => `/tools/${c.slug}`)]) {
       await page.goto(path);
       await expect(page.locator('h1').first(), path).toBeVisible();
     }
@@ -67,6 +67,22 @@ test.describe('every page renders without errors', () => {
     await page.goto('/about');
     await page.getByRole('button', { name: 'Ask for a tool' }).click();
     await expect(page.locator('dialog[open]').getByRole('heading', { name: 'Ask for a tool' })).toBeVisible();
+  });
+
+  test('until an app download is set, nothing points to the app and /app says it is coming', async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 800 });
+    await page.goto('/');
+    await expect(page.getByTestId('app-button')).toHaveCount(0);
+    await expect(page.getByTestId('home-app-card')).toHaveCount(0);
+    await expect(page.locator('a[href="/app"]')).toHaveCount(0);
+    // Heavy tools keep the plain browser warning.
+    await page.goto('/tools/video/convert');
+    await expect(page.getByTestId('browser-limits')).toHaveCount(0);
+    await expect(page.getByText(/hasn.t been verified across every browser/)).toBeVisible();
+    await page.goto('/app');
+    await expect(page.getByRole('heading', { level: 1 })).toContainText('Bench for desktop');
+    await expect(page.getByTestId('app-coming-soon')).toBeVisible();
+    await expect(page.getByTestId('app-download')).toHaveCount(0);
   });
 
   test('the footer opens the Credits page, grouped and searchable', async ({ page }) => {

@@ -17,6 +17,7 @@ import { useInstallPrompt } from '../lib/installPrompt';
 import { COLLECTIONS, resolveCollection, collectionSize } from '../lib/collections';
 import type { Collection } from '../lib/collections';
 import { ActionIcon } from '../lib/actionIcons';
+import { appAvailable } from '../lib/appRelease';
 import { tr } from '../lib/i18n';
 
 const toolCount = tools.filter((t) => t.status !== 'coming-soon').length;
@@ -289,6 +290,24 @@ export default function Home() {
             <kbd className="rounded border border-line px-1 font-mono text-[11px]">K</kbd> {tr('on any page and type what you want to do, like “compress video”.')}
           </Tip>
         </div>
+        {appAvailable && (
+          <Link to="/app" className="group mt-4 flex flex-wrap items-center gap-4 rounded-xl border border-workshop/40 bg-workshop-dim/50 p-4 transition-colors hover:border-workshop sm:p-5" data-testid="home-app-card">
+            <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-workshop text-white" aria-hidden="true">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 5h18v12H3zM8 21h8M12 17v4" /></svg>
+            </span>
+            <span className="min-w-0 flex-1">
+              <span className="flex flex-wrap items-center gap-2 font-display text-base font-semibold">
+                {tr('Bench for desktop')}
+                <span className="rounded-full bg-warn-dim px-2 py-0.5 text-[11px] font-semibold text-warn">{tr('Beta')}</span>
+              </span>
+              <span className="mt-0.5 block text-sm text-ink-2">{tr('Every tool at full power on your own computer: any file size, almost every format, your graphics card.')}</span>
+            </span>
+            <span className="inline-flex items-center gap-1.5 text-sm font-semibold text-workshop">
+              {tr('Get the app')}
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" className="transition-transform group-hover:translate-x-0.5 rtl:-scale-x-100"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
+            </span>
+          </Link>
+        )}
       </section>
     </>
   );

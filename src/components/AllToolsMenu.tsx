@@ -4,6 +4,7 @@ import { actionMeta, categories, toolsForCategory } from '../lib/toolRegistry';
 import { ActionIcon } from '../lib/actionIcons';
 import { CategoryIcon } from '../lib/categoryIcons';
 import { tr } from '../lib/i18n';
+import { appAvailable } from '../lib/appRelease';
 import ThemeToggle from './ThemeToggle';
 
 /**
@@ -101,6 +102,9 @@ export default function AllToolsMenu() {
             <Link role="menuitem" to="/tools" className="me-auto text-sm font-medium text-workshop hover:underline">
               {tr('See every tool on one page →')}
             </Link>
+            {appAvailable && (
+              <Link role="menuitem" to="/app" className="text-sm font-medium text-ink-2 hover:text-ink">{tr('Bench for desktop')} <span className="rounded-full bg-warn-dim px-1.5 py-0.5 text-[10px] font-semibold text-warn">{tr('Beta')}</span></Link>
+            )}
             {/* On the smallest phones the theme button lives here instead of the top bar. */}
             <div className="flex items-center gap-2 text-sm text-ink-2 min-[400px]:hidden">
               {tr('Theme')}

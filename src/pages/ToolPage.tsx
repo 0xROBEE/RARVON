@@ -8,6 +8,8 @@ import ComingSoonNotice from '../components/ComingSoonNotice';
 import ExperimentalNotice from '../components/ExperimentalNotice';
 import { usePageMeta, toolJsonLd } from '../lib/usePageMeta';
 import { recordToolVisit } from '../lib/recentTools';
+import BrowserLimitsCard from '../components/BrowserLimitsCard';
+import { appAvailable } from '../lib/appRelease';
 import { tr } from '../lib/i18n';
 
 export default function ToolPage() {
@@ -35,7 +37,10 @@ export default function ToolPage() {
   return (
     <ToolPageShell tool={tool}>
       {tool.status === 'coming-soon' && <div className="mb-4"><ComingSoonNotice reason={tool.comingSoonReason} /></div>}
-      {tool.status === 'experimental' && engineInfo.showsBrowserWarnings && <ExperimentalNotice note={EXPERIMENTAL_NOTE} />}
+      {tool.status === 'experimental' && engineInfo.showsBrowserWarnings && (
+        // With the app available, heavy tools show what it does better; until then, the plain warning.
+        appAvailable ? <BrowserLimitsCard tool={tool} /> : <ExperimentalNotice note={EXPERIMENTAL_NOTE} />
+      )}
       <Suspense fallback={<div className="py-12 text-center text-sm text-ink-3">{tr("Loading tool…")}</div>}>
         {Component ? <Component /> : null}
       </Suspense>

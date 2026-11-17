@@ -6,6 +6,7 @@ import LanguageToggle from './LanguageToggle';
 import AllToolsMenu from './AllToolsMenu';
 import InfoLinks from './InfoLinks';
 import { LogoMark } from './Logo';
+import { appAvailable } from '../lib/appRelease';
 import { tr } from '../lib/i18n';
 
 const toolCount = tools.filter((t) => t.status !== 'coming-soon').length;
@@ -36,6 +37,18 @@ export default function Header() {
           </span>
           <kbd className="ms-auto hidden shrink-0 rounded border border-line px-1.5 font-mono text-[10px] sm:inline">⌘K</kbd>
         </button>
+        {appAvailable && (
+          <Link
+            to="/app"
+            className="hidden h-9 shrink-0 items-center gap-1.5 rounded-full border border-workshop/40 bg-workshop-dim px-2.5 text-sm font-semibold text-workshop transition-colors hover:border-workshop md:inline-flex lg:px-3"
+            aria-label={tr('Get the Bench app')}
+            title={tr('Get the Bench app')}
+            data-testid="app-button"
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M12 3v11M7.5 9.5L12 14l4.5-4.5M4 19h16" /></svg>
+            <span className="hidden xl:inline">{tr('App')}</span>
+          </Link>
+        )}
         <InfoLinks />
         <Link
           to="/support"

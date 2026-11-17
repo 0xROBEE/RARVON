@@ -9,6 +9,7 @@ import Privacy from './pages/Privacy';
 import About from './pages/About';
 import Support from './pages/Support';
 import Credits from './pages/Credits';
+import AppDownload from './pages/AppDownload';
 import ActionPage from './pages/ActionPage';
 import NotFound from './pages/NotFound';
 import { SearchProvider } from './lib/searchContext';
@@ -47,6 +48,7 @@ export default function App() {
                       <Route path="/about" element={<About />} />
                       <Route path="/support" element={<Support />} />
                       <Route path="/credits" element={<Credits />} />
+                      <Route path="/app" element={<AppDownload />} />
                       <Route path="/tools" element={<AllToolsPage />} />
                       <Route path="/tools/:category" element={<CategoryPage />} />
                       <Route path="/tools/:category/:slug" element={<ToolPage />} />

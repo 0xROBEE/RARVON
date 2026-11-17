@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { categories } from '../lib/toolRegistry';
 import SupportButton from './SupportButton';
+import { appAvailable } from '../lib/appRelease';
 import { tr } from '../lib/i18n';
 
 export default function Footer() {
@@ -24,6 +25,7 @@ export default function Footer() {
             <Link to="/privacy" className="hover:text-ink">{tr('Privacy')}</Link>
             <Link to="/about" className="hover:text-ink">{tr('About')}</Link>
             <Link to="/support" className="hover:text-ink">{tr('Support')}</Link>
+            {appAvailable && <Link to="/app" className="hover:text-ink">{tr('Desktop app')}</Link>}
             <Link to="/credits" className="hover:text-ink">{tr('Credits and licenses')}</Link>
             <SupportButton variant="footer" />
           </div>
