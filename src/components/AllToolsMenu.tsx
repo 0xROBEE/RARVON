@@ -4,6 +4,7 @@ import { actionMeta, categories, toolsForCategory } from '../lib/toolRegistry';
 import { ActionIcon } from '../lib/actionIcons';
 import { CategoryIcon } from '../lib/categoryIcons';
 import { tr } from '../lib/i18n';
+import ThemeToggle from './ThemeToggle';
 
 /**
  * The header's single navigation entry: every category with its tools, the
@@ -100,9 +101,11 @@ export default function AllToolsMenu() {
             <Link role="menuitem" to="/tools" className="me-auto text-sm font-medium text-workshop hover:underline">
               {tr('See every tool on one page →')}
             </Link>
-            {/* On smaller screens the top bar has no room for About and Privacy, so they live here. */}
-            <Link role="menuitem" to="/about" className="text-sm font-medium text-ink-2 hover:text-ink lg:hidden">{tr('About')}</Link>
-            <Link role="menuitem" to="/privacy" className="text-sm font-medium text-ink-2 hover:text-ink lg:hidden">{tr('Privacy')}</Link>
+            {/* On the smallest phones the theme button lives here instead of the top bar. */}
+            <div className="flex items-center gap-2 text-sm text-ink-2 min-[400px]:hidden">
+              {tr('Theme')}
+              <ThemeToggle />
+            </div>
           </div>
         </div>
       )}

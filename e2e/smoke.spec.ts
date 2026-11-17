@@ -20,7 +20,7 @@ test.describe('every page renders without errors', () => {
     await expect(page.getByRole('button', { name: 'Share Bench with a friend' })).toBeVisible();
   });
 
-  test('About and Privacy sit in the top bar on wide screens and in the menu on phones', async ({ page }) => {
+  test('About and Privacy stay in the top bar at every width without moving the search box', async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 800 });
     await page.goto('/');
     const pill = page.getByTestId('info-links');
@@ -30,11 +30,25 @@ test.describe('every page renders without errors', () => {
     await pill.getByRole('link', { name: 'About' }).click();
     await expect(page).toHaveURL(/\/about$/);
 
-    await page.setViewportSize({ width: 375, height: 800 });
-    await expect(pill).toBeHidden();
-    await page.getByRole('button', { name: 'All tools' }).click();
-    await page.getByRole('menuitem', { name: 'Privacy', exact: true }).click();
+    // Hovering About must not change the search box's size.
+    const search = page.getByRole('button', { name: 'Search tools' });
+    const before = (await search.boundingBox())!.width;
+    await pill.getByRole('link', { name: 'Privacy' }).hover();
+    await page.waitForTimeout(400);
+    expect((await search.boundingBox())!.width).toBe(before);
+
+    // Phones keep the two icons; the smallest ones move the theme button into the menu.
+    for (const width of [360, 375, 596, 800]) {
+      await page.setViewportSize({ width, height: 800 });
+      await expect(pill, `${width}px`).toBeVisible();
+      // Poll: right after a resize the page may not have re-laid out yet.
+      await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth), { message: `${width}px` }).toBeLessThanOrEqual(width);
+    }
+    await page.setViewportSize({ width: 360, height: 800 });
+    await pill.getByRole('link', { name: 'Privacy' }).click();
     await expect(page).toHaveURL(/\/privacy$/);
+    await page.getByRole('button', { name: 'All tools' }).click();
+    await expect(page.getByRole('menu').getByRole('button', { name: /^Theme:/ })).toBeVisible();
   });
 
   test('every tool page and the About page open the feedback pop-up', async ({ page }) => {

@@ -13,8 +13,12 @@ const LINKS = [
  */
 export default function InfoLinks() {
   const { pathname } = useLocation();
+  const onPage = LINKS.some((l) => l.to === pathname);
   return (
-    <nav aria-label={tr('About and privacy')} className="hidden h-9 shrink-0 items-stretch overflow-hidden rounded-full border border-line lg:inline-flex" data-testid="info-links">
+    // The outer box keeps room for a name to slide out on wide screens, so the
+    // search box never changes size when you point at About or Privacy.
+    <div className={clsx('ms-auto flex shrink-0 justify-end', onPage ? 'lg:min-w-[11.5rem]' : 'lg:min-w-[8.75rem]')}>
+    <nav aria-label={tr('About and privacy')} className="inline-flex h-9 shrink-0 items-stretch overflow-hidden rounded-full border border-line" data-testid="info-links">
       {LINKS.map((l, i) => {
         const on = pathname === l.to;
         return (
@@ -25,7 +29,7 @@ export default function InfoLinks() {
             aria-label={tr(l.label)}
             title={tr(l.label)}
             className={clsx(
-              'info-link group flex items-center px-2.5 text-sm font-semibold transition-colors',
+              'info-link group flex items-center px-2 text-sm font-semibold transition-colors max-[399px]:px-1.5 sm:px-2.5',
               i > 0 && 'border-s border-line',
               on ? (l.tone === 'signal' ? 'is-on bg-signal-dim text-signal' : 'is-on bg-workshop-dim text-workshop') : 'text-ink-2 hover:bg-paper-dim hover:text-ink',
             )}
@@ -38,5 +42,6 @@ export default function InfoLinks() {
         );
       })}
     </nav>
+    </div>
   );
 }

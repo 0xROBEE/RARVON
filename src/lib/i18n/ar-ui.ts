@@ -1001,6 +1001,7 @@ export const arUi: Record<string, string> = {
   "The trade-off: once a page has a redaction, its whole text becomes non-selectable and non-searchable, not just the blacked-out part. Other pages are unaffected.": "المقابل: بمجرد إخفاء شيء في صفحة، يصبح نصها كله غير قابل للتحديد أو البحث، لا الجزء المسوّد فقط. ولا تتأثر الصفحات الأخرى.",
   "The website host": "الجهة المستضيفة للموقع",
   "The website’s host sees ordinary visit logs, like any website. They never include your files.": "تطّلع الجهة المستضيفة للموقع على سجلات الزيارة العادية، مثل أي موقع. ولا تتضمن هذه السجلات ملفاتك أبدًا.",
+  "Theme": "المظهر",
   "Theme (light or dark) and language": "المظهر (فاتح أو داكن) واللغة",
   "Theme: {name}. Click to change.": "المظهر: {name}. انقر للتغيير.",
   "There's no sound in this project to export.": "لا يوجد صوت في هذا المشروع لتصديره.",
