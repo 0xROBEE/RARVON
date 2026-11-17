@@ -1,3 +1,5 @@
+import { isBenchApp } from '../engine/info';
+
 /**
  * The Bench app (beta) download links. Set them at build time, like the
  * support links (see .env.example):
@@ -17,8 +19,11 @@ export const appRelease = {
   sizeMb: 100,
 };
 
-/** True once at least one download is set: links to the app appear across the site. */
-export const appAvailable = Boolean(appRelease.windows || appRelease.linuxAppImage || appRelease.linuxDeb);
+/**
+ * True once at least one download is set: links to the app appear across the
+ * site. Never inside the app itself (no "Get the app" in the app).
+ */
+export const appAvailable = Boolean(appRelease.windows || appRelease.linuxAppImage || appRelease.linuxDeb) && !isBenchApp();
 
 export type AppSystem = 'windows' | 'linux' | 'other';
 

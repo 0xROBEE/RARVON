@@ -5,9 +5,16 @@
  */
 import type { EngineKind } from './types';
 
-/** True inside the Bench desktop app (Tauri puts this object on the page). */
+declare global {
+  interface Window {
+    /** Set by Bench for desktop (the Bench Engine) on the page it serves. */
+    __BENCH_APP__?: { version: string; key: string };
+  }
+}
+
+/** True inside Bench for desktop: the Bench Engine marks the page it serves. */
 export function isBenchApp(): boolean {
-  return typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window;
+  return typeof window !== 'undefined' && Boolean(window.__BENCH_APP__);
 }
 
 export interface EngineInfo {
