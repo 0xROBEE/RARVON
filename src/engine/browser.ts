@@ -18,7 +18,15 @@ const audio = () => import('../lib/audioEngine');
 const editor = () => import('../lib/videoEditor/exporter');
 const capture = () => import('../lib/videoAudioCapture');
 const pdf = () => import('../lib/pdfjs');
-const ocr = () => import('../lib/ocrEngine');
+/**
+ * OCR keeps one shared worker, so stop and start must happen in the order
+ * they're called. Once the OCR code is loaded both run immediately (as a
+ * direct call would); before that, no worker can exist, so stop has nothing
+ * to do. (Making stop wait for the code to load let a late stop shut down the
+ * worker a new job was waiting on, and the job hung on "Loading…".)
+ */
+let ocrModule: typeof import('../lib/ocrEngine') | null = null;
+const ocr = async () => (ocrModule ??= await import('../lib/ocrEngine'));
 const image = () => import('./browserImage');
 const formats = () => import('../lib/imageFormatSupport');
 const ai = () => import('../lib/backgroundRemoval');
@@ -60,8 +68,10 @@ export const browserEngine: Engine = {
   },
   ocr: {
     languages: OCR_LANGUAGES,
-    recognize: async (img, langs, options) => (await ocr()).recognizeText(img, langs, options),
-    stop: async () => (await ocr()).terminateOcr(),
+    recognize: (img, langs, options) => (ocrModule ? ocrModule.recognizeText(img, langs, options) : ocr().then((m) => m.recognizeText(img, langs, options))),
+    stop: async () => {
+      if (ocrModule) await ocrModule.terminateOcr();
+    },
   },
   ai: {
     workSize: WORK_SIZE,
