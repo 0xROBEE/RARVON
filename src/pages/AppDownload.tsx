@@ -143,10 +143,11 @@ export default function AppDownload() {
             </details>
           ))}
         </div>
-        <p className="mt-4 text-sm text-ink-2">
+        {/* A div, not a p: the button brings its pop-up (with a heading) along. */}
+        <div className="mt-4 text-sm text-ink-2">
           {tr('Found something odd in the beta?')}{' '}
           <FeedbackButton kind="bug" toolName={tr('Bench for desktop')} className="font-semibold text-workshop hover:underline">{tr('Report a bug')}</FeedbackButton>
-        </p>
+        </div>
       </Section>
     </div>
   );
