@@ -1,4 +1,7 @@
 import type { Page } from '@playwright/test';
+
+/** How long a recognition may take in a busy test run (alone, it takes seconds). */
+const OCR_WAIT = 60_000;
 import { test, expect, openTool, upload } from './helpers';
 
 /**
@@ -102,8 +105,8 @@ function cer(ref: string, out: string) {
 const textarea = (page: Page) => page.getByRole('textbox', { name: 'Extracted text (editable)' });
 
 async function extracted(page: Page) {
-  await expect(page.getByRole('button', { name: 'Cancel' })).toHaveCount(0, { timeout: 60_000 });
-  await expect(textarea(page)).not.toHaveValue('', { timeout: 60_000 });
+  await expect(page.getByRole('button', { name: 'Cancel' })).toHaveCount(0, { timeout: OCR_WAIT });
+  await expect(textarea(page)).not.toHaveValue('', { timeout: OCR_WAIT });
   return textarea(page).inputValue();
 }
 
@@ -153,11 +156,11 @@ test.describe('Image to Text (OCR)', () => {
     await openTool(page, '/tools/image/to-text');
     await chooseLanguage(page, 'eng', false);
     await upload(page, await textImage(page, { lines: ENGLISH, rtl: false, font: 'Arial', rotate: 90 }));
-    await expect(page.getByRole('button', { name: 'Re-run OCR' })).toBeVisible({ timeout: 60_000 });
+    await expect(page.getByRole('button', { name: 'Re-run OCR' })).toBeVisible({ timeout: OCR_WAIT });
     await page.getByRole('button', { name: 'Rotate image left' }).click();
     await expect(page.getByText(/Settings changed/)).toBeVisible();
     await page.getByRole('button', { name: 'Re-run OCR' }).click();
-    await expect.poll(async () => cer(ENGLISH.join(' '), await textarea(page).inputValue()), { timeout: 60_000 }).toBeLessThan(3);
+    await expect.poll(async () => cer(ENGLISH.join(' '), await textarea(page).inputValue()), { timeout: OCR_WAIT }).toBeLessThan(3);
   });
 
   test('paste an image with Ctrl+V, then copy, search and download', async ({ page, context }) => {

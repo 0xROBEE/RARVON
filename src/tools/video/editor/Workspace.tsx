@@ -121,7 +121,7 @@ export default function Workspace() {
     const clip = { id: uid(), mediaId: m.id, start: at ?? time, in: 0, out: m.duration, volume: 1, fadeIn: 0, fadeOut: 0 };
     ed.setTimeline({ ...tl, audio: [...tl.audio, clip] });
     setSelection({ kind: 'audio', id: clip.id });
-  }, [ed, time]);
+  }, [ed, time, editorSettings.imageDuration]);
 
   // Files handed over from the projects page ("start a project with this video").
   const handled = useRef(false);

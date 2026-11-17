@@ -31,7 +31,7 @@ export const COLLECTIONS: Record<'convert' | 'compress', Collection> = {
       {
         title: 'Images',
         entries: [
-          { key: 'image/convert', formats: 'JPG, PNG, WebP, HEIC, SVG… → PNG, JPEG, WebP, AVIF' },
+          { key: 'image/convert', formats: 'JPG, PNG, WebP, TIFF, TGA, SVG… → PNG, JPEG, WebP, GIF, TIFF, ICO, PSD and more' },
           { key: 'image/to-text', formats: 'Image → editable text (OCR)' },
           { key: 'pdf/from-images', formats: 'JPG, PNG → PDF' },
         ],
@@ -39,14 +39,14 @@ export const COLLECTIONS: Record<'convert' | 'compress', Collection> = {
       {
         title: 'Documents',
         entries: [
-          { key: 'pdf/to-images', formats: 'PDF → PNG, JPG' },
+          { key: 'pdf/to-images', formats: 'PDF → PNG, JPG, WebP, GIF, BMP, TIFF' },
           { key: 'pdf/to-text', formats: 'PDF → TXT, Markdown' },
         ],
       },
       {
         title: 'Video and audio',
         entries: [
-          { key: 'video/convert', formats: 'MOV, MKV, MP4, WebM → MP4, WebM' },
+          { key: 'video/convert', formats: 'MOV, MKV, MP4, WebM → MP4, MOV, WebM, MKV, GIF' },
           { key: 'audio/convert', formats: 'MP3, WAV, FLAC, M4A, OGG → MP3, AAC, Opus, WAV' },
           { key: 'audio/extract', formats: 'Video → MP3, AAC, Opus, WAV' },
         ],

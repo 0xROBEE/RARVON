@@ -172,14 +172,14 @@ export const tools: ToolMeta[] = [
   // Image
   {
     slug: 'convert', category: 'image', name: 'Image Converter',
-    shortDescription: 'Convert JPG, PNG, WebP, GIF, BMP, ICO, SVG and more.',
-    description: 'Image Converter opens JPG, PNG, WebP, GIF, BMP, ICO and SVG files \u2014 plus AVIF, TIFF or HEIC where your specific browser can open them \u2014 and re-encodes to PNG, JPEG, WebP or AVIF, detecting at runtime which output formats your browser can actually produce rather than assuming.',
-    status: 'available', keywords: ['jpg to png', 'png to jpg', 'webp converter', 'avif converter', 'heic to jpg', 'svg to png'],
+    shortDescription: 'Convert JPG, PNG, WebP, TIFF, SVG and more to 13 formats.',
+    description: 'Image Converter opens JPG, PNG, WebP, GIF, BMP, ICO, SVG, TIFF, TGA, PPM and ICNS files (plus AVIF, and HEIC in Safari) and saves them as PNG, JPEG, WebP, AVIF, GIF, BMP, TIFF, ICO, ICNS, PSD, EPS, PS or ODG, all on your device.',
+    status: 'available', keywords: ['jpg to png', 'png to jpg', 'webp converter', 'avif converter', 'heic to jpg', 'svg to png', 'tiff to jpg', 'png to ico', 'image to psd', 'tga to png', 'png to eps'],
     actions: ['convert'],
     faq: [
-      { q: 'Why isn\u2019t my output format in the list?', a: 'Only formats this browser can actually encode via its own canvas API are offered \u2014 AVIF support in particular varies by browser and version. If a format is missing, your browser doesn\u2019t support producing it yet.' },
+      { q: 'Why isn\u2019t my output format in the list?', a: 'A few formats are made by the browser itself (JPEG, PNG, WebP, AVIF), so they only appear where your browser can make them. AVIF in particular depends on the browser and its version. The rest (GIF, BMP, TIFF, ICO, ICNS, PSD, EPS, PS, ODG) are written by Bench and work everywhere.' },
       { q: 'Can I convert a photo to SVG?', a: 'No. SVG is a vector format and a photo is pixel data \u2014 turning one into the other isn\u2019t a format conversion, it\u2019s image tracing, which this tool doesn\u2019t attempt. SVG works the other direction: as an input, rendered to a raster format at a resolution you choose.' },
-      { q: 'Why did my HEIC or TIFF file fail to open?', a: 'Most browsers other than Safari can\u2019t decode HEIC at all, and very few browsers can open TIFF directly \u2014 this isn\u2019t a bug in the tool, it\u2019s a real browser limitation. Exporting to JPEG from your device\u2019s photo app first works around it.' },
+      { q: 'Why did my HEIC file fail to open?', a: 'Only Safari can open HEIC photos; Chrome, Edge and Firefox can\u2019t decode them yet. Exporting to JPEG from your phone\u2019s photo app first works around it. TIFF, TGA, PPM and ICNS open everywhere: Bench reads them itself.' },
     ],
   },
   {
@@ -287,11 +287,11 @@ export const tools: ToolMeta[] = [
   },
   {
     slug: 'convert', category: 'video', name: 'Video Converter',
-    shortDescription: 'Convert MOV, MKV, MP4 and WebM to MP4 or WebM.',
-    description: 'Video Converter turns MOV, MKV, MP4 or WebM videos into MP4 (H.264 + AAC, plays everywhere) or WebM (VP9 + Opus) \u2014 scoped to the combinations this browser can actually encode, detected at runtime, rather than promising every format under the sun.',
-    status: 'experimental', keywords: ['mp4 to webm', 'webm to mp4', 'mov to mp4', 'mkv to mp4'],
+    shortDescription: 'Convert MOV, MKV, MP4 and WebM to MP4, MOV, WebM, MKV or GIF.',
+    description: 'Video Converter turns MOV, MKV, MP4 or WebM videos into MP4 (plays everywhere), MOV, WebM, MKV, smaller MP4 with HEVC or WebM with AV1, or a short animated GIF. Each format appears only if this browser can actually make it.',
+    status: 'experimental', keywords: ['mp4 to webm', 'webm to mp4', 'mov to mp4', 'mkv to mp4', 'mp4 to mov', 'mp4 to mkv', 'video to gif', 'mp4 to gif', 'hevc', 'av1'],
     actions: ['convert'],
-    faq: [{ q: 'Which formats work?', a: 'MP4, MOV, WebM and MKV files with the codecs your browser can decode \u2014 in practice H.264, VP8, VP9 and AV1 video almost everywhere, HEVC mostly on Apple devices. This uses WebCodecs, the browser\u2019s own hardware-accelerated encoders, instead of a 30 MB FFmpeg download; the trade-off is that a few exotic codecs (and very large files over 250 MB) aren\u2019t supported.' }],
+    faq: [{ q: 'Which formats work?', a: 'MP4, MOV, WebM and MKV files with the codecs your browser can decode \u2014 in practice H.264, VP8, VP9 and AV1 video almost everywhere, HEVC mostly on Apple devices. This uses WebCodecs, the browser\u2019s own hardware-accelerated encoders, instead of a 30 MB FFmpeg download; the trade-off is that a few exotic codecs (and very large files over 250 MB) aren\u2019t supported.' }, { q: 'Is GIF a video?', a: 'Not really: a GIF is a moving picture with no sound and only 256 colours, and it gets big quickly. It\u2019s great for short clips, reactions and memes. Pick a start, a length up to 15 seconds and a width, and Bench makes it frame by frame.' }],
   },
   {
     slug: 'compress', category: 'video', name: 'Video Compressor',
