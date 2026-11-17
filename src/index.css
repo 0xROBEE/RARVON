@@ -289,3 +289,32 @@ body {
 .feedback-dialog[open]::backdrop { animation: fade-in 220ms ease-out; }
 @keyframes feedback-in { from { opacity: 0; transform: translateY(10px) scale(0.96); } }
 @media (prefers-reduced-motion: reduce) { .feedback-dialog[open], .feedback-dialog[open]::backdrop { animation: none; } }
+
+/* Scroll bars: a slim pill that floats with no track. Grey at rest and purple
+   in use; on tool and category pages it takes that category's colour
+   (set through --scroll-tint by useScrollTint). */
+:root {
+  --scroll-tint: var(--color-workshop);
+  --scroll-rest: color-mix(in srgb, var(--color-ink-3) 55%, transparent);
+}
+:root[data-scroll-tint] {
+  --scroll-rest: color-mix(in srgb, var(--scroll-tint) 60%, transparent);
+}
+::-webkit-scrollbar { width: 12px; height: 12px; }
+::-webkit-scrollbar-track, ::-webkit-scrollbar-corner { background: transparent; }
+::-webkit-scrollbar-thumb {
+  background-color: var(--scroll-rest);
+  background-clip: padding-box;
+  border: 3px solid transparent;
+  border-radius: 999px;
+  min-height: 40px;
+}
+::-webkit-scrollbar-thumb:hover, ::-webkit-scrollbar-thumb:active {
+  background-color: var(--scroll-tint);
+  border-width: 2px;
+}
+/* Firefox can only set colour and a thin width. (Chrome also reads these and
+   would then ignore the rules above, so they apply to Firefox only.) */
+@supports (-moz-appearance: none) {
+  * { scrollbar-width: thin; scrollbar-color: var(--scroll-rest) transparent; }
+}

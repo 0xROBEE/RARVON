@@ -3,11 +3,13 @@ import { getCategory, toolsForCategory } from '../lib/toolRegistry';
 import ToolCard from '../components/ToolCard';
 import { CategoryIcon } from '../lib/categoryIcons';
 import { usePageMeta } from '../lib/usePageMeta';
+import { useScrollTint } from '../lib/useScrollTint';
 import { tr } from '../lib/i18n';
 
 export default function CategoryPage() {
   const { category } = useParams<{ category: string }>();
   const meta = getCategory(category ?? '');
+  useScrollTint(meta?.slug);
   usePageMeta(
     meta ? tr('{name} tools', { name: tr(meta.name) }) : 'Bench',
     meta ? tr(meta.description) : '',

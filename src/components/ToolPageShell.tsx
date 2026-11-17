@@ -7,6 +7,7 @@ import { useWorkspace } from '../lib/workspaceContext';
 import { KIND_LABEL, kindOfFile, toolsForKind } from '../lib/fileKinds';
 import { tr } from '../lib/i18n';
 import FeedbackButton from './FeedbackButton';
+import { useScrollTint } from '../lib/useScrollTint';
 
 /**
  * Next steps under a tool: once it has produced a result, tools that accept
@@ -66,6 +67,7 @@ function NextSteps({ tool, wide }: { tool: ToolMeta; wide: boolean }) {
 export default function ToolPageShell({ tool, children }: { tool: ToolMeta; children: ReactNode }) {
   const category = getCategory(tool.category);
   const wide = tool.layout === 'wide';
+  useScrollTint(tool.category);
   return (
     <div className={wide ? 'group/shell mx-auto max-w-[1680px] px-3 py-4 sm:px-4' : 'mx-auto max-w-3xl px-4 py-10 sm:px-6'}>
       {/* Wide tools (e.g. the PDF Editor) look like any other tool until they
