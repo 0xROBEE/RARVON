@@ -73,6 +73,12 @@ function benchPwa(): Plugin {
     name: 'bench-pwa',
     apply: 'build',
     generateBundle(_options, bundle) {
+      // ONNX Runtime (inside transformers.js) keeps a fallback reference to its
+      // 25.6 MB engine as a hashed asset. Bench always hands it the engine itself
+      // (from /ai/ort, see backgroundRemoval.worker.ts), so that copy is never
+      // fetched: drop it, or offline mode would download it on every first visit
+      // and some hosts (Cloudflare Pages) refuse files over 25 MB.
+      for (const f of Object.keys(bundle)) if (/^assets\/ort-wasm-simd-threaded\..*\.wasm$/.test(f)) delete bundle[f]
       // .woff duplicates of .woff2 fonts are skipped (cached on first use if ever needed).
       const files = Object.keys(bundle).filter((f) => f.startsWith('assets/') && !f.endsWith('.map') && !f.endsWith('.woff')).sort()
       const ocr = Object.keys(bundle).filter((f) => f.startsWith('ocr/')).sort()

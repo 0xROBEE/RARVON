@@ -92,3 +92,26 @@ test('the first download stays small (home page budget)', async () => {
   console.log(`First download: ${kb.toFixed(1)} KB compressed (${files.join(', ')})`);
   expect(kb, 'KB compressed before the first page shows').toBeLessThan(150);
 });
+
+test('offline mode stays a light download, and no file is too big to host', async () => {
+  const { readFileSync, readdirSync, statSync } = await import('node:fs');
+  const { join } = await import('node:path');
+  // What the offline worker fetches in the background on a first visit.
+  const sw = readFileSync('dist/sw.js', 'utf8');
+  const list: string[] = JSON.parse(sw.match(/\["\/[^\]]+\]/)![0]);
+  const mb = list.reduce((n, p) => n + statSync(`dist${p}`).size, 0) / 1048576;
+  console.log(`Offline download: ${list.length} files, ${mb.toFixed(1)} MB`);
+  expect(mb, 'MB the offline worker downloads on a first visit').toBeLessThan(12);
+  // Hosts limit single files (Cloudflare Pages: 25 MiB); big AI files are split into parts.
+  const tooBig: string[] = [];
+  const walk = (dir: string) => {
+    for (const name of readdirSync(dir)) {
+      const p = join(dir, name);
+      const s = statSync(p);
+      if (s.isDirectory()) walk(p);
+      else if (s.size > 24 * 1048576) tooBig.push(`${p} (${(s.size / 1048576).toFixed(1)} MB)`);
+    }
+  };
+  walk('dist');
+  expect(tooBig).toEqual([]);
+});
