@@ -14,7 +14,7 @@ export function downloadStatus(mode: 'standard' | 'hq') {
 }
 
 /** Longest side the AI works at; masks are scaled up to the full picture afterwards. */
-export const WORK_SIZE = 2048;
+export { WORK_SIZE } from './aiConstants';
 
 export interface MaskResult {
   mask: Uint8Array;

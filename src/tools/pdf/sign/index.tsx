@@ -1,10 +1,10 @@
+import { engine } from '../../../engine';
 import { useEffect, useRef, useState } from 'react';
 import type { PointerEvent as ReactPointerEvent } from 'react';
 import { PDFDocument } from 'pdf-lib';
 import FileDropzone from '../../../components/FileDropzone';
 import Button from '../../../components/Button';
 import ErrorMessage from '../../../components/ErrorMessage';
-import { getPdfPageCount, renderPdfPageToCanvas } from '../../../lib/pdfjs';
 import { ResultCard } from '../../../components/tool';
 import { tr } from '../../../lib/i18n';
 
@@ -35,7 +35,7 @@ export default function SignPdfTool() {
     setResult(null);
     setError(null);
     try {
-      const count = await getPdfPageCount(await f.arrayBuffer());
+      const count = await engine.pdf.pageCount(await f.arrayBuffer());
       setPageCount(count);
       setPageNumber(1);
     } catch {
@@ -48,7 +48,7 @@ export default function SignPdfTool() {
     setLoadingPreview(true);
     file.arrayBuffer().then(async (bytes) => {
       try {
-        const canvas = await renderPdfPageToCanvas(bytes, pageNumber, 1.2);
+        const canvas = await engine.pdf.renderPage(bytes, pageNumber, 1.2);
         setPagePreview({ url: canvas.toDataURL('image/png'), naturalW: canvas.width, naturalH: canvas.height });
       } catch {
         setError(tr("Could not render this page."));

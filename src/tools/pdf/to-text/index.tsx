@@ -1,13 +1,11 @@
+import { engine, PasswordRequired, preprocessForOcr } from '../../../engine';
+import type { PdfPageText } from '../../../engine';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import FileDropzone from '../../../components/FileDropzone';
 import Button from '../../../components/Button';
 import ErrorMessage from '../../../components/ErrorMessage';
 import ProgressBar from '../../../components/ProgressBar';
 import { formatBytes } from '../../../lib/imageUtils';
-import { PasswordRequired, extractPdfText, renderPdfPageToCanvas } from '../../../lib/pdfjs';
-import type { PdfPageText } from '../../../lib/pdfjs';
-import { OCR_LANGUAGES, recognizeText, terminateOcr } from '../../../lib/ocrEngine';
-import { preprocessForOcr } from '../../../lib/ocrPreprocess';
 import { tr } from '../../../lib/i18n';
 
 function downloadText(text: string, filename: string, type: string) {
@@ -57,7 +55,7 @@ export default function PdfToText() {
   const text = editedText ?? generated;
   const edited = editedText !== null;
 
-  useEffect(() => () => void terminateOcr(), []);
+  useEffect(() => () => void engine.ocr.stop(), []);
 
   async function open(f: File) {
     setError(null);
@@ -69,7 +67,7 @@ export default function PdfToText() {
     setProgress(0);
     try {
       const data = await f.arrayBuffer();
-      const result = await extractPdfText(data.slice(0), (done, total) => setProgress(done / total));
+      const result = await engine.pdf.extractText(data.slice(0), (done, total) => setProgress(done / total));
       setFile(f);
       setBytes(data);
       setPages(result);
@@ -95,8 +93,8 @@ export default function PdfToText() {
       for (let i = 0; i < todo.length; i++) {
         if (cancelRef.current) break;
         const n = todo[i];
-        const canvas = await renderPdfPageToCanvas(bytes.slice(0), n, 2.5);
-        const r = await recognizeText(preprocessForOcr(canvas), langs, {
+        const canvas = await engine.pdf.renderPage(bytes.slice(0), n, 2.5);
+        const r = await engine.ocr.recognize(preprocessForOcr(canvas), langs, {
           onProgress: (p) => p.stage === 'recognizing' && setProgress((i + p.fraction) / todo.length),
         });
         if (cancelRef.current) break;
@@ -115,7 +113,7 @@ export default function PdfToText() {
 
   function cancel() {
     cancelRef.current = true;
-    void terminateOcr();
+    void engine.ocr.stop();
     setBusy(null);
   }
 
@@ -146,7 +144,7 @@ export default function PdfToText() {
             <label className="text-xs text-ink-2">
               {tr("Language")}
               <select value={lang} onChange={(e) => setLang(e.target.value)} disabled={busy === 'ocr'} className="mt-1 block rounded-md border border-line bg-paper px-2 py-1.5 text-sm text-ink">
-                {OCR_LANGUAGES.map((l) => <option key={l.code} value={l.code}>{tr(l.label)}{l.native !== tr(l.label) ? ` — ${l.native}` : ''}</option>)}
+                {engine.ocr.languages.map((l) => <option key={l.code} value={l.code}>{tr(l.label)}{l.native !== tr(l.label) ? ` — ${l.native}` : ''}</option>)}
               </select>
             </label>
             {lang !== 'eng' && (

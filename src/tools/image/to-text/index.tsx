@@ -1,12 +1,11 @@
+import { engine, decodeImage, preprocessForOcr } from '../../../engine';
+import type { OcrLayout, OcrProgress } from '../../../engine';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import FileDropzone from '../../../components/FileDropzone';
 import Button from '../../../components/Button';
 import ErrorMessage from '../../../components/ErrorMessage';
 import ProgressBar from '../../../components/ProgressBar';
 import { formatBytes } from '../../../lib/imageUtils';
-import { OCR_LANGUAGES, recognizeText, terminateOcr } from '../../../lib/ocrEngine';
-import type { OcrLayout, OcrProgress } from '../../../lib/ocrEngine';
-import { decodeImage, preprocessForOcr } from '../../../lib/ocrPreprocess';
 import { tr } from '../../../lib/i18n';
 
 type Rotation = 0 | 90 | 180 | 270;
@@ -26,7 +25,7 @@ function loadSettings(): Settings {
     const raw = localStorage.getItem(SETTINGS_KEY);
     if (raw) {
       const s = { ...DEFAULT_SETTINGS, ...JSON.parse(raw) } as Settings;
-      if (OCR_LANGUAGES.some((l) => l.code === s.primary)) return s;
+      if (engine.ocr.languages.some((l) => l.code === s.primary)) return s;
     }
   } catch {
     // storage unavailable — fall through to defaults
@@ -115,7 +114,7 @@ export default function ImageToText() {
 
   const langs = languagesFor(settings);
   const configKey = `${langs.join('+')}|${settings.layout}|${settings.straighten}|${rotation}`;
-  const primaryMeta = OCR_LANGUAGES.find((l) => l.code === settings.primary)!;
+  const primaryMeta = engine.ocr.languages.find((l) => l.code === settings.primary)!;
 
   useEffect(() => saveSettings(settings), [settings]);
   useEffect(() => () => {
@@ -123,7 +122,7 @@ export default function ImageToText() {
   }, [previewUrl]);
   useEffect(() => () => bitmap?.close(), [bitmap]);
   // Free the OCR worker (and its loaded language models) when leaving the tool.
-  useEffect(() => () => void terminateOcr(), []);
+  useEffect(() => () => void engine.ocr.stop(), []);
 
   const flash = useCallback((msg: string) => {
     setNotice(msg);
@@ -141,7 +140,7 @@ export default function ImageToText() {
         await new Promise((r) => requestAnimationFrame(() => r(null)));
         const prepared = preprocessForOcr(bmp, { rotation: rot, deskew: s.straighten });
         const codes = languagesFor(s);
-        const result = await recognizeText(prepared, codes, {
+        const result = await engine.ocr.recognize(prepared, codes, {
           layout: s.layout,
           onProgress: (p) => id === runId.current && setProgress(p),
         });
@@ -171,7 +170,7 @@ export default function ImageToText() {
         return;
       }
       runId.current++;
-      void terminateOcr();
+      void engine.ocr.stop();
       setError(null);
       setText('');
       setStats(null);
@@ -221,7 +220,7 @@ export default function ImageToText() {
 
   function cancel() {
     runId.current++;
-    void terminateOcr();
+    void engine.ocr.stop();
     setBusy(false);
     setProgress(null);
   }
@@ -293,7 +292,7 @@ export default function ImageToText() {
           disabled={busy}
           className="mt-1 block rounded-md border border-line bg-paper px-2 py-1.5 text-sm text-ink"
         >
-          {OCR_LANGUAGES.map((l) => (
+          {engine.ocr.languages.map((l) => (
             <option key={l.code} value={l.code}>
               {tr(l.label)}{l.native !== tr(l.label) ? ` — ${l.native}` : ''}
             </option>

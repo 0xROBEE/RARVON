@@ -2,9 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { engine, isBenchApp, isCancelled, videoTooBig } from '../../src/engine';
-import { CancelledError } from '../../src/lib/audioEngine';
-import { VideoCancelledError } from '../../src/lib/videoEngine';
-import { ExportCancelled } from '../../src/lib/videoEditor/exporter';
+import { CancelledError, ExportCancelled, VideoCancelledError } from '../../src/lib/jobErrors';
 
 const fakeFile = (bytes: number) => ({ size: bytes, name: 'clip.mp4' }) as File;
 const MB = 1024 * 1024;
@@ -29,8 +27,8 @@ describe('engine', () => {
     expect(isCancelled(new Error('real failure'))).toBe(false);
   });
 
-  it('tools only reach video and audio work through the engine', () => {
-    const internals = /lib\/(videoEngine|audioEngine|videoAudioCapture|videoEditor\/exporter)'/;
+  it('tools only reach video, audio, image, PDF, OCR and AI work through the engine', () => {
+    const internals = /lib\/(videoEngine|audioEngine|videoAudioCapture|videoEditor\/exporter|pdfjs|ocrEngine|ocrPreprocess|backgroundRemoval|imageFormatSupport|imageEncoders|imageDecoders|documentEncoders)'/;
     const offenders: string[] = [];
     const walk = (dir: string) => {
       for (const name of readdirSync(dir)) {

@@ -18,11 +18,8 @@ export interface ExportOptions {
   signal: AbortSignal;
 }
 
-export class ExportCancelled extends Error {
-  constructor() {
-    super('Export cancelled.');
-  }
-}
+import { ExportCancelled } from '../jobErrors';
+export { ExportCancelled };
 
 const SAMPLE_RATE = 48000;
 

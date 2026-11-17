@@ -1,11 +1,11 @@
+import { engine } from '../../../engine';
+import type { ImageFormatOption } from '../../../engine';
 import { useEffect, useRef, useState } from 'react';
 import type { PointerEvent as ReactPointerEvent } from 'react';
 import FileDropzone from '../../../components/FileDropzone';
 import Button from '../../../components/Button';
 import ErrorMessage from '../../../components/ErrorMessage';
 import { loadImage, canvasToBlob, formatBytes } from '../../../lib/imageUtils';
-import { getSupportedEncodeFormats } from '../../../lib/imageFormatSupport';
-import type { ImageFormatOption } from '../../../lib/imageFormatSupport';
 import { resolutionPresets, socialPresets } from '../../../lib/resizePresets';
 import { ResultCard, ActionBar } from '../../../components/tool';
 import { tr } from '../../../lib/i18n';
@@ -63,7 +63,7 @@ export default function ImageResize() {
   const dragRef = useRef<{ startX: number; startY: number; startW: number; startH: number } | null>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const encodeFormats = getSupportedEncodeFormats();
+  const encodeFormats = engine.image.canvasFormats();
 
   async function handleFile(files: File[]) {
     const f = files[0];

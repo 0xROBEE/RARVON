@@ -1,5 +1,5 @@
+import { engine } from '../../../engine';
 import { useEffect, useRef, useState } from 'react';
-import { renderPdfPageToCanvas } from '../../../lib/pdfjs';
 import { tr } from '../../../lib/i18n';
 
 const thumbCache = new Map<string, string>(); // key: `${srcId}:${originalIndex}` -> data URL
@@ -28,7 +28,7 @@ export default function LazyThumb({
       (entries) => {
         if (entries[0].isIntersecting) {
           observer.disconnect();
-          renderPdfPageToCanvas(srcBytes.slice(0), originalIndex + 1, 0.5)
+          engine.pdf.renderPage(srcBytes.slice(0), originalIndex + 1, 0.5)
             .then((canvas) => {
               const url = canvas.toDataURL('image/png');
               thumbCache.set(`${srcId}:${originalIndex}`, url);

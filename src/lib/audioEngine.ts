@@ -14,23 +14,10 @@ import { tr } from './i18n';
  * MP4), it is copied without re-encoding — instant and lossless.
  */
 
-export type AudioTarget = 'opus' | 'aac' | 'mp3' | 'wav';
-
-export interface AudioTargetInfo {
-  value: AudioTarget;
-  label: string;
-  extension: string;
-  mime: string;
-  codec: AudioCodec;
-  lossless?: boolean;
-}
-
-export const AUDIO_TARGETS: AudioTargetInfo[] = [
-  { value: 'opus', label: 'Opus (.ogg) — small, modern', extension: 'ogg', mime: 'audio/ogg', codec: 'opus' },
-  { value: 'aac', label: 'AAC (.m4a) — plays everywhere', extension: 'm4a', mime: 'audio/mp4', codec: 'aac' },
-  { value: 'mp3', label: 'MP3 — the most compatible', extension: 'mp3', mime: 'audio/mpeg', codec: 'mp3' },
-  { value: 'wav', label: 'WAV — lossless, large', extension: 'wav', mime: 'audio/wav', codec: 'pcm-s16', lossless: true },
-];
+import { AUDIO_TARGETS } from './audioTargets';
+import type { AudioTarget, AudioTargetInfo } from './audioTargets';
+export { AUDIO_TARGETS };
+export type { AudioTarget, AudioTargetInfo };
 
 let encodable: Promise<Set<AudioTarget>> | null = null;
 /** Which targets this browser can actually encode (WAV always; Opus/AAC depend on WebCodecs support). */
@@ -79,11 +66,8 @@ export async function probeAudio(file: File): Promise<AudioInfo> {
   };
 }
 
-export class CancelledError extends Error {
-  constructor() {
-    super('Cancelled.');
-  }
-}
+import { CancelledError } from './jobErrors';
+export { CancelledError };
 
 export interface AudioJobOptions {
   target: AudioTarget | 'original';

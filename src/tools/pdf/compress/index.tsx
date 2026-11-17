@@ -1,10 +1,10 @@
+import { engine } from '../../../engine';
 import { useEffect, useState } from 'react';
 import { PDFDocument } from 'pdf-lib';
 import FileDropzone from '../../../components/FileDropzone';
 import Button from '../../../components/Button';
 import ErrorMessage from '../../../components/ErrorMessage';
 import { formatBytes } from '../../../lib/imageUtils';
-import { openPdfForRendering } from '../../../lib/pdfjs';
 import { ActionBar, SizeDelta } from '../../../components/tool';
 import { CompressFlow, DocTile, LevelSlider, MoreOptions } from '../../../components/tool/CompressFlow';
 import { tr } from '../../../lib/i18n';
@@ -33,7 +33,7 @@ export default function CompressPdf() {
     let stale = false;
     (async () => {
       try {
-        const pdf = await openPdfForRendering(await file.arrayBuffer());
+        const pdf = await engine.pdf.open(await file.arrayBuffer());
         try {
           const { canvas } = await pdf.renderPage(1, 0.4);
           if (!stale) setCover(canvas.toDataURL('image/jpeg', 0.8));
@@ -63,7 +63,7 @@ export default function CompressPdf() {
     setProgress(0);
     try {
       const bytes = await file.arrayBuffer();
-      const pdf = await openPdfForRendering(bytes.slice(0));
+      const pdf = await engine.pdf.open(bytes.slice(0));
       const outDoc = await PDFDocument.create();
 
       try {

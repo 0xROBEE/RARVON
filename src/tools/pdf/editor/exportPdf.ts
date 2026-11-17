@@ -1,6 +1,6 @@
+import { engine } from '../../../engine';
 import { PDFDocument, PDFHexString, PDFName, PDFString, degrees, rgb } from 'pdf-lib';
 import type { PDFImage, PDFPage } from 'pdf-lib';
-import { renderPdfPageToCanvas } from '../../../lib/pdfjs';
 import { createTextDrawer } from './pdfText';
 import type { TextDrawer } from './pdfText';
 import { NOTE_ICON_PT, TEXT_BASELINE, UNDERLINE_THICKNESS } from './types';
@@ -411,7 +411,7 @@ export async function exportEditedPdf(
         c.fillStyle = '#ffffff';
         c.fillRect(0, 0, canvas.width, canvas.height);
       } else {
-        canvas = await renderPdfPageToCanvas(srcBytes.slice(0), inst.originalIndex + 1, scale);
+        canvas = await engine.pdf.renderPage(srcBytes.slice(0), inst.originalIndex + 1, scale);
         // Displayed size in points = rendered pixels / scale (crop box and
         // the page's own rotation are already applied by pdf.js).
         [W, H] = [canvas.width / scale, canvas.height / scale];

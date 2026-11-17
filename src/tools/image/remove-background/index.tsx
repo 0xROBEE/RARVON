@@ -1,3 +1,5 @@
+import { engine } from '../../../engine';
+import type { BackgroundRemover } from '../../../engine';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { PointerEvent as ReactPointerEvent, ReactNode } from 'react';
 import clsx from 'clsx';
@@ -5,7 +7,6 @@ import FileDropzone from '../../../components/FileDropzone';
 import ErrorMessage from '../../../components/ErrorMessage';
 import { ResultCard } from '../../../components/tool';
 import { formatBytes } from '../../../lib/imageUtils';
-import { BackgroundRemover, WORK_SIZE, downloadStatus } from '../../../lib/backgroundRemoval';
 import { tr } from '../../../lib/i18n';
 import type { Outline, Vec } from '../../../lib/outline';
 import { drawOutlineBand, drawOutlineMask, hasClosedOutline, insertPoint, nearestOnOutline, newId, simplify, toggleCurve, traceMask } from '../../../lib/outline';
@@ -91,7 +92,7 @@ export default function RemoveBackground() {
 
   useEffect(() => {
     void detectHqSupport().then(setHqSupported);
-    void Promise.all([downloadStatus('standard'), downloadStatus('hq')])
+    void Promise.all([engine.ai.downloadStatus('standard'), engine.ai.downloadStatus('hq')])
       .then(([s, h]) => setSizes({ standard: s.missing, hq: h.missing }))
       .catch(() => setSizes(null));
     return () => remover.current?.dispose();
@@ -108,7 +109,7 @@ export default function RemoveBackground() {
     setError(null);
     try {
       const bmp = await createImageBitmap(f);
-      const scale = Math.min(1, WORK_SIZE / Math.max(bmp.width, bmp.height));
+      const scale = Math.min(1, engine.ai.workSize / Math.max(bmp.width, bmp.height));
       const w = Math.max(1, Math.round(bmp.width * scale));
       const h = Math.max(1, Math.round(bmp.height * scale));
       const wc = document.createElement('canvas');
@@ -200,7 +201,7 @@ export default function RemoveBackground() {
   // ---- AI
   const ensureRemover = async () => {
     if (!remover.current) {
-      remover.current = new BackgroundRemover();
+      remover.current = await engine.ai.backgroundRemover();
       remover.current.onProgress = (loaded, total) => setProgress(total > 0 && loaded < total ? { loaded, total } : null);
     }
     if (!imageSent.current && workImgRef.current) {
@@ -217,7 +218,7 @@ export default function RemoveBackground() {
       const r = await ensureRemover();
       const { mask } = await fn(r);
       commit(then(mask));
-      void Promise.all([downloadStatus('standard'), downloadStatus('hq')]).then(([s, h]) => setSizes({ standard: s.missing, hq: h.missing })).catch(() => undefined);
+      void Promise.all([engine.ai.downloadStatus('standard'), engine.ai.downloadStatus('hq')]).then(([s, h]) => setSizes({ standard: s.missing, hq: h.missing })).catch(() => undefined);
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Something went wrong.');
     } finally {

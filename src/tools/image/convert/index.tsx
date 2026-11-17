@@ -1,19 +1,11 @@
+import { engine, UnsupportedImageError, isSvg, guessSvgDimensions } from '../../../engine';
+import type { ImageFormatOption } from '../../../engine';
 import { useEffect, useState } from 'react';
 import clsx from 'clsx';
 import FileDropzone from '../../../components/FileDropzone';
 import Button from '../../../components/Button';
 import ErrorMessage from '../../../components/ErrorMessage';
-import { canvasToBlob, formatBytes } from '../../../lib/imageUtils';
-import {
-  getSupportedEncodeFormats,
-  tryDecodeImage,
-  isSvg,
-  guessSvgDimensions,
-} from '../../../lib/imageFormatSupport';
-import type { ImageFormatOption } from '../../../lib/imageFormatSupport';
-import { encodeBmp, encodeGif, encodeTiff } from '../../../lib/imageEncoders';
-import { encodeIco, encodeIcns, encodeOdg, encodePostScript, encodePsd } from '../../../lib/documentEncoders';
-import { customImageKind, decodeCustomImage, UnsupportedImageError } from '../../../lib/imageDecoders';
+import { formatBytes } from '../../../lib/imageUtils';
 import { ActionBar, SizeDelta } from '../../../components/tool';
 import { ConvertFlow, FormatPills } from '../../../components/tool/ConvertFlow';
 import { tr } from '../../../lib/i18n';
@@ -71,52 +63,9 @@ const FORMAT_HINTS: Record<string, string> = {
   'application/vnd.oasis.opendocument.graphics': 'Opens in LibreOffice Draw',
 };
 
-/** Formats Bench writes itself (the browser can't), after the ones the browser makes. */
-const BENCH_FORMATS: ImageFormatOption[] = [
-  { mime: 'image/gif', label: 'GIF', extension: 'gif' },
-  { mime: 'image/bmp', label: 'BMP', extension: 'bmp' },
-  { mime: 'image/tiff', label: 'TIFF', extension: 'tif' },
-  { mime: 'image/x-icon', label: 'ICO', extension: 'ico' },
-  { mime: 'image/icns', label: 'ICNS', extension: 'icns' },
-  { mime: 'image/vnd.adobe.photoshop', label: 'PSD', extension: 'psd' },
-  { mime: 'application/postscript+eps', label: 'EPS', extension: 'eps' },
-  { mime: 'application/postscript', label: 'PS', extension: 'ps' },
-  { mime: 'application/vnd.oasis.opendocument.graphics', label: 'ODG', extension: 'odg' },
-];
-
-/** Encodes the drawn picture into the chosen format. */
-async function encodeTo(canvas: HTMLCanvasElement, mime: string, quality: number): Promise<Blob> {
-  const pixels = () => canvas.getContext('2d')!.getImageData(0, 0, canvas.width, canvas.height);
-  switch (mime) {
-    case 'image/gif': return encodeGif(pixels());
-    case 'image/bmp': return encodeBmp(pixels());
-    case 'image/tiff': return encodeTiff(pixels());
-    case 'image/x-icon': return encodeIco(canvas);
-    case 'image/icns': return encodeIcns(canvas);
-    case 'image/vnd.adobe.photoshop': return encodePsd(pixels());
-    case 'application/postscript+eps': return encodePostScript(canvas, true);
-    case 'application/postscript': return encodePostScript(canvas, false);
-    case 'application/vnd.oasis.opendocument.graphics': return encodeOdg(canvas);
-    default: return canvasToBlob(canvas, mime, usesQuality(mime) ? quality : undefined);
-  }
-}
 /** Icons always hold the same set of sizes, so their size doesn't scale with the picture. */
 const fixedSize = (mime: string) => mime === 'image/x-icon' || mime === 'image/icns';
 
-/** Opens formats the browser can't (TIFF, TGA, PPM, ICNS) as a PNG picture Bench can work with. */
-async function openWithBench(file: File): Promise<{ url: string; width: number; height: number }> {
-  const out = await decodeCustomImage(file);
-  if (out instanceof Blob) {
-    const bmp = await createImageBitmap(out);
-    return { url: URL.createObjectURL(out), width: bmp.width, height: bmp.height };
-  }
-  const c = document.createElement('canvas');
-  c.width = out.width;
-  c.height = out.height;
-  c.getContext('2d')!.putImageData(new ImageData(out.data, out.width, out.height), 0, 0);
-  const png = await canvasToBlob(c, 'image/png');
-  return { url: URL.createObjectURL(png), width: out.width, height: out.height };
-}
 
 /** Draws the picture onto a canvas at the given scale. */
 async function drawImage(src: string, width: number, height: number, scale: number, mime: string) {
@@ -160,7 +109,7 @@ export default function ImageConvert() {
   const [convertError, setConvertError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
-  const encodeFormats = [...getSupportedEncodeFormats(), ...BENCH_FORMATS];
+  const encodeFormats = engine.image.outputFormats();
   // Everything except the format the picture already is.
   const outputOptions = decoded ? encodeFormats.filter((f) => f.mime !== decoded.file.type && f.label !== decoded.label) : encodeFormats;
 
@@ -185,11 +134,11 @@ export default function ImageConvert() {
       if (svgInput) {
         const { width, height } = await guessSvgDimensions(file);
         setDecoded({ file, label, previewUrl: URL.createObjectURL(file), width, height, isSvgInput: true, isAnimatedGif: false });
-      } else if (customImageKind(file.name, new Uint8Array(await file.slice(0, 8).arrayBuffer()))) {
-        const { url, width, height } = await openWithBench(file);
+      } else if (await engine.image.needsReader(file)) {
+        const { url, width, height } = await engine.image.open(file);
         setDecoded({ file, label, previewUrl: url, width, height, isSvgInput: false, isAnimatedGif: false });
       } else {
-        const { image, url } = await tryDecodeImage(file);
+        const { image, url } = await engine.image.load(file);
         setDecoded({
           file,
           label,
@@ -216,7 +165,7 @@ export default function ImageConvert() {
         const pixels = decoded.width * decoded.height;
         const scale = fixedSize(target.mime) ? 1 : Math.min(1, Math.sqrt(1_000_000 / pixels));
         const canvas = await drawImage(decoded.previewUrl, decoded.width, decoded.height, scale, target.mime);
-        const blob = await encodeTo(canvas, target.mime, quality);
+        const blob = await engine.image.encode(canvas, target.mime, quality);
         if (!stale) setEstimate(blob.size / (scale * scale));
       } catch {
         // No estimate; the conversion itself reports errors.
@@ -231,7 +180,7 @@ export default function ImageConvert() {
     setConvertError(null);
     try {
       const canvas = await drawImage(decoded.previewUrl, decoded.width, decoded.height, 1, target.mime);
-      const blob = await encodeTo(canvas, target.mime, quality);
+      const blob = await engine.image.encode(canvas, target.mime, quality);
       const base = decoded.file.name.replace(/\.[^.]+$/, '');
       setResult({ url: URL.createObjectURL(blob), name: `${base}.${target.extension}`, size: blob.size });
     } catch (e) {

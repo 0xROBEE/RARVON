@@ -114,7 +114,8 @@ export interface PdfPageText {
  * between paragraphs. Pages that are only images (scans) come back empty.
  * Throws `PasswordRequired` for encrypted PDFs.
  */
-export class PasswordRequired extends Error {}
+import { PasswordRequired } from './jobErrors';
+export { PasswordRequired };
 
 export async function extractPdfText(data: ArrayBuffer, onProgress?: (done: number, total: number) => void): Promise<PdfPageText[]> {
   const task = open(data);

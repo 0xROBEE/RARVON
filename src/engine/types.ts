@@ -13,6 +13,10 @@ import type { GifOptions, RunConversionOptions, VideoInfo } from '../lib/videoEn
 import type { ExportOptions } from '../lib/videoEditor/exporter';
 import type { Project } from '../lib/videoEditor/types';
 import type { VideoCodec } from 'mediabunny';
+import type { ImageFormatOption } from '../lib/imageFormatSupport';
+import type { PdfPageText } from '../lib/pdfjs';
+import type { OcrLanguage, OcrLayout, OcrProgress, OcrResult } from '../lib/ocrEngine';
+import type { BackgroundRemover } from '../lib/backgroundRemoval';
 
 export type EngineKind = 'browser' | 'native';
 
@@ -42,6 +46,55 @@ export interface AudioEngine {
   captureFromVideo: ((file: File, onProgress: (fraction: number) => void) => Promise<Blob>) | null;
 }
 
+export interface ImageEngine {
+  /** Every format this engine can save a picture as (browser-made first). */
+  outputFormats(): ImageFormatOption[];
+  /** Formats the browser's own canvas can write (for tools that only need those). */
+  canvasFormats(): ImageFormatOption[];
+  /** Saves a drawn picture in a format (`mime` from outputFormats). */
+  encode(canvas: HTMLCanvasElement, mime: string, quality: number): Promise<Blob>;
+  /** Opens a picture the usual way (formats the platform itself understands). */
+  load(file: File): Promise<{ image: HTMLImageElement; url: string }>;
+  /** True when this file needs the engine's own readers (the browser can't open it). */
+  needsReader(file: File): Promise<boolean>;
+  /** Opens such a file as a picture the tool can draw. */
+  open(file: File): Promise<{ url: string; width: number; height: number }>;
+}
+
+/** A PDF opened for drawing its pages; destroy it when done. */
+export interface PdfDocument {
+  numPages: number;
+  renderPage(pageNumber: number, scale: number): Promise<{ canvas: HTMLCanvasElement; widthPt: number; heightPt: number }>;
+  destroy(): Promise<void>;
+}
+
+export interface PdfEngine {
+  pageCount(data: ArrayBuffer): Promise<number>;
+  /** Draws one page (1-based) at a scale (1 = 72 dpi). */
+  renderPage(data: ArrayBuffer, pageNumber: number, scale: number): Promise<HTMLCanvasElement>;
+  open(data: ArrayBuffer): Promise<PdfDocument>;
+  /** Small pictures of every page, as data URLs. */
+  thumbnails(data: ArrayBuffer, scale?: number): Promise<string[]>;
+  /** The text of every page, with its layout. */
+  extractText(data: ArrayBuffer, onProgress?: (done: number, total: number) => void): Promise<PdfPageText[]>;
+}
+
+export interface OcrEngine {
+  languages: OcrLanguage[];
+  recognize(image: HTMLCanvasElement | Blob, langs: string[], options?: { layout?: OcrLayout; onProgress?: (p: OcrProgress) => void }): Promise<OcrResult>;
+  /** Frees the text-recognition engine (it's large). */
+  stop(): Promise<void>;
+}
+
+export interface AiEngine {
+  /** Longest side, in pixels, the background models work at. */
+  workSize: number;
+  /** A background remover; it keeps its models loaded until disposed. */
+  backgroundRemover(): Promise<BackgroundRemover>;
+  /** How much of each model still has to be downloaded. */
+  downloadStatus(mode: 'standard' | 'hq'): Promise<{ missing: number }>;
+}
+
 export interface Engine {
   kind: EngineKind;
   /**
@@ -56,4 +109,8 @@ export interface Engine {
   showsBrowserWarnings: boolean;
   video: VideoEngine;
   audio: AudioEngine;
+  image: ImageEngine;
+  pdf: PdfEngine;
+  ocr: OcrEngine;
+  ai: AiEngine;
 }

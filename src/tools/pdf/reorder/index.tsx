@@ -1,10 +1,10 @@
+import { engine } from '../../../engine';
 import { useRef, useState } from 'react';
 import type { PointerEvent as ReactPointerEvent } from 'react';
 import { PDFDocument } from 'pdf-lib';
 import FileDropzone from '../../../components/FileDropzone';
 import Button from '../../../components/Button';
 import ErrorMessage from '../../../components/ErrorMessage';
-import { renderAllThumbnails } from '../../../lib/pdfjs';
 import { ResultCard, ActionBar } from '../../../components/tool';
 import { tr } from '../../../lib/i18n';
 
@@ -35,7 +35,7 @@ export default function ReorderPdf() {
     setError(null);
     setLoading(true);
     try {
-      const thumbs = await renderAllThumbnails(await f.arrayBuffer());
+      const thumbs = await engine.pdf.thumbnails(await f.arrayBuffer());
       setPages(thumbs.map((thumb, i) => ({ originalIndex: i, thumb })));
     } catch {
       setError(tr("Could not read this PDF."));

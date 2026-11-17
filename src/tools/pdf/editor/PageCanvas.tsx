@@ -1,6 +1,6 @@
+import { engine } from '../../../engine';
 import { useEffect, useRef, useState } from 'react';
 import type { PointerEvent as ReactPointerEvent } from 'react';
-import { renderPdfPageToCanvas } from '../../../lib/pdfjs';
 import type { Annotation, EditorTool, PageInstance, ShapeKind } from './types';
 import { NOTE_ICON_PT, UNDERLINE_THICKNESS, newId } from './types';
 import { EDITOR_FONT_STACK } from './exportPdf';
@@ -85,7 +85,7 @@ export default function PageCanvas({
       setLoading(false);
       return;
     }
-    renderPdfPageToCanvas(srcBytes.slice(0), page.originalIndex + 1, RENDER_SCALE).then((canvas) => {
+    engine.pdf.renderPage(srcBytes.slice(0), page.originalIndex + 1, RENDER_SCALE).then((canvas) => {
       if (cancelled) return;
       setPageImg({ url: canvas.toDataURL('image/png'), w: canvas.width, h: canvas.height });
       setLoading(false);

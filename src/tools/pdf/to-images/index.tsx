@@ -1,12 +1,10 @@
+import { engine, encodeBmp, encodeGif, encodeTiff } from '../../../engine';
 import { useEffect, useState } from 'react';
 import JSZip from 'jszip';
 import FileDropzone from '../../../components/FileDropzone';
 import Button from '../../../components/Button';
 import ErrorMessage from '../../../components/ErrorMessage';
-import { openPdfForRendering, renderPdfPageToCanvas } from '../../../lib/pdfjs';
 import { canvasToBlob, formatBytes } from '../../../lib/imageUtils';
-import { getSupportedEncodeFormats } from '../../../lib/imageFormatSupport';
-import { encodeBmp, encodeGif, encodeTiff } from '../../../lib/imageEncoders';
 import { ActionBar } from '../../../components/tool';
 import { ConvertFlow, FormatPills } from '../../../components/tool/ConvertFlow';
 import { DocTile } from '../../../components/tool/CompressFlow';
@@ -25,7 +23,7 @@ const FORMATS: { value: Format; label: string; hint: string; mime?: string }[] =
 ];
 /** Formats made by the browser itself only appear where this browser can make them. */
 function availableFormats() {
-  const can = new Set(getSupportedEncodeFormats().map((f) => f.mime));
+  const can = new Set(engine.image.canvasFormats().map((f) => f.mime));
   return FORMATS.filter((f) => !f.mime || can.has(f.mime));
 }
 
@@ -84,7 +82,7 @@ export default function PdfToImages() {
     let stale = false;
     (async () => {
       try {
-        const pdf = await openPdfForRendering(await file.arrayBuffer());
+        const pdf = await engine.pdf.open(await file.arrayBuffer());
         try {
           const blank = Array.from({ length: pdf.numPages }, (_, i) => ({ id: `p${i + 1}`, src: null, widthPt: 0, heightPt: 0 }));
           if (stale) return;
@@ -135,13 +133,13 @@ export default function PdfToImages() {
       const numbers = chosen.map((p) => Number(p.id.slice(1)));
 
       if (numbers.length === 1) {
-        const canvas = await renderPdfPageToCanvas(bytes.slice(0), numbers[0], scale);
+        const canvas = await engine.pdf.renderPage(bytes.slice(0), numbers[0], scale);
         const blob = await encodePage(canvas, format);
         setResult({ url: URL.createObjectURL(blob), name: pages.length === 1 ? `${base}.${ext}` : `${base}-page-${numbers[0]}.${ext}`, size: blob.size });
       } else {
         const zip = new JSZip();
         for (const [k, n] of numbers.entries()) {
-          const canvas = await renderPdfPageToCanvas(bytes.slice(0), n, scale);
+          const canvas = await engine.pdf.renderPage(bytes.slice(0), n, scale);
           const blob = await encodePage(canvas, format);
           zip.file(`${base}-page-${n}.${ext}`, blob);
           setProgress((k + 1) / numbers.length);

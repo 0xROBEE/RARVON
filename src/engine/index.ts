@@ -4,23 +4,21 @@
  */
 import type { Engine } from './types';
 import { browserEngine } from './browser';
-import { CancelledError } from '../lib/audioEngine';
-import { VideoCancelledError } from '../lib/videoEngine';
-import { ExportCancelled } from '../lib/videoEditor/exporter';
+import { CancelledError, ExportCancelled, VideoCancelledError } from '../lib/jobErrors';
 import { tr } from '../lib/i18n';
 
-export type { Engine, EngineKind, VideoEngine, AudioEngine } from './types';
+export type { Engine, EngineKind, VideoEngine, AudioEngine, ImageEngine, PdfEngine, PdfDocument, OcrEngine, AiEngine } from './types';
 
-/** True inside the Bench desktop app (Tauri puts this object on the page). */
-export function isBenchApp(): boolean {
-  return typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window;
-}
+export { isBenchApp, engineInfo } from './info';
 
 /**
  * The engine for this session. The app's native engine plugs in here when it
  * exists; until then the app also uses the browser engine.
  */
 export const engine: Engine = browserEngine;
+
+export { PasswordRequired } from '../lib/jobErrors';
+export { UnsupportedImageError } from '../lib/imageDecoders';
 
 /** True when a job ended because the person pressed Cancel (in any engine). */
 export function isCancelled(e: unknown): boolean {
@@ -36,7 +34,18 @@ export function videoTooBig(file: File): string | null {
 }
 
 // Shared lists, types and pure helpers the tools use alongside the engine.
-export { AUDIO_TARGETS } from '../lib/audioEngine';
-export type { AudioInfo, AudioTarget, AudioTargetInfo, AudioJobOptions } from '../lib/audioEngine';
-export { compressionBitrates } from '../lib/videoEngine';
+export { AUDIO_TARGETS } from '../lib/audioTargets';
+export type { AudioTarget, AudioTargetInfo } from '../lib/audioTargets';
+export type { AudioInfo, AudioJobOptions } from '../lib/audioEngine';
+export { compressionBitrates } from '../lib/videoBitrates';
 export type { VideoInfo, OutputContainer, WriteContainer, RunConversionOptions, GifOptions } from '../lib/videoEngine';
+export type { ImageFormatOption } from '../lib/imageFormatSupport';
+// SVG has no fixed size: helpers to detect it and read its intended size.
+export { isSvg, guessSvgDimensions } from '../lib/imageFormatSupport';
+export type { PdfPageText } from '../lib/pdfjs';
+export type { OcrLanguage, OcrLayout, OcrProgress, OcrResult } from '../lib/ocrEngine';
+export type { BackgroundRemover, MaskResult } from '../lib/backgroundRemoval';
+// Picture preparation for text recognition: plain canvas work, the same in every engine.
+export { decodeImage, preprocessForOcr } from '../lib/ocrPreprocess';
+// Bench's own still/animated writers, for tools that build pictures themselves.
+export { encodeBmp, encodeGif, encodeTiff } from '../lib/imageEncoders';

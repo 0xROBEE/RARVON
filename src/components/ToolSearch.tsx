@@ -1,4 +1,4 @@
-import { engine } from '../engine';
+import { engineInfo } from '../engine/info';
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { tools, getCategory, actionMeta } from '../lib/toolRegistry';
@@ -134,7 +134,7 @@ export default function ToolSearch({ open, onClose }: { open: boolean; onClose: 
                   {tool.status === 'coming-soon' && (
                     <span className="shrink-0 rounded-full border border-line px-2 py-0.5 text-[10px] uppercase text-ink-3">{tr('Soon')}</span>
                   )}
-                  {tool.status === 'experimental' && engine.showsBrowserWarnings && (
+                  {tool.status === 'experimental' && engineInfo.showsBrowserWarnings && (
                     <span className="shrink-0 rounded-full border border-warn/30 bg-warn-dim px-2 py-0.5 text-[10px] uppercase text-warn">{tr('Experimental')}</span>
                   )}
                 </button>

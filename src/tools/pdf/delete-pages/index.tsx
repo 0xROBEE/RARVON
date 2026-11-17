@@ -1,9 +1,9 @@
+import { engine } from '../../../engine';
 import { useState } from 'react';
 import { PDFDocument } from 'pdf-lib';
 import FileDropzone from '../../../components/FileDropzone';
 import Button from '../../../components/Button';
 import ErrorMessage from '../../../components/ErrorMessage';
-import { getPdfPageCount } from '../../../lib/pdfjs';
 import { parsePageRange } from '../../../lib/pageRange';
 import { ResultCard, ActionBar } from '../../../components/tool';
 import { tr } from '../../../lib/i18n';
@@ -23,7 +23,7 @@ export default function DeletePdfPages() {
     // Only show the page controls once the page count is known, so nothing
     // typed into them can be overwritten by this load finishing.
     try {
-      const count = await getPdfPageCount(await f.arrayBuffer());
+      const count = await engine.pdf.pageCount(await f.arrayBuffer());
       setPageCount(count);
       setRange('');
       setFile(f);
