@@ -16,7 +16,7 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 use std::fs;
-use std::io::Cursor;
+use std::io::{Cursor, Read};
 use std::path::{Component, Path, PathBuf};
 use std::process::Command;
 use std::sync::{Arc, Mutex};
@@ -24,6 +24,9 @@ use std::thread;
 use std::time::{Duration, Instant};
 
 use tiny_http::{Header, Method, Request, Response, Server, StatusCode};
+
+mod native;
+use native::Native;
 
 const VERSION: &str = env!("CARGO_PKG_VERSION");
 /// Bench's usual port. Staying on one address lets the window remember your
@@ -61,19 +64,30 @@ fn main() {
     let port = server.server_addr().to_ip().expect("ip address").port();
     let origin = format!("http://127.0.0.1:{port}");
 
-    let last_contact: Arc<Mutex<Contact>> = Arc::new(Mutex::new(Contact::default()));
+    // Video and audio on this computer's hardware, when FFmpeg is next to Bench.
+    let native = Native::find().map(Arc::new);
+    let shared = Arc::new(Shared {
+        web,
+        host: format!("127.0.0.1:{port}"),
+        token: token.clone(),
+        contact: Mutex::new(Contact::default()),
+        native: native.clone(),
+    });
     {
-        let last_contact = Arc::clone(&last_contact);
-        let token = token.clone();
-        let host = format!("127.0.0.1:{port}");
+        let shared = Arc::clone(&shared);
         thread::spawn(move || {
             for request in server.incoming_requests() {
-                handle(request, &web, &host, &token, &last_contact);
+                // One thread per request: a big upload never holds up the rest.
+                let shared = Arc::clone(&shared);
+                thread::spawn(move || handle(request, &shared));
             }
         });
     }
+    let last_contact = &shared.contact;
 
-    if !open_app_window(&format!("{origin}/")) {
+    // BENCH_NO_WINDOW=1: for testing, serve without opening a window.
+    let window_wanted = std::env::var_os("BENCH_NO_WINDOW").is_none();
+    if window_wanted && !open_app_window(&format!("{origin}/")) {
         eprintln!("Bench could not open a window: Microsoft Edge or Google Chrome is needed.");
         std::process::exit(1);
     }
@@ -92,6 +106,18 @@ fn main() {
             break;
         }
     }
+    if let Some(native) = native {
+        native.shut_down();
+    }
+}
+
+/// Everything the request threads share.
+struct Shared {
+    web: PathBuf,
+    host: String,
+    token: String,
+    contact: Mutex<Contact>,
+    native: Option<Arc<Native>>,
 }
 
 /// Bench's pages: `web` next to the program; while developing, `BENCH_WEB_DIR` or the site's `dist`.
@@ -127,7 +153,77 @@ fn reply(request: Request, status: u16, body: &str) {
     let _ = request.respond(Response::from_string(body).with_status_code(StatusCode(status)));
 }
 
-fn handle(request: Request, web: &Path, host: &str, token: &str, last_contact: &Mutex<Contact>) {
+fn reply_json(request: Request, result: Result<serde_json::Value, String>) {
+    let (status, body) = match result {
+        Ok(v) => (200, v.to_string()),
+        Err(e) => (400, serde_json::json!({ "error": e }).to_string()),
+    };
+    let _ = request.respond(
+        Response::from_string(body).with_status_code(StatusCode(status)).with_header(header("Content-Type", "application/json")),
+    );
+}
+
+fn read_json<T: serde::de::DeserializeOwned>(request: &mut Request) -> Result<T, String> {
+    let mut body = String::new();
+    request.as_reader().take(64 * 1024).read_to_string(&mut body).map_err(|e| e.to_string())?;
+    serde_json::from_str(&body).map_err(|e| e.to_string())
+}
+
+/// The engine's own commands (all need the secret key in a header).
+fn handle_native(mut request: Request, path: &str, url: &str, native: &Arc<Native>) {
+    #[derive(serde::Deserialize)]
+    struct Ask {
+        file: Option<String>,
+        codec: Option<String>,
+    }
+    let query = |name: &str| {
+        url.split_once('?')
+            .and_then(|(_, q)| q.split('&').find_map(|kv| kv.strip_prefix(&format!("{name}=")[..]).map(str::to_string)))
+            .unwrap_or_default()
+    };
+    let method = request.method().clone();
+    match (method, path) {
+        (Method::Post, "/__bench/upload") => {
+            let ext = query("ext");
+            let result = native.upload(&mut request.as_reader(), &ext);
+            reply_json(request, result)
+        }
+        (Method::Post, "/__bench/probe") => {
+            let result = read_json::<Ask>(&mut request).and_then(|a| native.probe_json(&a.file.unwrap_or_default()));
+            reply_json(request, result)
+        }
+        (Method::Post, "/__bench/can-encode") => {
+            let result = read_json::<Ask>(&mut request).map(|a| native.can_encode(&a.codec.unwrap_or_default()));
+            reply_json(request, result)
+        }
+        (Method::Post, "/__bench/job") => {
+            let result = read_json::<native::JobSpec>(&mut request).and_then(|spec| native.start(spec));
+            reply_json(request, result)
+        }
+        (Method::Get, p) if p.starts_with("/__bench/job/") && p.ends_with("/result") => {
+            let id = &p["/__bench/job/".len()..p.len() - "/result".len()];
+            match native.take_result(id).and_then(|(file, mime)| fs::File::open(&file).map(|f| (f, mime)).map_err(|e| e.to_string())) {
+                Ok((file, mime)) => {
+                    let _ = request.respond(Response::from_file(file).with_header(header("Content-Type", mime)));
+                    native.forget_job(id);
+                }
+                Err(e) => reply_json(request, Err(e)),
+            }
+        }
+        (Method::Get, p) if p.starts_with("/__bench/job/") => {
+            let result = native.status(&p["/__bench/job/".len()..]);
+            reply_json(request, result)
+        }
+        (Method::Post, p) if p.starts_with("/__bench/job/") && p.ends_with("/cancel") => {
+            let result = native.cancel(&p["/__bench/job/".len()..p.len() - "/cancel".len()]);
+            reply_json(request, result)
+        }
+        _ => reply(request, 404, "Not found"),
+    }
+}
+
+fn handle(request: Request, shared: &Shared) {
+    let (web, host, token, last_contact) = (&shared.web, &shared.host, &shared.token, &shared.contact);
     // Only requests addressed exactly to this computer and port.
     let host_ok = request.headers().iter().any(|h| h.field.equiv("Host") && h.value.as_str() == host);
     if !host_ok {
@@ -156,6 +252,15 @@ fn handle(request: Request, web: &Path, host: &str, token: &str, last_contact: &
         return reply(request, 204, "");
     }
 
+    if path.starts_with("/__bench/") {
+        let key_ok = request.headers().iter().any(|h| h.field.equiv("X-Bench-Key") && h.value.as_str() == token);
+        return match (&shared.native, key_ok) {
+            (Some(native), true) => handle_native(request, &path, &url, native),
+            (None, true) => reply(request, 404, "Not found"),
+            _ => reply(request, 403, "Forbidden"),
+        };
+    }
+
     if *request.method() != Method::Get && *request.method() != Method::Head {
         return reply(request, 405, "Method not allowed");
     }
@@ -180,7 +285,8 @@ fn handle(request: Request, web: &Path, host: &str, token: &str, last_contact: &
     if name == "index.html" {
         // Tell Bench's page it is running in the app, with the key for "still open".
         let marker = format!(
-            "<script>window.__BENCH_APP__={{version:\"{VERSION}\",key:\"{token}\"}}</script></head>"
+            "<script>window.__BENCH_APP__={{version:\"{VERSION}\",key:\"{token}\",ffmpeg:{}}}</script></head>",
+            shared.native.is_some()
         );
         body = String::from_utf8_lossy(&body).replacen("</head>", &marker, 1).into_bytes();
     }

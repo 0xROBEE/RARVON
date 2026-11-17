@@ -4,18 +4,20 @@
  */
 import type { Engine } from './types';
 import { browserEngine } from './browser';
+import { nativeEngine } from './native';
+import { hasNativeEngine } from './info';
 import { CancelledError, ExportCancelled, VideoCancelledError } from '../lib/jobErrors';
 import { tr } from '../lib/i18n';
 
 export type { Engine, EngineKind, VideoEngine, AudioEngine, ImageEngine, PdfEngine, PdfDocument, OcrEngine, AiEngine } from './types';
 
-export { isBenchApp, engineInfo } from './info';
+export { isBenchApp, engineInfo, showsBrowserWarning } from './info';
 
 /**
- * The engine for this session. The app's native engine plugs in here when it
- * exists; until then the app also uses the browser engine.
+ * The engine for this session: in Bench for desktop, video and audio run in
+ * FFmpeg on this computer; on the website, everything runs in the browser.
  */
-export const engine: Engine = browserEngine;
+export const engine: Engine = hasNativeEngine ? nativeEngine : browserEngine;
 
 export { PasswordRequired } from '../lib/jobErrors';
 export { UnsupportedImageError } from '../lib/imageDecoders';

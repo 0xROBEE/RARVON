@@ -1,4 +1,4 @@
-import { engineInfo } from '../engine/info';
+import { showsBrowserWarning } from '../engine/info';
 import { Suspense, useEffect } from 'react';
 import { useParams, Navigate } from 'react-router-dom';
 import { getTool, getCategory, EXPERIMENTAL_NOTE } from '../lib/toolRegistry';
@@ -37,7 +37,7 @@ export default function ToolPage() {
   return (
     <ToolPageShell tool={tool}>
       {tool.status === 'coming-soon' && <div className="mb-4"><ComingSoonNotice reason={tool.comingSoonReason} /></div>}
-      {tool.status === 'experimental' && engineInfo.showsBrowserWarnings && (
+      {tool.status === 'experimental' && showsBrowserWarning(tool.category, tool.slug) && (
         // With the app available, heavy tools show what it does better; until then, the plain warning.
         appAvailable ? <BrowserLimitsCard tool={tool} /> : <ExperimentalNotice note={EXPERIMENTAL_NOTE} />
       )}

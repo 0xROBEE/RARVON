@@ -1,4 +1,4 @@
-import { engine, isCancelled, videoTooBig } from '../../../engine';
+import { engine, engineInfo, isCancelled, videoTooBig } from '../../../engine';
 import type { VideoInfo, WriteContainer } from '../../../engine';
 import { useEffect, useRef, useState } from 'react';
 import FileDropzone from '../../../components/FileDropzone';
@@ -116,7 +116,7 @@ export default function VideoConvertTool() {
 
   return (
     <div className="space-y-4">
-      {!file && <FileDropzone accept="video/mp4,video/webm,video/quicktime,video/x-matroska,.mkv,.mov" onFiles={handleFile} hint={tr("MP4, MOV, WebM or MKV, up to 250MB")} />}
+      {!file && <FileDropzone accept={engineInfo.videoAccept} onFiles={handleFile} hint={tr(engineInfo.videoHint)} />}
 
       {file && info && (
         <div className="slide-in space-y-4">

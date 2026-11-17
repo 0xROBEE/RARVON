@@ -1,4 +1,4 @@
-import { engine, isCancelled, videoTooBig } from '../../../engine';
+import { engine, engineInfo, isCancelled, videoTooBig } from '../../../engine';
 import type { VideoInfo } from '../../../engine';
 import { useRef, useState } from 'react';
 import FileDropzone from '../../../components/FileDropzone';
@@ -84,7 +84,7 @@ export default function VideoResolutionTool() {
   return (
     <div className="space-y-4">
       {!file ? (
-        <FileDropzone accept="video/mp4,video/webm,video/quicktime,video/x-matroska,.mkv,.mov" onFiles={handleFile} hint={tr("MP4, MOV, WebM or MKV, up to 250MB")} />
+        <FileDropzone accept={engineInfo.videoAccept} onFiles={handleFile} hint={tr(engineInfo.videoHint)} />
       ) : (
         <div className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-line bg-paper-dim p-3 text-sm">
           <span className="truncate">

@@ -35,8 +35,8 @@ export interface VideoInfo {
   /** Container to write results in: MP4/MOV sources → mp4; WebM, and MKV holding WebM codecs → webm. */
   container: OutputContainer | null;
   videoCodec: string | null;
-  /** The file's actual container. */
-  sourceFormat: 'mp4' | 'mov' | 'webm' | 'mkv';
+  /** The file's actual container (the app also reads others, such as "avi" or "wmv"). */
+  sourceFormat: 'mp4' | 'mov' | 'webm' | 'mkv' | (string & {});
   /** Average total bitrate of the file in bits/s. */
   bitrate: number;
 }
