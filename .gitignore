@@ -7,3 +7,6 @@ dist-ssr
 test-results
 playwright-report
 ai-models
+
+# Demo download links for previewing the app button (npx vite --mode appdemo)
+.env.appdemo

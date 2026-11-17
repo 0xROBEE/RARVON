@@ -57,6 +57,13 @@ fn main() {
         }
     };
 
+    // Bench already open? Open another window of it (same address, same settings).
+    let window_wanted = std::env::var_os("BENCH_NO_WINDOW").is_none();
+    if window_wanted && bench_already_running() {
+        open_app_window(&format!("http://127.0.0.1:{USUAL_PORT}/"));
+        return;
+    }
+
     let token = secret_key();
     let server = Server::http(("127.0.0.1", USUAL_PORT))
         .or_else(|_| Server::http("127.0.0.1:0"))
@@ -85,8 +92,7 @@ fn main() {
     }
     let last_contact = &shared.contact;
 
-    // BENCH_NO_WINDOW=1: for testing, serve without opening a window.
-    let window_wanted = std::env::var_os("BENCH_NO_WINDOW").is_none();
+    // BENCH_NO_WINDOW=1 (for testing): serve without opening a window.
     if window_wanted && !open_app_window(&format!("{origin}/")) {
         eprintln!("Bench could not open a window: Microsoft Edge or Google Chrome is needed.");
         std::process::exit(1);
@@ -118,6 +124,24 @@ struct Shared {
     token: String,
     contact: Mutex<Contact>,
     native: Option<Arc<Native>>,
+}
+
+/// Whether a Bench Engine already answers on Bench's usual port.
+fn bench_already_running() -> bool {
+    use std::io::Write;
+    use std::net::{SocketAddr, TcpStream};
+    let addr = SocketAddr::from(([127, 0, 0, 1], USUAL_PORT));
+    let Ok(mut stream) = TcpStream::connect_timeout(&addr, Duration::from_millis(500)) else {
+        return false;
+    };
+    let _ = stream.set_read_timeout(Some(Duration::from_secs(2)));
+    let request = format!("GET / HTTP/1.1\r\nHost: 127.0.0.1:{USUAL_PORT}\r\nConnection: close\r\n\r\n");
+    if stream.write_all(request.as_bytes()).is_err() {
+        return false;
+    }
+    let mut page = Vec::new();
+    let _ = stream.take(256 * 1024).read_to_end(&mut page);
+    String::from_utf8_lossy(&page).contains("window.__BENCH_APP__")
 }
 
 /// Bench's pages: `web` next to the program; while developing, `BENCH_WEB_DIR` or the site's `dist`.

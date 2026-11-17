@@ -32,6 +32,29 @@ or x265). It makes H.264 with the graphics card (NVIDIA, AMD or Intel), Windows'
 Bench keeps FFmpeg as a separate program, which the LGPL allows for closed-source software. The installer
 must include FFmpeg's license and say where its source code is available.
 
+## The Windows installer
+
+```bash
+npm run build:desktop
+```
+
+This builds the site and the engine, gathers them in `desktop/stage` (`Bench.exe`, `web/`, `ffmpeg/`,
+`LICENSE.txt`), and makes `desktop/out/Bench-setup-<version>.exe` with
+[Inno Setup 6](https://jrsoftware.org/isinfo.php). Inno Setup is a free build tool and isn't shipped
+inside Bench. The version comes from `bench-engine/Cargo.toml`. The installer:
+
+- installs for the current user only (`%LOCALAPPDATA%\Programs\Bench`), so no administrator prompt;
+- adds a Start menu shortcut, an optional desktop shortcut, and "Bench (beta)" in Settings → Apps;
+- offers its wizard in English or Arabic;
+- shows `installer/license.txt` (free to use, all rights reserved, FFmpeg's LGPL notice);
+- closes a running Bench before an update or uninstall. Uninstalling leaves nothing behind.
+
+Opening Bench while it's already running opens another window of the same Bench.
+
+To show the download buttons on the website, upload the installer (for example to GitHub Releases) and
+build the site with `VITE_APP_VERSION` and `VITE_APP_WINDOWS_URL` set (see `src/lib/appRelease.ts`).
+To preview them with pretend links, run `npx vite --mode appdemo` with a `.env.appdemo` file.
+
 ## Tests
 
 ```bash
@@ -66,5 +89,6 @@ ever opens, it gives up after 90 seconds.
 
 ## Still to come
 
-The installer (it asks about the website connection, off by default), signed updates, Linux packages, and
+The website-connection question in the installer (off by default; it comes with that feature), signed
+installers and updates, Linux packages, and
 the app-only features: whole folders, the right-click menu, "Open with Bench", and saving beside the original.

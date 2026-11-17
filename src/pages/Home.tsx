@@ -19,6 +19,7 @@ import type { Collection } from '../lib/collections';
 import { ActionIcon } from '../lib/actionIcons';
 import { appAvailable } from '../lib/appRelease';
 import { tr } from '../lib/i18n';
+import { showsBrowserWarning } from '../engine/info';
 
 const toolCount = tools.filter((t) => t.status !== 'coming-soon').length;
 const MAX_SUGGESTIONS = 6;
@@ -229,7 +230,7 @@ export default function Home() {
                     <li key={t.slug}>
                       <Link to={`/tools/${t.category}/${t.slug}`} className="flex items-center justify-between gap-2 rounded-md px-2 py-1.5 text-sm text-ink-2 hover:bg-paper-dim hover:text-ink">
                         <span className="truncate">{tr(t.name)}</span>
-                        {t.status === 'experimental' && <span className="shrink-0 font-mono text-[10px] uppercase tracking-wide text-warn">{tr('Beta')}</span>}
+                        {t.status === 'experimental' && showsBrowserWarning(t.category, t.slug) && <span className="shrink-0 font-mono text-[10px] uppercase tracking-wide text-warn">{tr('Beta')}</span>}
                       </Link>
                     </li>
                   ))}
@@ -348,7 +349,7 @@ function CollectionCard({ collection }: { collection: Collection }) {
           <li key={t.category + t.slug}>
             <Link to={`/tools/${t.category}/${t.slug}`} className="flex items-center justify-between gap-2 rounded-md px-2 py-1.5 text-sm text-ink-2 hover:bg-paper-dim hover:text-ink">
               <span className="truncate">{tr(t.name)}</span>
-              {t.status === 'experimental' && <span className="shrink-0 font-mono text-[10px] uppercase tracking-wide text-warn">{tr('Beta')}</span>}
+              {t.status === 'experimental' && showsBrowserWarning(t.category, t.slug) && <span className="shrink-0 font-mono text-[10px] uppercase tracking-wide text-warn">{tr('Beta')}</span>}
             </Link>
           </li>
         ))}

@@ -5,6 +5,7 @@ description = "Bench for desktop (beta): serves Bench on this computer and opens
 authors = ["ROBEE"]
 edition = "2021"
 publish = false
+build = "build.rs"
 
 [dependencies]
 tiny_http = "0.12"
@@ -12,6 +13,9 @@ getrandom = "0.2"
 percent-encoding = "2"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
+
+[build-dependencies]
+embed-resource = "3"
 
 [profile.release]
 opt-level = 3

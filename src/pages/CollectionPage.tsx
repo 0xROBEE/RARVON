@@ -5,6 +5,7 @@ import { CategoryIcon } from '../lib/categoryIcons';
 import { ActionIcon } from '../lib/actionIcons';
 import { getCategory } from '../lib/toolRegistry';
 import { tr } from '../lib/i18n';
+import { showsBrowserWarning } from '../engine/info';
 
 /** A dedicated page for one cross-category collection (Convert, Compress). */
 export default function CollectionPage({ collection }: { collection: Collection }) {
@@ -38,7 +39,7 @@ export default function CollectionPage({ collection }: { collection: Collection 
                   <span className="min-w-0">
                     <span className="flex items-center gap-2">
                       <span className="font-display text-sm font-semibold">{tr(tool.name)}</span>
-                      {tool.status === 'experimental' && <span className="font-mono text-[10px] uppercase tracking-wide text-warn">{tr('Beta')}</span>}
+                      {tool.status === 'experimental' && showsBrowserWarning(tool.category, tool.slug) && <span className="font-mono text-[10px] uppercase tracking-wide text-warn">{tr('Beta')}</span>}
                     </span>
                     <span className="mt-0.5 block text-xs text-ink-2">{tr(formats)}</span>
                     <span className="mt-1 block text-[11px] text-ink-3">{tr(getCategory(tool.category)?.name ?? '')}</span>

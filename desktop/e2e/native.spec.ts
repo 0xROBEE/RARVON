@@ -47,6 +47,10 @@ test.describe('Bench for desktop (FFmpeg engine)', () => {
     await expect(page.getByText(/Video Converter turns almost any video/)).toBeVisible();
     await expect(page.getByText(/In the Bench app, FFmpeg does the work on your computer/)).toBeVisible();
     await expect(page.getByText(/WebCodecs|this browser/)).toHaveCount(0);
+    // No "Beta" tag on tools FFmpeg runs; the Video Editor keeps it.
+    await page.goto('/');
+    await expect(page.getByRole('link', { name: /^Video Converter/ }).first()).not.toContainText('Beta');
+    await expect(page.getByRole('link', { name: /^Video Editor/ }).first()).toContainText('Beta');
     await page.goto('/tools/audio');
     await expect(page.getByText('all on your computer', { exact: false }).first()).toBeVisible();
     // The Video Editor still runs in the browser, so it keeps its note.
