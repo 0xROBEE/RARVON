@@ -8,6 +8,7 @@ import { KIND_LABEL, kindOfFile, toolsForKind } from '../lib/fileKinds';
 import { tr } from '../lib/i18n';
 import FeedbackButton from './FeedbackButton';
 import { useScrollTint } from '../lib/useScrollTint';
+import { toolText } from '../lib/appText';
 
 /**
  * Next steps under a tool: once it has produced a result, tools that accept
@@ -67,6 +68,7 @@ function NextSteps({ tool, wide }: { tool: ToolMeta; wide: boolean }) {
 export default function ToolPageShell({ tool, children }: { tool: ToolMeta; children: ReactNode }) {
   const category = getCategory(tool.category);
   const wide = tool.layout === 'wide';
+  const { faq } = toolText(tool);
   useScrollTint(tool.category);
   return (
     <div className={wide ? 'group/shell mx-auto max-w-[1680px] px-3 py-4 sm:px-4' : 'mx-auto max-w-3xl px-4 py-10 sm:px-6'}>
@@ -85,18 +87,18 @@ export default function ToolPageShell({ tool, children }: { tool: ToolMeta; chil
           <CategoryIcon category={tool.category} size={40} className={wide ? 'group-has-[[data-workspace]]/shell:hidden' : undefined} />
           <h1 className={`font-display text-2xl font-semibold tracking-tight sm:text-3xl ${wide ? 'group-has-[[data-workspace]]/shell:text-lg sm:group-has-[[data-workspace]]/shell:text-xl' : ''}`}>{tr(tool.name)}</h1>
         </div>
-        <p className={`mt-2 max-w-xl text-sm text-ink-2 ${wide ? 'group-has-[[data-workspace]]/shell:hidden' : ''}`}>{tr(tool.description)}</p>
+        <p className={`mt-2 max-w-xl text-sm text-ink-2 ${wide ? 'group-has-[[data-workspace]]/shell:hidden' : ''}`}>{tr(toolText(tool).description)}</p>
       </div>
 
       <div className={wide ? 'mt-8 group-has-[[data-workspace]]/shell:mt-3' : 'mt-8'}>{children}</div>
 
       {tool.status !== 'coming-soon' && <NextSteps tool={tool} wide={wide} />}
 
-      {tool.faq && tool.faq.length > 0 && (
+      {faq && faq.length > 0 && (
         <section className={`mt-12 border-t border-line pt-6 ${wide ? 'mx-auto max-w-3xl' : ''}`} aria-labelledby="faq-heading">
           <h2 id="faq-heading" className="font-display text-sm font-semibold">{tr('Frequently asked questions')}</h2>
           <dl className="mt-3 space-y-4">
-            {tool.faq.map((f) => (
+            {faq.map((f) => (
               <div key={f.q}>
                 <dt className="text-sm font-medium">{tr(f.q)}</dt>
                 <dd className="mt-1 text-sm text-ink-2">{tr(f.a)}</dd>

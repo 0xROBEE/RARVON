@@ -5,6 +5,10 @@ export const EXPERIMENTAL_NOTE = 'This tool works, but hasn\u2019t been verified
 
 export type ToolAction = 'convert' | 'compress' | 'edit' | 'resize' | 'extract' | 'generate' | 'optimize' | 'analyze';
 
+/** In the Bench app: which videos the video tools read. */
+const APP_VIDEO_FORMATS = 'Almost any video: MP4, MOV, MKV, WebM, AVI, WMV, FLV, MPEG, 3GP and more, at any size. In the Bench app, FFmpeg does the work on your computer, using your graphics card\u2019s video encoder when it has one.';
+const APP_FORMATS_FAQ = { q: 'Which formats work?', a: APP_VIDEO_FORMATS };
+
 export interface ToolMeta {
   slug: string;
   category: string;
@@ -19,6 +23,8 @@ export interface ToolMeta {
   /** 'wide' opts a tool page out of the standard max-w-3xl article layout for tools that need a full document-workspace canvas (e.g. the PDF Editor). */
   layout?: 'wide';
   faq?: { q: string; a: string }[];
+  /** In the Bench app, where FFmpeg does the work: text that differs from the website's. */
+  app?: { description?: string; faq?: { q: string; a: string }[] };
 }
 
 export const actionMeta: { value: ToolAction; label: string; description: string }[] = [
@@ -36,13 +42,15 @@ export interface CategoryMeta {
   slug: string;
   name: string;
   description: string;
+  /** The description inside the Bench app, when it differs. */
+  appDescription?: string;
 }
 
 export const categories: CategoryMeta[] = [
   { slug: 'pdf', name: 'PDF', description: 'Merge, split, compress and edit PDF files entirely in your browser.' },
   { slug: 'image', name: 'Image', description: 'Convert, compress, resize and edit images without uploading them anywhere.' },
-  { slug: 'video', name: 'Video', description: 'Video processing tools. Most require heavier browser tech and are being rolled out carefully.' },
-  { slug: 'audio', name: 'Audio', description: 'Convert, trim and compress audio, or pull the soundtrack out of a video — all in your browser.' },
+  { slug: 'video', name: 'Video', description: 'Video processing tools. Most require heavier browser tech and are being rolled out carefully.', appDescription: 'Convert, compress, trim and resize videos on your computer, at any size.' },
+  { slug: 'audio', name: 'Audio', description: 'Convert, trim and compress audio, or pull the soundtrack out of a video — all in your browser.', appDescription: 'Convert, trim and compress audio, or pull the soundtrack out of a video, all on your computer.' },
   { slug: 'developer', name: 'Developer', description: 'Everyday utilities for formatting, encoding and generating data.' },
   { slug: 'text', name: 'Text', description: 'Clean up, count and reshape text instantly.' },
   { slug: 'utilities', name: 'Utilities', description: 'Small, focused tools for everyday tasks.' },
@@ -264,6 +272,10 @@ export const tools: ToolMeta[] = [
     description: 'Trim Video cuts an MP4, MOV, WebM or MKV video to a start and end time using WebCodecs, entirely in your browser. When possible it copies the existing encoded video without re-compressing it, so quality is unchanged.',
     status: 'experimental', keywords: ['cut video', 'video clip'],
     actions: ['edit'],
+    app: {
+      description: 'Trim Video cuts a video to a start and end time on your computer. When it can, it copies the existing video without re-compressing it, so quality is unchanged.',
+      faq: [APP_FORMATS_FAQ, { q: 'Why does my clip start a little early?', a: 'When the video is copied without re-compressing, a cut can only start on a full picture (a keyframe), so Bench starts at the one just before your start time. Videos usually have one every few seconds.' }],
+    },
     faq: [{ q: 'Which formats work?', a: 'MP4, MOV, WebM and MKV files with the codecs your browser can decode \u2014 in practice H.264, VP8, VP9 and AV1 video almost everywhere, HEVC mostly on Apple devices. This uses WebCodecs, the browser\u2019s own hardware-accelerated encoders, instead of a 30 MB FFmpeg download; the trade-off is that a few exotic codecs (and very large files over 250 MB) aren\u2019t supported.' }],
   },
   {
@@ -284,6 +296,10 @@ export const tools: ToolMeta[] = [
     description: 'Change Video Resolution re-encodes an MP4, MOV, WebM or MKV video at a new width and height using WebCodecs, with common presets or exact dimensions.',
     status: 'experimental', keywords: ['downscale video', 'video resize'],
     actions: ['resize'],
+    app: {
+      description: 'Change Video Resolution re-encodes a video at a new width and height on your computer, with common presets or exact dimensions.',
+      faq: [APP_FORMATS_FAQ],
+    },
   },
   {
     slug: 'convert', category: 'video', name: 'Video Converter',
@@ -291,6 +307,10 @@ export const tools: ToolMeta[] = [
     description: 'Video Converter turns MOV, MKV, MP4 or WebM videos into MP4 (plays everywhere), MOV, WebM, MKV, smaller MP4 with HEVC or WebM with AV1, or a short animated GIF. Each format appears only if this browser can actually make it.',
     status: 'experimental', keywords: ['mp4 to webm', 'webm to mp4', 'mov to mp4', 'mkv to mp4', 'mp4 to mov', 'mp4 to mkv', 'video to gif', 'mp4 to gif', 'hevc', 'av1'],
     actions: ['convert'],
+    app: {
+      description: 'Video Converter turns almost any video (MP4, MOV, MKV, WebM, AVI, WMV and more) into MP4 (plays everywhere), MOV, WebM, MKV, smaller MP4 with HEVC or WebM with AV1, or a short animated GIF.',
+      faq: [APP_FORMATS_FAQ, { q: 'Is GIF a video?', a: 'Not really: a GIF is a moving picture with no sound and only 256 colours, and it gets big quickly. It\u2019s great for short clips, reactions and memes. Pick a start, a length up to 15 seconds and a width, and Bench makes it frame by frame.' }],
+    },
     faq: [{ q: 'Which formats work?', a: 'MP4, MOV, WebM and MKV files with the codecs your browser can decode \u2014 in practice H.264, VP8, VP9 and AV1 video almost everywhere, HEVC mostly on Apple devices. This uses WebCodecs, the browser\u2019s own hardware-accelerated encoders, instead of a 30 MB FFmpeg download; the trade-off is that a few exotic codecs (and very large files over 250 MB) aren\u2019t supported.' }, { q: 'Is GIF a video?', a: 'Not really: a GIF is a moving picture with no sound and only 256 colours, and it gets big quickly. It\u2019s great for short clips, reactions and memes. Pick a start, a length up to 15 seconds and a width, and Bench makes it frame by frame.' }],
   },
   {
@@ -299,6 +319,7 @@ export const tools: ToolMeta[] = [
     description: 'Video Compressor re-encodes an MP4, MOV, WebM or MKV video at a bitrate derived from the original (and optionally a lower resolution) using your device\u2019s video encoder, so the result is reliably smaller \u2014 with a size estimate up front.',
     status: 'experimental', keywords: ['shrink video', 'reduce video size'],
     actions: ['compress'],
+    app: { faq: [APP_FORMATS_FAQ] },
   },
 
   // Developer
@@ -425,6 +446,7 @@ export const tools: ToolMeta[] = [
     description: 'Audio Converter turns MP3, WAV, OGG, FLAC, M4A or Opus files into MP3, AAC (.m4a), Opus (.ogg) or lossless WAV on your device \u2014 typically in a second or two, not in real time.',
     status: 'available', keywords: ['audio format converter', 'wav to mp3', 'm4a to mp3', 'flac to mp3', 'mp3 converter'],
     actions: ['convert'],
+    app: { faq: [{ q: 'How does MP3 export work without a server?', a: 'In the Bench app, FFmpeg makes the MP3 on your computer with the open-source LAME encoder. AAC and Opus sound a little better at the same size.' }] },
     faq: [{ q: 'How does MP3 export work without a server?', a: 'Browsers can play MP3 but have no built-in MP3 encoder, so Bench loads the open-source LAME encoder (compiled to WebAssembly) the first time you export an MP3. It runs entirely on your device (LAME is LGPL-licensed; see /licenses/LAME-LGPL-2.0.txt). AAC and Opus use the browser\u2019s own encoders and sound a little better at the same size.' }],
   },
   {
@@ -440,6 +462,10 @@ export const tools: ToolMeta[] = [
     description: 'Extract Audio saves the soundtrack of an MP4, MOV, WebM or MKV video as an audio file. By default the audio is copied out without re-encoding \u2014 instant and identical in quality \u2014 or you can convert it to AAC, Opus or WAV.',
     status: 'available', keywords: ['video to audio', 'get audio from video', 'video to mp3', 'mp4 to m4a'],
     actions: ['extract'],
+    app: {
+      description: 'Extract Audio saves the soundtrack of almost any video as an audio file. By default the audio is copied out without re-encoding (instant and identical in quality), or you can convert it to AAC, Opus, MP3 or WAV.',
+      faq: [{ q: 'Is the audio re-encoded?', a: 'Not with \u201cOriginal audio\u201d: the audio track is copied out of the video as-is (AAC into .m4a, Opus or Vorbis into .ogg, MP3 into .mp3), so it\u2019s instant and loses nothing. Other kinds of sound are saved as Opus.' }],
+    },
     faq: [{ q: 'Is the audio re-encoded?', a: 'Not with \u201cOriginal audio\u201d: the audio track is copied out of the video as-is (AAC into .m4a, Opus or Vorbis into .ogg, MP3 into .mp3), so it\u2019s instant and loses nothing. For unusual video formats the browser can play but not unpack, it falls back to recording the audio while the video plays, which takes as long as the video.' }],
   },
 

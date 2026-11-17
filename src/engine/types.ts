@@ -29,6 +29,11 @@ export interface VideoEngine {
   toGif(file: File, options: GifOptions): Promise<Blob>;
   /** Whether this engine can encode a video codec on this device. */
   canEncode(codec: VideoCodec): Promise<boolean>;
+  /**
+   * A still picture from the video, for previews of files the browser can't
+   * play (null: previews use the browser's own video player).
+   */
+  thumbnail: ((file: File) => Promise<Blob>) | null;
   /** Renders a Video Editor project to a file. */
   exportProject(project: Project, files: Map<string, File>, options: ExportOptions): Promise<Blob>;
 }

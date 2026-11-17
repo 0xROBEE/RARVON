@@ -1,4 +1,4 @@
-import { engine, isCancelled, AUDIO_TARGETS } from '../../../engine';
+import { engine, engineInfo, isCancelled, AUDIO_TARGETS } from '../../../engine';
 import type { AudioInfo, AudioTarget } from '../../../engine';
 import { useEffect, useRef, useState } from 'react';
 import FileDropzone from '../../../components/FileDropzone';
@@ -114,13 +114,13 @@ export default function ExtractAudioTool() {
 
   return (
     <div className="space-y-4">
-      {!file && <FileDropzone accept="video/*,.mkv,.mov" onFiles={handleFile} hint={tr("MP4, MOV, WebM, MKV or any video your browser can play")} />}
+      {!file && <FileDropzone accept={engineInfo.kind === 'native' ? engineInfo.videoAccept : "video/*,.mkv,.mov"} onFiles={handleFile} hint={engineInfo.kind === 'native' ? tr(engineInfo.videoHint) : tr("MP4, MOV, WebM, MKV or any video your browser can play")} />}
 
       {file && (
         <div className="slide-in space-y-4">
           <ConvertFlow
             from={{
-              preview: srcUrl ? <VideoThumb url={srcUrl} /> : <IconTile kind="video" />,
+              preview: srcUrl ? <VideoThumb url={srcUrl} file={file} /> : <IconTile kind="video" />,
               name: file.name,
               detail: info ? `${formatBytes(file.size)} · ${formatDuration(info.durationSec)}` : formatBytes(file.size),
               format: tr('Video'),

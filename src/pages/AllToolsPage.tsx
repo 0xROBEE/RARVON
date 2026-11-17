@@ -5,6 +5,7 @@ import ToolCard from '../components/ToolCard';
 import { usePageMeta } from '../lib/usePageMeta';
 import { ActionIcon } from '../lib/actionIcons';
 import { tr } from '../lib/i18n';
+import { categoryDescription } from '../lib/appText';
 
 export default function AllToolsPage() {
   const count = tools.filter((t) => t.status !== 'coming-soon').length;
@@ -37,7 +38,7 @@ export default function AllToolsPage() {
               <CategoryIcon category={c.slug} size={34} />
               <div className="min-w-0">
                 <h2 id={`h-${c.slug}`} className="font-display text-lg font-semibold">{tr(c.name)}</h2>
-                <p className="text-sm text-ink-2">{tr(c.description)}</p>
+                <p className="text-sm text-ink-2">{tr(categoryDescription(c))}</p>
               </div>
             </div>
             <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">

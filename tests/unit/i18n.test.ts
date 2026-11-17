@@ -14,11 +14,14 @@ const SAME_IN_BOTH = new Set([
 describe('Arabic interface', () => {
   it('translates every tool, category, action and collection text', () => {
     const texts = [EXPERIMENTAL_NOTE];
-    for (const c of categories) texts.push(c.name, c.description);
+    for (const c of categories) texts.push(c.name, c.description, ...(c.appDescription ? [c.appDescription] : []));
     for (const a of actionMeta) texts.push(a.label, a.description);
     for (const t of tools) {
       texts.push(t.name, t.shortDescription, t.description, ...(t.faq ?? []).flatMap((f) => [f.q, f.a]));
       if (t.comingSoonReason) texts.push(t.comingSoonReason);
+      // The Bench app's own texts for the tools FFmpeg runs.
+      if (t.app?.description) texts.push(t.app.description);
+      texts.push(...(t.app?.faq ?? []).flatMap((f) => [f.q, f.a]));
     }
     for (const c of Object.values(COLLECTIONS)) {
       texts.push(c.title, c.intro, ...(c.note ? [c.note] : []));

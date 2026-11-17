@@ -122,13 +122,13 @@ export default function VideoConvertTool() {
         <div className="slide-in space-y-4">
           <ConvertFlow
             from={{
-              preview: srcUrl ? <VideoThumb url={srcUrl} /> : null,
+              preview: srcUrl ? <VideoThumb url={srcUrl} file={file} /> : null,
               name: file.name,
               detail: `${formatBytes(file.size)} · ${formatDuration(info.durationSec)} · ${info.width}×${info.height}`,
               format: info.sourceFormat.toUpperCase(),
             }}
             to={{
-              preview: srcUrl ? <VideoThumb url={srcUrl} /> : null,
+              preview: srcUrl ? <VideoThumb url={srcUrl} file={file} /> : null,
               name: result?.name ?? `${base}.${t.ext}`,
               detail: result
                 ? <>{formatBytes(result.size)}<SizeDelta before={file.size} after={result.size} /></>

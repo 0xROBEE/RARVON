@@ -139,6 +139,15 @@ export const nativeEngine: Engine = {
       if (!encodable.has(codec)) encodable.set(codec, call<{ ok: boolean }>('/__bench/can-encode', { codec }).then((r) => r.ok).catch(() => false));
       return encodable.get(codec)!;
     },
+    thumbnail: async (file) => {
+      const res = await fetch('/__bench/thumbnail', {
+        method: 'POST',
+        headers: { 'X-Bench-Key': key(), 'Content-Type': 'application/json' },
+        body: JSON.stringify({ file: await upload(file) }),
+      });
+      if (!res.ok) throw new Error('no picture');
+      return res.blob();
+    },
     exportProject: browserEngine.video.exportProject,
   },
   audio: {

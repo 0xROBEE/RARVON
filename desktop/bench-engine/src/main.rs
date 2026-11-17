@@ -192,6 +192,14 @@ fn handle_native(mut request: Request, path: &str, url: &str, native: &Arc<Nativ
             let result = read_json::<Ask>(&mut request).and_then(|a| native.probe_json(&a.file.unwrap_or_default()));
             reply_json(request, result)
         }
+        (Method::Post, "/__bench/thumbnail") => {
+            match read_json::<Ask>(&mut request).and_then(|a| native.thumbnail(&a.file.unwrap_or_default())) {
+                Ok(jpeg) => {
+                    let _ = request.respond(Response::from_data(jpeg).with_header(header("Content-Type", "image/jpeg")));
+                }
+                Err(e) => reply_json(request, Err(e)),
+            }
+        }
         (Method::Post, "/__bench/can-encode") => {
             let result = read_json::<Ask>(&mut request).map(|a| native.can_encode(&a.codec.unwrap_or_default()));
             reply_json(request, result)

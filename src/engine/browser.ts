@@ -43,6 +43,7 @@ export const browserEngine: Engine = {
     convert: async (file, options) => (await video()).runVideoConversion(file, options),
     toGif: async (file, options) => (await video()).videoToGif(file, options),
     canEncode: async (codec) => (await video()).canEncodeVideoCodec(codec),
+    thumbnail: null,
     exportProject: async (project, files, options) => (await editor()).exportProject(project, files, options),
   },
   audio: {

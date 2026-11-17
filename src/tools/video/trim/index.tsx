@@ -102,7 +102,7 @@ export default function TrimVideoTool() {
               <input type="range" min={0} max={info.durationSec} step={0.1} value={end} onChange={(e) => setEnd(Math.max(Number(e.target.value), start + 0.1))} className="mt-2 block w-full" />
             </label>
           </div>
-          <p className="text-xs text-ink-3">{tr("Clip length:")}{' '}{formatDuration(end - start)}{tr(". This is designed to copy the existing video stream directly rather than re-encode it, which keeps quality intact when your browser can do that for this file.")}</p>
+          <p className="text-xs text-ink-3">{tr("Clip length:")}{' '}{formatDuration(end - start)}{tr(". It copies the existing video directly instead of re-encoding it whenever it can, so the quality stays the same.")}</p>
           <ActionBar>
             <Button onClick={trim} disabled={busy}>{busy ? tr("Trimming…") : tr("Trim video")}</Button>
             {busy && <Button variant="secondary" onClick={() => abortRef.current?.abort()}>{tr("Cancel")}</Button>}

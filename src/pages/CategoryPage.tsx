@@ -5,6 +5,7 @@ import { CategoryIcon } from '../lib/categoryIcons';
 import { usePageMeta } from '../lib/usePageMeta';
 import { useScrollTint } from '../lib/useScrollTint';
 import { tr } from '../lib/i18n';
+import { categoryDescription } from '../lib/appText';
 
 export default function CategoryPage() {
   const { category } = useParams<{ category: string }>();
@@ -12,7 +13,7 @@ export default function CategoryPage() {
   useScrollTint(meta?.slug);
   usePageMeta(
     meta ? tr('{name} tools', { name: tr(meta.name) }) : 'Bench',
-    meta ? tr(meta.description) : '',
+    meta ? tr(categoryDescription(meta)) : '',
   );
   if (!meta) return <Navigate to="/" replace />;
   const list = toolsForCategory(meta.slug);
@@ -27,7 +28,7 @@ export default function CategoryPage() {
         <CategoryIcon category={meta.slug} size={40} />
         <h1 className="font-display text-2xl font-semibold tracking-tight sm:text-3xl">{tr('{name} tools', { name: tr(meta.name) })}</h1>
       </div>
-      <p className="mt-2 max-w-xl text-sm text-ink-2">{tr(meta.description)}</p>
+      <p className="mt-2 max-w-xl text-sm text-ink-2">{tr(categoryDescription(meta))}</p>
       <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {list.map((t) => (
           <ToolCard key={t.slug} tool={t} />

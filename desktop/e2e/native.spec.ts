@@ -43,6 +43,12 @@ test.describe('Bench for desktop (FFmpeg engine)', () => {
     await openTool(page, '/tools/video/convert');
     await expect(page.getByText(/hasn.t been verified across every browser/)).toHaveCount(0);
     await expect(page.getByText('Any video: MP4, MOV, MKV, AVI, WMV and more, any size')).toBeVisible();
+    // The app's own description and answers, not the browser's.
+    await expect(page.getByText(/Video Converter turns almost any video/)).toBeVisible();
+    await expect(page.getByText(/In the Bench app, FFmpeg does the work on your computer/)).toBeVisible();
+    await expect(page.getByText(/WebCodecs|this browser/)).toHaveCount(0);
+    await page.goto('/tools/audio');
+    await expect(page.getByText('all on your computer', { exact: false }).first()).toBeVisible();
     // The Video Editor still runs in the browser, so it keeps its note.
     await page.goto('/tools/video/editor');
     await expect(page.getByText(/hasn.t been verified across every browser/)).toBeVisible();
@@ -51,6 +57,10 @@ test.describe('Bench for desktop (FFmpeg engine)', () => {
   test('converts an AVI (which the browser can’t open) to MP4 with AAC sound', async ({ page }) => {
     await openTool(page, '/tools/video/convert');
     await upload(page, avi());
+    // The browser can't play AVI, so the engine draws the preview picture.
+    const preview = page.getByTestId('convert-flow').locator('img').first();
+    await expect(preview).toBeVisible();
+    expect(await preview.evaluate((img: HTMLImageElement) => img.naturalWidth)).toBe(480);
     await page.getByRole('button', { name: 'Convert to MP4' }).click();
     const out = await download(page);
     expect(out.name).toBe('old-camera.mp4');

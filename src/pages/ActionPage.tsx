@@ -7,6 +7,11 @@ import NotFound from './NotFound';
 import CollectionPage from './CollectionPage';
 import { COLLECTIONS } from '../lib/collections';
 import { tr } from '../lib/i18n';
+import { isBenchApp } from '../engine/info';
+
+const RUNS_LOCALLY = isBenchApp()
+  ? 'Every tool below runs on your computer. Nothing is uploaded to a server.'
+  : 'Every tool below runs in your browser. Nothing is uploaded to a server.';
 
 export default function ActionPage() {
   const { action } = useParams<{ action: string }>();
@@ -14,7 +19,7 @@ export default function ActionPage() {
 
   usePageMeta(
     meta ? tr('{name} — free, local, no account', { name: tr(meta.label) }) : tr('Page not found'),
-    meta ? `${tr(meta.description)} ${tr('Every tool below runs in your browser. Nothing is uploaded to a server.')}` : tr('This page could not be found.'),
+    meta ? `${tr(meta.description)} ${tr(RUNS_LOCALLY)}` : tr('This page could not be found.'),
   );
 
   if (!meta) return <NotFound />;
@@ -37,7 +42,7 @@ export default function ActionPage() {
         <h1 className="font-display text-2xl font-semibold tracking-tight sm:text-3xl">{tr(meta.label)}</h1>
       </div>
       <p className="mt-3 max-w-xl text-sm text-ink-2">
-        {tr(meta.description)} {tr('Every tool below runs in your browser. Nothing is uploaded to a server.')}
+        {tr(meta.description)} {tr(RUNS_LOCALLY)}
       </p>
 
       {(

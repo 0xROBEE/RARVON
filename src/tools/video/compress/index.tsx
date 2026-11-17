@@ -97,7 +97,7 @@ export default function VideoCompressTool() {
 
   const smaller = result && file ? result.size < file.size : true;
   const remove = () => { abortRef.current?.abort(); setFile(null); setInfo(null); setResult(null); setSrcUrl(null); };
-  const thumb = srcUrl ? <VideoThumb url={srcUrl} /> : null;
+  const thumb = srcUrl ? <VideoThumb url={srcUrl} file={file} /> : null;
   const out = resize ?? (info ? { width: info.width, height: info.height } : null);
 
   return (

@@ -1,7 +1,8 @@
-import type { ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import clsx from 'clsx';
 import DownloadButton from '../DownloadButton';
 import { tr } from '../../lib/i18n';
+import { engine } from '../../engine';
 
 /**
  * The "From → To" layout shared by the converters: the file you have on one
@@ -164,7 +165,30 @@ export function IconTile({ kind, tone = 'workshop' }: { kind: 'audio' | 'video';
   );
 }
 
-/** The first frame of a video, as a still picture. */
-export function VideoThumb({ url }: { url: string }) {
+/**
+ * The first frame of a video, as a still picture. With `file`, the Bench app
+ * draws it with FFmpeg, so videos the browser can't play (AVI, WMV…) get one too.
+ */
+export function VideoThumb({ url, file }: { url: string; file?: File | null }) {
+  const [poster, setPoster] = useState<string | null>(null);
+  useEffect(() => {
+    const make = engine.video.thumbnail;
+    if (!file || !make) return;
+    let made: string | null = null;
+    let live = true;
+    make(file)
+      .then((blob) => {
+        if (!live) return;
+        made = URL.createObjectURL(blob);
+        setPoster(made);
+      })
+      .catch(() => undefined);
+    return () => {
+      live = false;
+      setPoster(null);
+      if (made) URL.revokeObjectURL(made);
+    };
+  }, [file]);
+  if (poster) return <img src={poster} alt="" className="h-full w-full object-cover" />;
   return <video src={`${url}#t=0.1`} muted playsInline preload="metadata" className="h-full w-full object-cover" aria-hidden="true" />;
 }

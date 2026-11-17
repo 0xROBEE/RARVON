@@ -160,6 +160,27 @@ impl Native {
         Ok(p)
     }
 
+    /// A still picture from early in the video (JPEG, 480 px wide), for the tool's preview.
+    pub fn thumbnail(&self, id: &str) -> Result<Vec<u8>, String> {
+        let input = self.file(id)?;
+        let probe = self.probe(&input)?;
+        if probe.video.is_none() {
+            return Err("no video".into());
+        }
+        let at = (probe.duration * 0.1).min(1.0);
+        let out = self
+            .command()
+            .args(["-loglevel", "error", "-ss", &format!("{at:.3}"), "-i"])
+            .arg(&input)
+            .args(["-frames:v", "1", "-vf", "scale=480:-2", "-c:v", "mjpeg", "-q:v", "4", "-f", "image2pipe", "pipe:1"])
+            .output()
+            .map_err(|e| e.to_string())?;
+        if out.stdout.is_empty() {
+            return Err("no picture".into());
+        }
+        Ok(out.stdout)
+    }
+
     /// The FFmpeg encoder that works on this computer for a codec, trying the
     /// graphics card first, then the processor. Tested once, never assumed.
     fn encoder(&self, codec: &str) -> Option<&'static str> {

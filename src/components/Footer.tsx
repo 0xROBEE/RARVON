@@ -3,6 +3,7 @@ import { categories } from '../lib/toolRegistry';
 import SupportButton from './SupportButton';
 import { appAvailable } from '../lib/appRelease';
 import { tr } from '../lib/i18n';
+import { categoryDescription } from '../lib/appText';
 
 export default function Footer() {
   return (
@@ -12,7 +13,7 @@ export default function Footer() {
           {categories.map((c) => (
             <div key={c.slug}>
               <h3 className="font-display text-sm font-semibold">{tr(c.name)}</h3>
-              <p className="mt-1 text-xs text-ink-3">{tr(c.description)}</p>
+              <p className="mt-1 text-xs text-ink-3">{tr(categoryDescription(c))}</p>
               <Link to={`/tools/${c.slug}`} className="mt-2 inline-block text-xs font-medium text-workshop hover:underline">
                 {tr('Browse {name} tools', { name: tr(c.name).toLowerCase() })}
               </Link>
