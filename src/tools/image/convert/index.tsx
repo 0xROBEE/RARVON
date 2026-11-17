@@ -11,6 +11,9 @@ import {
   guessSvgDimensions,
 } from '../../../lib/imageFormatSupport';
 import type { ImageFormatOption } from '../../../lib/imageFormatSupport';
+import { encodeBmp, encodeGif, encodeTiff } from '../../../lib/imageEncoders';
+import { encodeIco, encodeIcns, encodeOdg, encodePostScript, encodePsd } from '../../../lib/documentEncoders';
+import { customImageKind, decodeCustomImage, UnsupportedImageError } from '../../../lib/imageDecoders';
 import { ActionBar, SizeDelta } from '../../../components/tool';
 import { ConvertFlow, FormatPills } from '../../../components/tool/ConvertFlow';
 import { tr } from '../../../lib/i18n';
@@ -28,10 +31,13 @@ const INPUT_LABELS: Record<string, string> = {
   'image/heic': 'HEIC',
   'image/heif': 'HEIF',
   'image/svg+xml': 'SVG',
+  'image/x-tga': 'TGA',
+  'image/x-portable-pixmap': 'PPM',
 };
 const EXTENSION_LABELS: Record<string, string> = {
   jpg: 'JPEG', jpeg: 'JPEG', png: 'PNG', webp: 'WebP', avif: 'AVIF', gif: 'GIF',
   bmp: 'BMP', ico: 'ICO', tif: 'TIFF', tiff: 'TIFF', heic: 'HEIC', heif: 'HEIF', svg: 'SVG',
+  jfif: 'JPEG', tga: 'TGA', ppm: 'PPM', pgm: 'PGM', pbm: 'PBM', pnm: 'PNM', icns: 'ICNS',
 };
 
 function detectLabel(file: File): string {
@@ -45,9 +51,6 @@ function decodeFailureMessage(file: File): string {
   if (label.includes('heic') || label.includes('heif')) {
     return 'This browser can\u2019t open HEIC/HEIF photos. Safari can display many HEIC files directly; Chrome and Firefox generally can\u2019t decode HEIC at all. Try exporting to JPEG from your device\u2019s Photos app first.';
   }
-  if (label.includes('tiff')) {
-    return 'Most browsers can\u2019t open TIFF files directly. Try converting it with your OS\u2019s image viewer or Preview app first.';
-  }
   return 'This browser couldn\u2019t open this image. It may be corrupted or use a format this browser can\u2019t decode.';
 }
 
@@ -57,7 +60,63 @@ const FORMAT_HINTS: Record<string, string> = {
   'image/png': 'Lossless, keeps transparency',
   'image/webp': 'Small, for websites',
   'image/avif': 'Smallest, newest',
+  'image/gif': 'Simple pictures, 256 colours',
+  'image/bmp': 'Uncompressed, for old programs',
+  'image/tiff': 'For printing and scanning',
+  'image/x-icon': 'Windows and website icons',
+  'image/icns': 'Mac app icons',
+  'image/vnd.adobe.photoshop': 'Opens in Photoshop',
+  'application/postscript+eps': 'For print and design programs',
+  'application/postscript': 'A printable page',
+  'application/vnd.oasis.opendocument.graphics': 'Opens in LibreOffice Draw',
 };
+
+/** Formats Bench writes itself (the browser can't), after the ones the browser makes. */
+const BENCH_FORMATS: ImageFormatOption[] = [
+  { mime: 'image/gif', label: 'GIF', extension: 'gif' },
+  { mime: 'image/bmp', label: 'BMP', extension: 'bmp' },
+  { mime: 'image/tiff', label: 'TIFF', extension: 'tif' },
+  { mime: 'image/x-icon', label: 'ICO', extension: 'ico' },
+  { mime: 'image/icns', label: 'ICNS', extension: 'icns' },
+  { mime: 'image/vnd.adobe.photoshop', label: 'PSD', extension: 'psd' },
+  { mime: 'application/postscript+eps', label: 'EPS', extension: 'eps' },
+  { mime: 'application/postscript', label: 'PS', extension: 'ps' },
+  { mime: 'application/vnd.oasis.opendocument.graphics', label: 'ODG', extension: 'odg' },
+];
+
+/** Encodes the drawn picture into the chosen format. */
+async function encodeTo(canvas: HTMLCanvasElement, mime: string, quality: number): Promise<Blob> {
+  const pixels = () => canvas.getContext('2d')!.getImageData(0, 0, canvas.width, canvas.height);
+  switch (mime) {
+    case 'image/gif': return encodeGif(pixels());
+    case 'image/bmp': return encodeBmp(pixels());
+    case 'image/tiff': return encodeTiff(pixels());
+    case 'image/x-icon': return encodeIco(canvas);
+    case 'image/icns': return encodeIcns(canvas);
+    case 'image/vnd.adobe.photoshop': return encodePsd(pixels());
+    case 'application/postscript+eps': return encodePostScript(canvas, true);
+    case 'application/postscript': return encodePostScript(canvas, false);
+    case 'application/vnd.oasis.opendocument.graphics': return encodeOdg(canvas);
+    default: return canvasToBlob(canvas, mime, usesQuality(mime) ? quality : undefined);
+  }
+}
+/** Icons always hold the same set of sizes, so their size doesn't scale with the picture. */
+const fixedSize = (mime: string) => mime === 'image/x-icon' || mime === 'image/icns';
+
+/** Opens formats the browser can't (TIFF, TGA, PPM, ICNS) as a PNG picture Bench can work with. */
+async function openWithBench(file: File): Promise<{ url: string; width: number; height: number }> {
+  const out = await decodeCustomImage(file);
+  if (out instanceof Blob) {
+    const bmp = await createImageBitmap(out);
+    return { url: URL.createObjectURL(out), width: bmp.width, height: bmp.height };
+  }
+  const c = document.createElement('canvas');
+  c.width = out.width;
+  c.height = out.height;
+  c.getContext('2d')!.putImageData(new ImageData(out.data, out.width, out.height), 0, 0);
+  const png = await canvasToBlob(c, 'image/png');
+  return { url: URL.createObjectURL(png), width: out.width, height: out.height };
+}
 
 /** Draws the picture onto a canvas at the given scale. */
 async function drawImage(src: string, width: number, height: number, scale: number, mime: string) {
@@ -101,8 +160,9 @@ export default function ImageConvert() {
   const [convertError, setConvertError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
-  const encodeFormats = getSupportedEncodeFormats();
-  const outputOptions = decoded ? encodeFormats.filter((f) => f.mime !== decoded.file.type) : encodeFormats;
+  const encodeFormats = [...getSupportedEncodeFormats(), ...BENCH_FORMATS];
+  // Everything except the format the picture already is.
+  const outputOptions = decoded ? encodeFormats.filter((f) => f.mime !== decoded.file.type && f.label !== decoded.label) : encodeFormats;
 
   useEffect(() => {
     if (outputOptions.length && (!target || !outputOptions.some((o) => o.mime === target.mime))) {
@@ -125,6 +185,9 @@ export default function ImageConvert() {
       if (svgInput) {
         const { width, height } = await guessSvgDimensions(file);
         setDecoded({ file, label, previewUrl: URL.createObjectURL(file), width, height, isSvgInput: true, isAnimatedGif: false });
+      } else if (customImageKind(file.name, new Uint8Array(await file.slice(0, 8).arrayBuffer()))) {
+        const { url, width, height } = await openWithBench(file);
+        setDecoded({ file, label, previewUrl: url, width, height, isSvgInput: false, isAnimatedGif: false });
       } else {
         const { image, url } = await tryDecodeImage(file);
         setDecoded({
@@ -137,8 +200,8 @@ export default function ImageConvert() {
           isAnimatedGif: file.type === 'image/gif',
         });
       }
-    } catch {
-      setDecodeError(decodeFailureMessage(file));
+    } catch (e) {
+      setDecodeError(e instanceof UnsupportedImageError ? tr(e.message) : decodeFailureMessage(file));
     }
   }
 
@@ -151,9 +214,9 @@ export default function ImageConvert() {
     const t = window.setTimeout(async () => {
       try {
         const pixels = decoded.width * decoded.height;
-        const scale = Math.min(1, Math.sqrt(1_000_000 / pixels));
+        const scale = fixedSize(target.mime) ? 1 : Math.min(1, Math.sqrt(1_000_000 / pixels));
         const canvas = await drawImage(decoded.previewUrl, decoded.width, decoded.height, scale, target.mime);
-        const blob = await canvasToBlob(canvas, target.mime, usesQuality(target.mime) ? quality : undefined);
+        const blob = await encodeTo(canvas, target.mime, quality);
         if (!stale) setEstimate(blob.size / (scale * scale));
       } catch {
         // No estimate; the conversion itself reports errors.
@@ -168,7 +231,7 @@ export default function ImageConvert() {
     setConvertError(null);
     try {
       const canvas = await drawImage(decoded.previewUrl, decoded.width, decoded.height, 1, target.mime);
-      const blob = await canvasToBlob(canvas, target.mime, usesQuality(target.mime) ? quality : undefined);
+      const blob = await encodeTo(canvas, target.mime, quality);
       const base = decoded.file.name.replace(/\.[^.]+$/, '');
       setResult({ url: URL.createObjectURL(blob), name: `${base}.${target.extension}`, size: blob.size });
     } catch (e) {
@@ -188,9 +251,9 @@ export default function ImageConvert() {
     <div className="space-y-4">
       {!decoded && !decodeError && (
         <FileDropzone
-          accept="image/*,.heic,.heif,.tif,.tiff,.ico"
+          accept="image/*,.heic,.heif,.tif,.tiff,.ico,.icns,.tga,.ppm,.pgm,.pbm,.pnm,.jfif"
           onFiles={handleFile}
-          hint={tr("JPG, PNG, WebP, GIF, BMP, ICO, SVG — plus AVIF, TIFF or HEIC where your browser supports opening them")}
+          hint={tr("JPG, PNG, WebP, GIF, BMP, ICO, SVG, TIFF, TGA, PPM, ICNS — plus AVIF or HEIC where your browser can open them")}
         />
       )}
 

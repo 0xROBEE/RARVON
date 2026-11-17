@@ -30,6 +30,52 @@ function withExif(jpeg: UploadFile, make = 'BenchCam', model = 'Model T'): Uploa
 }
 
 test.describe('image tools with real files', () => {
+  test('image converter opens TGA and TIFF, and saves to every format Bench writes itself', async ({ page }) => {
+    await openTool(page, '/tools/image/convert');
+    // A 4×3 TGA (24-bit, bottom-up), made by hand: red top row, blue below.
+    const w = 4, h = 3;
+    const tgaHead = Buffer.alloc(18);
+    tgaHead[2] = 2; tgaHead[12] = w; tgaHead[14] = h; tgaHead[16] = 24;
+    const px: number[] = [];
+    for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) px.push(...(y === h - 1 ? [0, 0, 255] : [255, 0, 0])); // BGR, bottom row first
+    await upload(page, { name: 'tiny.tga', mimeType: 'image/x-tga', buffer: Buffer.concat([tgaHead, Buffer.from(px)]) });
+    await expect(page.getByTestId('convert-flow')).toContainText('TGA');
+    await page.getByRole('radio', { name: 'PNG', exact: true }).click();
+    await page.getByRole('button', { name: 'Convert', exact: true }).click();
+    const png = await download(page);
+    expect(await imageSize(page, png.buffer, 'image/png')).toEqual({ width: 4, height: 3 });
+
+    // Save as each format and check the file's signature.
+    const checks: [string, string, (b: Buffer) => boolean][] = [
+      ['TIFF', 'tif', (b) => b.subarray(0, 4).toString('hex') === '49492a00'],
+      ['BMP', 'bmp', (b) => b.subarray(0, 2).toString('latin1') === 'BM'],
+      ['GIF', 'gif', (b) => b.subarray(0, 6).toString('latin1') === 'GIF89a'],
+      ['ICO', 'ico', (b) => b.readUInt16LE(2) === 1 && b.readUInt16LE(4) === 6],
+      ['ICNS', 'icns', (b) => b.subarray(0, 4).toString('latin1') === 'icns'],
+      ['PSD', 'psd', (b) => b.subarray(0, 4).toString('latin1') === '8BPS'],
+      ['EPS', 'eps', (b) => b.toString('latin1').startsWith('%!PS-Adobe-3.0 EPSF-3.0')],
+      ['PS', 'ps', (b) => b.toString('latin1').startsWith('%!PS-Adobe-3.0\n')],
+      ['ODG', 'odg', (b) => b.subarray(30, 38).toString('latin1') === 'mimetype'],
+    ];
+    for (const [label, ext, ok] of checks) {
+      await page.getByRole('radio', { name: label, exact: true }).click();
+      await page.getByRole('button', { name: 'Convert', exact: true }).click();
+      const out = await download(page);
+      expect(out.name, label).toBe(`tiny.${ext}`);
+      expect(ok(out.buffer), label).toBe(true);
+    }
+
+    // The TIFF Bench wrote opens again in Bench.
+    const tif = (await (async () => {
+      await page.getByRole('radio', { name: 'TIFF', exact: true }).click();
+      await page.getByRole('button', { name: 'Convert', exact: true }).click();
+      return download(page);
+    })()).buffer;
+    await page.getByRole('button', { name: 'Remove' }).first().click();
+    await upload(page, { name: 'again.tif', mimeType: 'image/tiff', buffer: tif });
+    await expect(page.getByTestId('convert-flow')).toContainText('4×3');
+  });
+
   test('convert JPEG to PNG and WebP', async ({ page }) => {
     await openTool(page, '/tools/image/convert');
     const src = await makeImage(page, { width: 900, height: 600 });
