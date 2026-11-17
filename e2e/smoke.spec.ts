@@ -147,6 +147,20 @@ test.describe('every page renders without errors', () => {
     await expect(page).toHaveURL(/\/tools\/pdf\/merge/);
   });
 
+  test('the search cover dims the page in both themes (never lightens it)', async ({ page }) => {
+    for (const theme of ['light', 'dark']) {
+      await page.goto('/');
+      await page.evaluate((t) => localStorage.setItem('bench-theme', t), theme);
+      await page.reload();
+      await page.keyboard.press('Control+k');
+      const cover = page.getByRole('dialog', { name: 'Search tools' }).locator('xpath=..');
+      // A dark cover: red, green and blue all low (the text colour is light in dark mode).
+      const rgb = await cover.evaluate((el) => getComputedStyle(el).backgroundColor.match(/[\d.]+/g)!.slice(0, 3).map(Number));
+      expect(Math.max(...rgb), theme).toBeLessThan(40);
+      await page.keyboard.press('Escape');
+    }
+  });
+
   test('theme toggle switches to dark', async ({ page }) => {
     await page.goto('/');
     await page.evaluate(() => localStorage.setItem('bench-theme', 'dark'));

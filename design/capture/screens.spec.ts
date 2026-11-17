@@ -1,7 +1,7 @@
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import type { Page } from '@playwright/test';
-import { test, expect, upload, makePdf, makeImage, makeWebm, makeWav } from '../../e2e/helpers';
+import { test as base, expect, upload, makePdf, makeImage, makeWebm, makeWav } from '../../e2e/helpers';
 
 /**
  * Photographs Bench's real screens for the design map (design/README.md).
@@ -18,7 +18,12 @@ const SITE = 'http://localhost:4321';
 const DEMO = 'http://localhost:5180'; // the website with a (pretend) app download link
 const APP = 'http://127.0.0.1:47821'; // Bench for desktop (the Bench Engine with FFmpeg)
 
-type Variant = 'desktop' | 'phone' | 'dark' | 'arabic' | 'app' | 'download-on';
+type Variant = 'desktop' | 'phone' | 'arabic' | 'app' | 'download-on';
+type Theme = 'light' | 'dark';
+
+/** Every screen is taken twice: the "light" and "dark" projects in playwright.design.config.ts. */
+const test = base.extend<{ theme: Theme }>({ theme: ['light', { option: true }] });
+let THEME: Theme = 'light';
 interface Arrow { to: string; label: string }
 interface Shot { flow: string; title: string; variant?: Variant; arrows?: Arrow[]; note?: string; full?: boolean }
 
@@ -33,22 +38,26 @@ async function shot(page: Page, id: string, s: Shot) {
   const full = s.full !== false;
   const docH = full ? await page.evaluate(() => document.documentElement.scrollHeight) : vp.height;
   const height = Math.min(docH, MAX_HEIGHT);
+  // Dark screens get their own id, and so do the screens their arrows point to.
+  const dark = THEME === 'dark';
+  const fid = dark ? `${id}-dark` : id;
   await page.screenshot({
-    path: join(OUT, `${id}.png`),
+    path: join(OUT, `${fid}.png`),
     fullPage: full,
     clip: { x: 0, y: 0, width: vp.width, height },
     animations: 'disabled',
     caret: 'hide',
   });
-  writeFileSync(join(OUT, `${id}.json`), JSON.stringify({ id, variant: 'desktop', arrows: [], ...s, width: vp.width, height, url: page.url() }, null, 1));
+  const arrows = (s.arrows ?? []).map((a) => ({ ...a, to: dark ? `${a.to}-dark` : a.to }));
+  writeFileSync(join(OUT, `${fid}.json`), JSON.stringify({ variant: 'desktop', ...s, id: fid, base: id, theme: THEME, arrows, width: vp.width, height, url: page.url() }, null, 1));
 }
 
-async function prefs(page: Page, base: string, o: { theme?: 'dark' | 'light'; lang?: 'ar' | 'en' }) {
-  await page.goto(base + '/');
+async function prefs(page: Page, site: string, o: { lang?: 'ar' | 'en' }) {
+  await page.goto(site + '/');
   await page.evaluate(({ theme, lang }) => {
-    localStorage.setItem('bench-theme', theme ?? 'light');
+    localStorage.setItem('bench-theme', theme);
     localStorage.setItem('bench-lang', lang ?? 'en');
-  }, o);
+  }, { theme: THEME, lang: o.lang });
 }
 
 async function textImage(page: Page) {
@@ -69,7 +78,8 @@ const SAMPLE_TEXT = 'Bench is a free toolbox for everyday files.\nIt runs on you
 test.describe.configure({ mode: 'serial' });
 test.use({ viewport: DESKTOP, serviceWorkers: 'block' });
 
-test.beforeEach(async ({ page }) => {
+test.beforeEach(async ({ page, theme }) => {
+  THEME = theme;
   await prefs(page, SITE, {});
 });
 
@@ -263,28 +273,6 @@ test('phone screens', async ({ page }) => {
   await shot(page, 'phone-word-counter', { flow: 'text', title: 'Word Counter', variant: 'phone' });
   await page.goto(SITE + '/about');
   await shot(page, 'phone-about', { flow: 'info', title: 'About', variant: 'phone' });
-});
-
-test('dark theme', async ({ page }) => {
-  await prefs(page, SITE, { theme: 'dark' });
-  await page.goto(SITE + '/');
-  await shot(page, 'dark-home', { flow: 'finding', title: 'Home', variant: 'dark' });
-  await page.goto(SITE + '/tools/image/convert');
-  await upload(page, await makeImage(page, { width: 900, height: 600, name: 'holiday.png' }));
-  await shot(page, 'dark-convert-image-loaded', { flow: 'convert', title: 'Image Converter: file loaded', variant: 'dark' });
-  await page.goto(SITE + '/tools/image/compress');
-  await upload(page, await makeImage(page, { width: 1600, height: 1200, type: 'image/jpeg', name: 'photo.jpg' }));
-  await expect(page.getByTestId('savings-ring')).toHaveAttribute('aria-label', /smaller/);
-  await shot(page, 'dark-compress-image-loaded', { flow: 'compress', title: 'Image Compressor: estimate', variant: 'dark' });
-  await page.goto(SITE + '/tools/pdf/editor');
-  await upload(page, await makePdf({ pages: 2, label: 'Contract' }));
-  await expect(page.getByAltText('Page', { exact: true })).toBeVisible();
-  await shot(page, 'dark-editor-loaded', { flow: 'pdf-editor', title: 'PDF Editor: editing', variant: 'dark', full: false });
-  await page.goto(SITE + '/tools/text/word-counter');
-  await page.locator('main textarea').fill(SAMPLE_TEXT);
-  await shot(page, 'dark-word-counter', { flow: 'text', title: 'Word Counter', variant: 'dark' });
-  await page.goto(SITE + '/about');
-  await shot(page, 'dark-about', { flow: 'info', title: 'About', variant: 'dark' });
 });
 
 test('Arabic', async ({ page }) => {

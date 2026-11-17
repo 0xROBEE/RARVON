@@ -90,7 +90,7 @@ export default function ToolSearch({ open, onClose }: { open: boolean; onClose: 
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center bg-ink/40 px-4 pt-[12vh]" onClick={onClose}>
+    <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/50 px-4 pt-[12vh]" onClick={onClose}>
       <div
         role="dialog"
         aria-modal="true"

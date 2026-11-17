@@ -38,9 +38,14 @@ const FLOWS = [
   ['13-download-on', 'Download button switched on', ['dl-home', 'dl-app', 'dl-video-tool']],
   ['14-desktop-app', 'Bench for desktop', ['app-home', 'app-convert-done']],
   ['15-phone', 'Phone (390 px)', ['phone-home', 'phone-menu', 'phone-convert-image-loaded', 'phone-merge-loaded', 'phone-word-counter', 'phone-about']],
-  ['16-dark', 'Dark theme', ['dark-home', 'dark-convert-image-loaded', 'dark-compress-image-loaded', 'dark-editor-loaded', 'dark-word-counter', 'dark-about']],
-  ['17-arabic', 'Arabic (right to left)', ['ar-home', 'ar-menu', 'ar-convert-image-loaded', 'ar-merge-loaded', 'ar-word-counter', 'ar-about']],
+  ['16-arabic', 'Arabic (right to left)', ['ar-home', 'ar-menu', 'ar-convert-image-loaded', 'ar-merge-loaded', 'ar-word-counter', 'ar-about']],
 ];
+
+// Every flow also in the dark theme: the same screens, taken dark ("<id>-dark").
+const ALL_FLOWS = FLOWS.flatMap(([folder, title, ids]) => [
+  [folder, title, ids, false],
+  [`${folder}-dark`, `${title} · dark`, ids.map((id) => `${id}-dark`), true],
+]);
 
 const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 function wrap(text, max) {
@@ -53,7 +58,10 @@ function wrap(text, max) {
   return lines;
 }
 
-function flowSheet(title, ids) {
+function flowSheet(title, ids, dark) {
+  const C = dark
+    ? { bg: '#17171d', ink: '#f1f0f5', ink2: '#c3c1cf', ink3: '#9a98a8', line: '#34333f', card: '#1d1d25', accent: '#9d97ff' }
+    : { bg: '#f6f5f1', ink: '#1b1b22', ink2: '#4c4b57', ink3: '#6e6c7a', line: '#dcd9cf', card: '#ffffff', accent: '#5146d8' };
   const phone = ids.every((id) => shots[id].width < 600);
   const CARD = phone ? 300 : 520;
   const GAP = 160;
@@ -69,20 +77,20 @@ function flowSheet(title, ids) {
     const png = readFileSync(join(SCREENS, `${id}.png`)).toString('base64');
     const fullH = Math.round((s.height * CARD) / s.width);
     parts.push(`<g id="${esc(id)}">`,
-      `<text x="${x}" y="${TOP - 14}" font-family="Space Grotesk, Inter, sans-serif" font-size="20" font-weight="600" fill="#1b1b22">${esc(s.title)}</text>`,
+      `<text x="${x}" y="${TOP - 14}" font-family="Space Grotesk, Inter, sans-serif" font-size="20" font-weight="600" fill="${C.ink}">${esc(s.title)}</text>`,
       `<clipPath id="c-${esc(id)}"><rect x="${x}" y="${TOP}" width="${CARD}" height="${h}" rx="12"/></clipPath>`,
-      `<rect x="${x}" y="${TOP}" width="${CARD}" height="${h}" rx="12" fill="#ffffff" stroke="#dcd9cf"/>`,
+      `<rect x="${x}" y="${TOP}" width="${CARD}" height="${h}" rx="12" fill="${C.card}" stroke="${C.line}"/>`,
       `<image href="data:image/png;base64,${png}" x="${x}" y="${TOP}" width="${CARD}" height="${fullH}" clip-path="url(#c-${esc(id)})" preserveAspectRatio="xMidYMin slice"/>`);
     let y = TOP + h + 28;
-    if (s.note) for (const l of wrap(s.note, phone ? 40 : 70)) { parts.push(`<text x="${x}" y="${y}" font-family="Inter, sans-serif" font-size="15" fill="#4c4b57">${esc(l)}</text>`); y += 22; }
+    if (s.note) for (const l of wrap(s.note, phone ? 40 : 70)) { parts.push(`<text x="${x}" y="${y}" font-family="Inter, sans-serif" font-size="15" fill="${C.ink2}">${esc(l)}</text>`); y += 22; }
     const others = (s.arrows ?? []).filter((a) => a.to !== ids[i + 1]);
     if (others.length) {
       y += 10;
-      parts.push(`<text x="${x}" y="${y}" font-family="JetBrains Mono, monospace" font-size="12" letter-spacing="1" fill="#6e6c7a">BUTTONS HERE LEAD TO</text>`);
+      parts.push(`<text x="${x}" y="${y}" font-family="JetBrains Mono, monospace" font-size="12" letter-spacing="1" fill="${C.ink3}">BUTTONS HERE LEAD TO</text>`);
       y += 24;
       for (const a of others) {
         const target = shots[a.to]?.title ?? a.to;
-        parts.push(`<text x="${x}" y="${y}" font-family="Inter, sans-serif" font-size="15" fill="#1b1b22"><tspan font-weight="600" fill="#5146d8">${esc(a.label)}</tspan> → ${esc(target)}</text>`);
+        parts.push(`<text x="${x}" y="${y}" font-family="Inter, sans-serif" font-size="15" fill="${C.ink}"><tspan font-weight="600" fill="${C.accent}">${esc(a.label)}</tspan> → ${esc(target)}</text>`);
         y += 22;
       }
     }
@@ -93,8 +101,8 @@ function flowSheet(title, ids) {
     if (next) {
       const ay = TOP + 200;
       parts.push(`<g id="arrow-${esc(id)}">`,
-        `<text x="${x + GAP / 2}" y="${ay - 16}" text-anchor="middle" font-family="Inter, sans-serif" font-size="14" font-weight="600" fill="#5146d8">${esc(next.label)}</text>`,
-        `<path d="M${x + 14} ${ay}h${GAP - 36}M${x + GAP - 30} ${ay - 8}l8 8-8 8" fill="none" stroke="#5146d8" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>`,
+        `<text x="${x + GAP / 2}" y="${ay - 16}" text-anchor="middle" font-family="Inter, sans-serif" font-size="14" font-weight="600" fill="${C.accent}">${esc(next.label)}</text>`,
+        `<path d="M${x + 14} ${ay}h${GAP - 36}M${x + GAP - 30} ${ay - 8}l8 8-8 8" fill="none" stroke="${C.accent}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>`,
         '</g>');
     }
     if (i < ids.length - 1) x += GAP;
@@ -102,8 +110,8 @@ function flowSheet(title, ids) {
   const width = x + PAD;
   const height = bottom + PAD;
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">
-<rect width="${width}" height="${height}" fill="#f6f5f1"/>
-<text x="${PAD}" y="76" font-family="Space Grotesk, Inter, sans-serif" font-size="40" font-weight="700" fill="#1b1b22">${esc(title)}</text>
+<rect width="${width}" height="${height}" fill="${C.bg}"/>
+<text x="${PAD}" y="76" font-family="Space Grotesk, Inter, sans-serif" font-size="40" font-weight="700" fill="${C.ink}">${esc(title)}</text>
 ${parts.join('\n')}
 </svg>
 `;
@@ -112,7 +120,7 @@ ${parts.join('\n')}
 rmSync(OUT, { recursive: true, force: true });
 mkdirSync(join(PACK, 'flow-sheets'), { recursive: true });
 const zip = new JSZip();
-for (const [folder, title, ids] of FLOWS) {
+for (const [folder, title, ids, dark] of ALL_FLOWS) {
   for (const id of ids) if (!shots[id]) throw new Error(`Missing screen ${id}: run npm run design:capture first`);
   mkdirSync(join(PACK, folder), { recursive: true });
   ids.forEach((id, i) => {
@@ -120,7 +128,7 @@ for (const [folder, title, ids] of FLOWS) {
     copyFileSync(join(SCREENS, `${id}.png`), join(PACK, folder, name));
     zip.file(`figma/${folder}/${name}`, readFileSync(join(SCREENS, `${id}.png`)));
   });
-  const svg = flowSheet(title, ids);
+  const svg = flowSheet(title, ids, dark);
   writeFileSync(join(PACK, 'flow-sheets', `${folder}.svg`), svg);
   zip.file(`figma/flow-sheets/${folder}.svg`, svg);
 }
@@ -129,5 +137,5 @@ writeFileSync(join(PACK, 'README.md'), guide);
 zip.file('figma/README.md', guide);
 const buf = await zip.generateAsync({ type: 'nodebuffer', compression: 'DEFLATE' });
 writeFileSync(join(OUT, 'Bench-figma-pack.zip'), buf);
-const count = FLOWS.reduce((n, f) => n + f[2].length, 0);
-console.log(`${FLOWS.length} flow sheets, ${count} screens → design/out/Bench-figma-pack.zip (${(buf.length / 1024 / 1024).toFixed(1)} MB)`);
+const count = ALL_FLOWS.reduce((n, f) => n + f[2].length, 0);
+console.log(`${ALL_FLOWS.length} flow sheets, ${count} screens → design/out/Bench-figma-pack.zip (${(buf.length / 1024 / 1024).toFixed(1)} MB)`);

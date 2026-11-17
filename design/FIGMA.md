@@ -7,11 +7,12 @@ leads where.
 
 | Folder | What it is |
 |---|---|
-| `flow-sheets/` | One SVG per flow (17). Screens in order, each arrow labelled with its button, the other buttons listed under each screen. |
-| `01-finding-tools/` … `17-arabic/` | Every screen as a full-length PNG, numbered in flow order. |
+| `flow-sheets/` | One SVG per flow and theme (32). Screens in order, each arrow labelled with its button, the other buttons listed under each screen. |
+| `01-finding-tools/` … `16-arabic/` | Every screen as a full-length PNG, numbered in flow order. |
+| `01-finding-tools-dark/` … `16-arabic-dark/` | The same screens in the dark theme. |
 
 Flows 01–12 are the website on a desktop (1440 px wide), 13 is the website once the app download link is
-set, 14 is Bench for desktop, and 15–17 are the phone, dark and Arabic versions.
+set, 14 is Bench for desktop, 15 is the phone and 16 is Arabic. Every flow is there twice: light and dark.
 
 ## Bring it into Figma
 

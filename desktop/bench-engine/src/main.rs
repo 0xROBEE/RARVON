@@ -106,7 +106,8 @@ fn main() {
         let closed = match (contact.alive, contact.bye) {
             (_, Some(bye)) => bye.elapsed() > AFTER_BYE,
             (Some(alive), None) => alive.elapsed() > SILENT_FOR,
-            (None, None) => started.elapsed() > FIRST_CONTACT,
+            // Without a window (testing) nobody reports in at first, so only silence after contact counts.
+            (None, None) => window_wanted && started.elapsed() > FIRST_CONTACT,
         };
         if closed {
             break;

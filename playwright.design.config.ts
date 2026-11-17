@@ -6,14 +6,18 @@ import { join } from 'node:path';
 // link (to show the download buttons), and Bench for desktop's engine.
 const engine = join('desktop', 'bench-engine', 'target', 'release', process.platform === 'win32' ? 'bench-engine.exe' : 'bench-engine');
 
-export default defineConfig({
+export default defineConfig<{ theme: 'light' | 'dark' }>({
   testDir: 'design/capture',
   timeout: 120_000,
   expect: { timeout: 30_000 },
   workers: 1,
   reporter: [['list']],
   use: { acceptDownloads: true, serviceWorkers: 'block' },
-  projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
+  // Every screen in both themes: light first, then dark.
+  projects: [
+    { name: 'light', use: { ...devices['Desktop Chrome'], theme: 'light' } },
+    { name: 'dark', use: { ...devices['Desktop Chrome'], theme: 'dark' } },
+  ],
   webServer: [
     { command: 'npx vite preview --port 4321 --strictPort', url: 'http://localhost:4321', reuseExistingServer: false, timeout: 60_000 },
     {
