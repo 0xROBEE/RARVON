@@ -1,13 +1,23 @@
 import {
   Input, Output, Conversion, BlobSource, BufferTarget,
-  MP4, QTFF, WEBM, MATROSKA, Mp4OutputFormat, WebMOutputFormat,
-  canEncodeVideo, canEncode,
+  MP4, QTFF, WEBM, MATROSKA, Mp4OutputFormat, WebMOutputFormat, MovOutputFormat, MkvOutputFormat,
+  canEncodeVideo, canEncode, CanvasSink,
   QUALITY_HIGH, QUALITY_MEDIUM, QUALITY_LOW,
 } from 'mediabunny';
 import type { VideoCodec } from 'mediabunny';
 import { tr } from './i18n';
+import { GifWriter } from './imageEncoders';
 
 export type OutputContainer = 'mp4' | 'webm';
+/** Every container Bench can write: the two above plus MOV (Apple) and MKV (Matroska). */
+export type WriteContainer = OutputContainer | 'mov' | 'mkv';
+
+const encodeSupport = new Map<VideoCodec, Promise<boolean>>();
+/** Whether this device can encode a video codec (tested once, never assumed). */
+export function canEncodeVideoCodec(codec: VideoCodec): Promise<boolean> {
+  if (!encodeSupport.has(codec)) encodeSupport.set(codec, canEncodeVideo(codec).catch(() => false));
+  return encodeSupport.get(codec)!;
+}
 
 const FILE_SIZE_CEILING = 250 * 1024 * 1024; // 250MB — see VIDEO_ARCHITECTURE.md §7 for why
 
@@ -94,15 +104,21 @@ export async function probeVideo(file: File): Promise<VideoInfo> {
   };
 }
 
-function outputFormatFor(container: OutputContainer) {
-  return container === 'mp4' ? new Mp4OutputFormat() : new WebMOutputFormat();
+function outputFormatFor(container: WriteContainer) {
+  switch (container) {
+    case 'mp4': return new Mp4OutputFormat();
+    case 'mov': return new MovOutputFormat();
+    case 'mkv': return new MkvOutputFormat();
+    default: return new WebMOutputFormat();
+  }
 }
+const MIME: Record<WriteContainer, string> = { mp4: 'video/mp4', mov: 'video/quicktime', mkv: 'video/x-matroska', webm: 'video/webm' };
 export function videoCodecFor(container: OutputContainer): VideoCodec {
   return container === 'mp4' ? 'avc' : 'vp9';
 }
 
 export interface RunConversionOptions {
-  container: OutputContainer;
+  container: WriteContainer;
   /** Only set this when the tool's whole purpose is a codec/container change
    * (the Convert tool). Leaving it unset for Trim/Resize/Compress lets
    * Mediabunny copy the existing encoded stream directly whenever it can,
@@ -133,7 +149,7 @@ export async function runVideoConversion(file: File, options: RunConversionOptio
   const needsVideoOptions = Boolean(options.forceVideoCodec || options.resize || options.quality || options.videoBitrate);
   // MP4 players (Safari/QuickTime, many TVs) expect AAC audio; when a
   // conversion re-encodes for MP4 anyway, make sure audio ends up as AAC.
-  const wantAac = options.container === 'mp4' && Boolean(options.forceVideoCodec) && (await canEncodeAac());
+  const wantAac = options.container !== 'webm' && Boolean(options.forceVideoCodec) && (await canEncodeAac());
   const needsAudioOptions = Boolean(options.quality || options.audioBitrate || wantAac);
 
   const conversion = await Conversion.init({
@@ -173,7 +189,45 @@ export async function runVideoConversion(file: File, options: RunConversionOptio
   if (options.signal?.aborted) throw new VideoCancelledError();
 
   if (!target.buffer) throw new Error(tr("Conversion finished but produced no output."));
-  return new Blob([target.buffer], { type: options.container === 'mp4' ? 'video/mp4' : 'video/webm' });
+  return new Blob([target.buffer], { type: MIME[options.container] });
+}
+
+export interface GifOptions {
+  /** Where to start, in seconds. */
+  start: number;
+  /** How many seconds to turn into the GIF. */
+  seconds: number;
+  /** Width of the GIF in pixels (height follows the video's shape). */
+  width: number;
+  /** Frames per second. */
+  fps: number;
+  onProgress?: (fraction: number) => void;
+  signal?: AbortSignal;
+}
+
+/** Turns part of a video into an animated GIF (no sound; 256 colours). */
+export async function videoToGif(file: File, o: GifOptions): Promise<Blob> {
+  const input = makeInput(file);
+  if (!(await input.canRead())) throw new Error(tr("This browser couldn't read this video file."));
+  const track = await input.getPrimaryVideoTrack();
+  if (!track) throw new Error(tr("This file doesn't have a video track."));
+  const [dw, dh] = [await track.getDisplayWidth(), await track.getDisplayHeight()];
+  const width = Math.max(2, Math.round(Math.min(o.width, dw) / 2) * 2);
+  const height = Math.max(2, Math.round((width * dh) / dw / 2) * 2);
+  const sink = new CanvasSink(track, { width, height, fit: 'fill', poolSize: 2 });
+  const count = Math.max(1, Math.round(o.seconds * o.fps));
+  const times = Array.from({ length: count }, (_, k) => o.start + k / o.fps);
+  const gif = new GifWriter(width, height);
+  let done = 0;
+  for await (const frame of sink.canvasesAtTimestamps(times)) {
+    if (o.signal?.aborted) throw new VideoCancelledError();
+    if (frame) {
+      const ctx = (frame.canvas as HTMLCanvasElement).getContext('2d') as CanvasRenderingContext2D;
+      gif.addFrame(ctx.getImageData(0, 0, width, height), 1000 / o.fps);
+    }
+    o.onProgress?.(++done / count);
+  }
+  return gif.finish();
 }
 
 /**

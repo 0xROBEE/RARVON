@@ -157,6 +157,31 @@ test.describe('video tools (WebCodecs via Mediabunny)', () => {
     expect([info.width, info.height]).toEqual([320, 180]);
   });
 
+  test('convert to MOV, MKV and an animated GIF', async ({ page }) => {
+    await openTool(page, '/tools/video/convert');
+    await upload(page, await makeWebm(page, 3));
+    for (const [label, ext] of [['MOV', 'mov'], ['MKV', 'mkv']] as const) {
+      await page.getByRole('radio', { name: label, exact: true }).click();
+      await page.getByRole('button', { name: `Convert to ${label}` }).click();
+      const out = await download(page);
+      expect(out.name.endsWith(`.${ext}`)).toBe(true);
+      if (ext === 'mov') expect(out.buffer.subarray(4, 12).toString('latin1')).toBe('ftypqt  ');
+      else expect(out.buffer.subarray(0, 4).toString('hex')).toBe('1a45dfa3'); // Matroska
+    }
+    await page.getByRole('radio', { name: 'GIF', exact: true }).click();
+    await expect(page.getByText('no sound').first()).toBeVisible();
+    await page.getByRole('button', { name: 'Convert to GIF' }).click();
+    const gif = await download(page);
+    expect(gif.name).toMatch(/\.gif$/);
+    expect(gif.buffer.subarray(0, 6).toString('latin1')).toBe('GIF89a');
+    // Several frames: each starts with a graphic control extension (21 F9 04).
+    const frames = gif.buffer.toString('hex').split('21f904').length - 1;
+    expect(frames).toBeGreaterThan(10);
+    // The width picker starts at the largest size that fits the 640 px clip.
+    const size = await imageSize(page, gif.buffer, 'image/gif');
+    expect(size.width).toBe(640);
+  });
+
   test('convert WebM to MP4 with AAC audio', async ({ page }) => {
     await openTool(page, '/tools/video/convert');
     await upload(page, await makeWebm(page, 2));
