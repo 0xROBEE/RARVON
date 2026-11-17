@@ -88,6 +88,17 @@ test.describe('PDF tools with real files', () => {
     await page.getByRole('button', { name: 'Convert to images' }).click();
     const one = await download(page);
     expect(one.name).toBe('page-page-2.jpg');
+
+    // Formats the browser can't make itself: written by Bench's own encoders.
+    for (const [label, ext, magic] of [['GIF', 'gif', 'GIF89a'], ['BMP', 'bmp', 'BM'], ['TIFF', 'tif', 'II*']] as const) {
+      await page.getByRole('radio', { name: label, exact: true }).click();
+      await page.getByRole('button', { name: 'Convert to images' }).click();
+      const file = await download(page);
+      expect(file.name).toBe(`page-page-2.${ext}`);
+      expect(file.buffer.subarray(0, magic.length).toString('latin1')).toBe(magic);
+    }
+    // The sharpness buttons say how big the pictures will be (an A4 page at 2×).
+    await expect(page.getByRole('radio', { name: '2×' })).toContainText('1190 × 1684 px');
     const size = await imageSize(page, Buffer.from(await zip.file(images[0])!.async('uint8array')), 'image/png');
     expect(size.width / size.height).toBeCloseTo(595 / 842, 2);
   });

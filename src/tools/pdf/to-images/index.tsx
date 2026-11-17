@@ -5,17 +5,46 @@ import Button from '../../../components/Button';
 import ErrorMessage from '../../../components/ErrorMessage';
 import { openPdfForRendering, renderPdfPageToCanvas } from '../../../lib/pdfjs';
 import { canvasToBlob, formatBytes } from '../../../lib/imageUtils';
+import { getSupportedEncodeFormats } from '../../../lib/imageFormatSupport';
+import { encodeBmp, encodeGif, encodeTiff } from '../../../lib/imageEncoders';
 import { ActionBar } from '../../../components/tool';
 import { ConvertFlow, FormatPills } from '../../../components/tool/ConvertFlow';
 import { DocTile } from '../../../components/tool/CompressFlow';
 import { PageGrid } from '../../../components/tool/PageGrid';
 import { tr } from '../../../lib/i18n';
 
-type Format = 'image/png' | 'image/jpeg';
-const FORMATS: { value: Format; label: string; hint: string }[] = [
-  { value: 'image/png', label: 'PNG', hint: 'Sharp text, larger files' },
-  { value: 'image/jpeg', label: 'JPG', hint: 'Smaller, for photos' },
+type Format = 'png' | 'jpg' | 'webp' | 'avif' | 'gif' | 'bmp' | 'tiff';
+const FORMATS: { value: Format; label: string; hint: string; mime?: string }[] = [
+  { value: 'png', label: 'PNG', hint: 'Sharp text, larger files', mime: 'image/png' },
+  { value: 'jpg', label: 'JPG', hint: 'Smaller, for photos', mime: 'image/jpeg' },
+  { value: 'webp', label: 'WebP', hint: 'Small, for websites', mime: 'image/webp' },
+  { value: 'avif', label: 'AVIF', hint: 'Smallest, newest', mime: 'image/avif' },
+  { value: 'gif', label: 'GIF', hint: 'Simple pictures, 256 colours' },
+  { value: 'bmp', label: 'BMP', hint: 'Uncompressed, for old programs' },
+  { value: 'tiff', label: 'TIFF', hint: 'For printing and scanning' },
 ];
+/** Formats made by the browser itself only appear where this browser can make them. */
+function availableFormats() {
+  const can = new Set(getSupportedEncodeFormats().map((f) => f.mime));
+  return FORMATS.filter((f) => !f.mime || can.has(f.mime));
+}
+
+async function encodePage(canvas: HTMLCanvasElement, format: Format): Promise<Blob> {
+  const f = FORMATS.find((x) => x.value === format)!;
+  if (f.mime) {
+    if (format === 'jpg') {
+      // JPG has no transparency: put the page on white.
+      const ctx = canvas.getContext('2d')!;
+      ctx.globalCompositeOperation = 'destination-over';
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+    }
+    return canvasToBlob(canvas, f.mime, 0.92);
+  }
+  const img = canvas.getContext('2d')!.getImageData(0, 0, canvas.width, canvas.height);
+  return format === 'gif' ? encodeGif(img) : format === 'bmp' ? encodeBmp(img) : encodeTiff(img);
+}
+
 const SCALES = [
   { value: '1', label: '1×', hint: 'Screen' },
   { value: '2', label: '2×', hint: 'Sharp' },
@@ -34,7 +63,7 @@ export default function PdfToImages() {
   const [file, setFile] = useState<File | null>(null);
   const [pages, setPages] = useState<Page[]>([]);
   const [picked, setPicked] = useState<Set<string>>(new Set());
-  const [format, setFormat] = useState<Format>('image/png');
+  const [format, setFormat] = useState<Format>('png');
   const [scale, setScale] = useState(2);
   const [busy, setBusy] = useState(false);
   const [progress, setProgress] = useState(0);
@@ -80,8 +109,9 @@ export default function PdfToImages() {
   const chosen = pages.filter((p) => picked.has(p.id));
   const first = chosen.find((p) => p.widthPt) ?? pages.find((p) => p.widthPt);
   const pixel = first ? `${Math.round(first.widthPt * scale)}×${Math.round(first.heightPt * scale)} px` : '';
-  const ext = format === 'image/png' ? 'png' : 'jpg';
-  const label = format === 'image/png' ? 'PNG' : 'JPG';
+  const ext = format === 'tiff' ? 'tif' : format;
+  const label = FORMATS.find((f) => f.value === format)!.label;
+  const sizeAt = (k: number) => (first ? `${Math.round(first.widthPt * k)} × ${Math.round(first.heightPt * k)} px` : '');
 
   const toggle = (id: string) => {
     setPicked((s) => {
@@ -106,13 +136,13 @@ export default function PdfToImages() {
 
       if (numbers.length === 1) {
         const canvas = await renderPdfPageToCanvas(bytes.slice(0), numbers[0], scale);
-        const blob = await canvasToBlob(canvas, format, 0.92);
+        const blob = await encodePage(canvas, format);
         setResult({ url: URL.createObjectURL(blob), name: pages.length === 1 ? `${base}.${ext}` : `${base}-page-${numbers[0]}.${ext}`, size: blob.size });
       } else {
         const zip = new JSZip();
         for (const [k, n] of numbers.entries()) {
           const canvas = await renderPdfPageToCanvas(bytes.slice(0), n, scale);
-          const blob = await canvasToBlob(canvas, format, 0.92);
+          const blob = await encodePage(canvas, format);
           zip.file(`${base}-page-${n}.${ext}`, blob);
           setProgress((k + 1) / numbers.length);
         }
@@ -163,14 +193,21 @@ export default function PdfToImages() {
             </div>
           )}
 
-          <div className="grid gap-4 rounded-xl border border-line bg-elevated p-3 sm:grid-cols-2 sm:p-4">
+          <div className="grid gap-5 rounded-xl border border-line bg-elevated p-3 sm:p-4">
             <div>
               <p className="mb-2 text-xs font-medium text-ink-2">{tr('Format')}</p>
-              <FormatPills options={FORMATS} value={format} onChange={(f) => { setFormat(f); setResult(null); }} disabled={busy} label="Format" />
+              <FormatPills options={availableFormats()} value={format} onChange={(f) => { setFormat(f); setResult(null); }} disabled={busy} label="Format" />
             </div>
             <div>
-              <p className="mb-2 text-xs font-medium text-ink-2">{tr('Sharpness')}</p>
-              <FormatPills options={SCALES} value={String(scale)} onChange={(v) => { setScale(Number(v)); setResult(null); }} disabled={busy} label="Sharpness" />
+              <p className="text-xs font-medium text-ink-2">{tr('Sharpness (picture size)')}</p>
+              <p className="mb-2 mt-0.5 text-xs leading-relaxed text-ink-3">{tr('How many pixels each page gets. Higher is clearer when you zoom in or print, but the files are bigger.')}</p>
+              <FormatPills
+                options={SCALES.map((o) => ({ ...o, hint: first ? `${tr(o.hint)} · ${sizeAt(Number(o.value))}` : o.hint }))}
+                value={String(scale)}
+                onChange={(v) => { setScale(Number(v)); setResult(null); }}
+                disabled={busy}
+                label="Sharpness"
+              />
             </div>
           </div>
 
