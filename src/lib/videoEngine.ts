@@ -19,33 +19,6 @@ export function canEncodeVideoCodec(codec: VideoCodec): Promise<boolean> {
   return encodeSupport.get(codec)!;
 }
 
-const FILE_SIZE_CEILING = 250 * 1024 * 1024; // 250MB — see VIDEO_ARCHITECTURE.md §7 for why
-
-export function checkFileSize(file: File): string | null {
-  if (file.size > FILE_SIZE_CEILING) {
-    return `This file is ${(file.size / (1024 * 1024)).toFixed(0)}MB, above the ${FILE_SIZE_CEILING / (1024 * 1024)}MB limit for in-browser video processing. Very large files risk crashing the tab, since the whole file has to fit in memory. Try a shorter clip or a lower-resolution export first.`;
-  }
-  return null;
-}
-
-export interface VideoCapabilities {
-  mp4H264: boolean;
-  webmVp9: boolean;
-}
-
-let cachedCapabilities: VideoCapabilities | null = null;
-
-/** Tests actual encode support on this browser/device — never assumed. */
-export async function detectVideoCapabilities(): Promise<VideoCapabilities> {
-  if (cachedCapabilities) return cachedCapabilities;
-  const [mp4H264, webmVp9] = await Promise.all([
-    canEncodeVideo('avc').catch(() => false),
-    canEncodeVideo('vp9').catch(() => false),
-  ]);
-  cachedCapabilities = { mp4H264, webmVp9 };
-  return cachedCapabilities;
-}
-
 export async function canEncodeAac(): Promise<boolean> {
   try {
     return await canEncode('aac');
@@ -113,9 +86,6 @@ function outputFormatFor(container: WriteContainer) {
   }
 }
 const MIME: Record<WriteContainer, string> = { mp4: 'video/mp4', mov: 'video/quicktime', mkv: 'video/x-matroska', webm: 'video/webm' };
-export function videoCodecFor(container: OutputContainer): VideoCodec {
-  return container === 'mp4' ? 'avc' : 'vp9';
-}
 
 export interface RunConversionOptions {
   container: WriteContainer;

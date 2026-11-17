@@ -2,7 +2,6 @@ import { describe, expect, it } from 'vitest';
 import { isLikelyCompatible } from '../../src/lib/workspaceContext';
 import { formatDuration } from '../../src/lib/audioUtils';
 import { formatBytes, extensionFor } from '../../src/lib/imageUtils';
-import { checkFileSize } from '../../src/lib/videoEngine';
 
 describe('isLikelyCompatible (tool chaining)', () => {
   const cases: [string, string | undefined, boolean][] = [
@@ -42,10 +41,4 @@ describe('formatting helpers', () => {
   });
 });
 
-describe('video file size ceiling', () => {
-  const fakeFile = (size: number) => ({ size }) as File;
-  it('accepts files up to 250 MB and rejects larger ones', () => {
-    expect(checkFileSize(fakeFile(250 * 1024 * 1024))).toBeNull();
-    expect(checkFileSize(fakeFile(250 * 1024 * 1024 + 1))).toMatch(/limit/);
-  });
-});
+// The video size limit is now the engine's: see engine.test.ts.

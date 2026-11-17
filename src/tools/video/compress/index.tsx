@@ -1,11 +1,11 @@
+import { engine, isCancelled, videoTooBig, compressionBitrates } from '../../../engine';
+import type { VideoInfo } from '../../../engine';
 import { useEffect, useRef, useState } from 'react';
 import FileDropzone from '../../../components/FileDropzone';
 import Button from '../../../components/Button';
 import ErrorMessage from '../../../components/ErrorMessage';
 import { formatDuration } from '../../../lib/audioUtils';
 import { formatBytes } from '../../../lib/imageUtils';
-import { probeVideo, runVideoConversion, checkFileSize, compressionBitrates, VideoCancelledError } from '../../../lib/videoEngine';
-import type { VideoInfo } from '../../../lib/videoEngine';
 import { ActionBar, SizeDelta } from '../../../components/tool';
 import { CompressFlow, LevelSlider, MoreOptions } from '../../../components/tool/CompressFlow';
 import { VideoThumb } from '../../../components/tool/ConvertFlow';
@@ -41,13 +41,13 @@ export default function VideoCompressTool() {
     setResult(null);
     setError(null);
     setInfo(null);
-    const sizeError = checkFileSize(f);
+    const sizeError = videoTooBig(f);
     if (sizeError) {
       setError(sizeError);
       return;
     }
     try {
-      const probed = await probeVideo(f);
+      const probed = await engine.video.probe(f);
       setFile(f);
       setInfo(probed);
       setSrcUrl(URL.createObjectURL(f));
@@ -76,7 +76,7 @@ export default function VideoCompressTool() {
     setResult(null);
     setProgress(0);
     try {
-      const blob = await runVideoConversion(file, {
+      const blob = await engine.video.convert(file, {
         container: info.container,
         videoBitrate: rates.video,
         audioBitrate: rates.audio,
@@ -87,7 +87,7 @@ export default function VideoCompressTool() {
       const base = file.name.replace(/\.[^.]+$/, '');
       setResult({ url: URL.createObjectURL(blob), name: `${base}-compressed.${info.container}`, size: blob.size });
     } catch (e) {
-      if (e instanceof VideoCancelledError) return;
+      if (isCancelled(e)) return;
       setError(e instanceof Error ? e.message : 'Could not compress this video.');
     } finally {
       setBusy(false);

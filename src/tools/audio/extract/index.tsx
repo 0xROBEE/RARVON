@@ -1,19 +1,15 @@
+import { engine, isCancelled, AUDIO_TARGETS } from '../../../engine';
+import type { AudioInfo, AudioTarget } from '../../../engine';
 import { useEffect, useRef, useState } from 'react';
 import FileDropzone from '../../../components/FileDropzone';
 import Button from '../../../components/Button';
 import ErrorMessage from '../../../components/ErrorMessage';
 import { formatDuration } from '../../../lib/audioUtils';
 import { formatBytes } from '../../../lib/imageUtils';
-import { AUDIO_TARGETS, CancelledError, convertAudio, encodableAudioTargets, probeAudio } from '../../../lib/audioEngine';
-import type { AudioInfo, AudioTarget } from '../../../lib/audioEngine';
-import { extractAudioFromVideo } from '../../../lib/videoAudioCapture';
 import { ActionBar } from '../../../components/tool';
 import { ConvertFlow, FormatPills, IconTile, VideoThumb } from '../../../components/tool/ConvertFlow';
 import { tr } from '../../../lib/i18n';
 
-const supportsCaptureStream =
-  typeof HTMLVideoElement !== 'undefined' &&
-  ('captureStream' in HTMLVideoElement.prototype || 'mozCaptureStream' in HTMLVideoElement.prototype);
 
 type Choice = AudioTarget | 'original';
 
@@ -36,7 +32,7 @@ export default function ExtractAudioTool() {
   useEffect(() => () => { if (srcUrl) URL.revokeObjectURL(srcUrl); }, [srcUrl]);
 
   useEffect(() => {
-    void encodableAudioTargets().then(setTargets);
+    void engine.audio.encodableTargets().then(setTargets);
   }, []);
 
   function reset() {
@@ -54,12 +50,12 @@ export default function ExtractAudioTool() {
     reset();
     setSrcUrl(URL.createObjectURL(f));
     try {
-      setInfo(await probeAudio(f));
+      setInfo(await engine.audio.probe(f));
       setFile(f);
     } catch (e) {
       if (e instanceof Error && e.message.includes('no audio')) {
         setError(tr("This video has no audio track to extract."));
-      } else if (supportsCaptureStream) {
+      } else if (engine.audio.captureFromVideo) {
         setUseCapture(true);
         setFile(f);
       } else {
@@ -79,11 +75,11 @@ export default function ExtractAudioTool() {
     const base = file.name.replace(/\.[^.]+$/, '');
     try {
       if (useCapture) {
-        const blob = await extractAudioFromVideo(file, setProgress);
+        const blob = await engine.audio.captureFromVideo!(file, setProgress);
         const ext = blob.type.includes('ogg') ? 'ogg' : 'webm';
         setResult({ url: URL.createObjectURL(blob), name: `${base}-audio.${ext}`, size: blob.size });
       } else {
-        const out = await convertAudio(file, { target: choice, bitrate: 160_000, onProgress: setProgress, signal: controller.signal });
+        const out = await engine.audio.convert(file, { target: choice, bitrate: 160_000, onProgress: setProgress, signal: controller.signal });
         setResult({
           url: URL.createObjectURL(out.blob),
           name: `${base}-audio.${out.extension}`,
@@ -92,7 +88,7 @@ export default function ExtractAudioTool() {
         });
       }
     } catch (e) {
-      if (e instanceof CancelledError) return;
+      if (isCancelled(e)) return;
       setError(e instanceof Error ? e.message : 'Could not extract audio from this video.');
     } finally {
       setBusy(false);

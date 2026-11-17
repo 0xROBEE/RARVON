@@ -1093,6 +1093,7 @@ export const arUi: Record<string, string> = {
   "This file doesn't have a video track.": "لا يحتوي هذا الملف على مسار فيديو.",
   "This file has no audio track.": "لا يحتوي هذا الملف على مسار صوتي.",
   "This file is already smaller than that quality setting (": "هذا الملف أصغر أصلًا من إعداد الجودة هذا (",
+  "This file is {size} MB, above the {max} MB limit for video in the browser. The whole file has to fit in the tab’s memory, so very large files can crash it. Try a shorter clip or a lower resolution first.": "حجم هذا الملف {size} ميغابايت، وهو أكبر من حد {max} ميغابايت للفيديو في المتصفح. يجب أن يتسع الملف كله في ذاكرة علامة التبويب، لذا قد تتعطل الملفات الكبيرة جدًا. جرّب مقطعًا أقصر أو دقة أقل أولًا.",
   "This file’s format isn’t supported.": "صيغة هذا الملف غير مدعومة.",
   "This icon only has old-style pictures inside that Bench can’t read yet.": "لا تحتوي هذه الأيقونة إلا على صور بنمط قديم لا يستطيع Bench قراءتها بعد.",
   "This image could not be opened.": "تعذّر فتح هذه الصورة.",

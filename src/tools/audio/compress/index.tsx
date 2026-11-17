@@ -1,11 +1,11 @@
+import { engine, isCancelled } from '../../../engine';
+import type { AudioInfo, AudioTarget } from '../../../engine';
 import { useEffect, useRef, useState } from 'react';
 import FileDropzone from '../../../components/FileDropzone';
 import Button from '../../../components/Button';
 import ErrorMessage from '../../../components/ErrorMessage';
 import { formatDuration } from '../../../lib/audioUtils';
 import { formatBytes } from '../../../lib/imageUtils';
-import { CancelledError, convertAudio, encodableAudioTargets, probeAudio } from '../../../lib/audioEngine';
-import type { AudioInfo, AudioTarget } from '../../../lib/audioEngine';
 import { ActionBar, OptionCards, SizeDelta } from '../../../components/tool';
 import { CompressFlow, LevelSlider, MoreOptions } from '../../../components/tool/CompressFlow';
 import { IconTile } from '../../../components/tool/ConvertFlow';
@@ -38,7 +38,7 @@ export default function AudioCompressTool() {
   const abortRef = useRef<AbortController | null>(null);
 
   useEffect(() => {
-    void encodableAudioTargets().then((t) => {
+    void engine.audio.encodableTargets().then((t) => {
       const lossy = (['opus', 'aac', 'mp3'] as const).filter((c) => t.has(c));
       setCodecs(lossy);
       if (lossy.length) setCodec(lossy[0]);
@@ -57,7 +57,7 @@ export default function AudioCompressTool() {
     const f = files[0];
     reset();
     try {
-      const probed = await probeAudio(f);
+      const probed = await engine.audio.probe(f);
       setInfo(probed);
       setFile(f);
     } catch (e) {
@@ -74,11 +74,11 @@ export default function AudioCompressTool() {
     setResult(null);
     setProgress(0);
     try {
-      const out = await convertAudio(file, { target: codec, bitrate, onProgress: setProgress, signal: controller.signal });
+      const out = await engine.audio.convert(file, { target: codec, bitrate, onProgress: setProgress, signal: controller.signal });
       const base = file.name.replace(/\.[^.]+$/, '');
       setResult({ url: URL.createObjectURL(out.blob), name: `${base}-compressed.${out.extension}`, size: out.blob.size });
     } catch (e) {
-      if (e instanceof CancelledError) return;
+      if (isCancelled(e)) return;
       setError(e instanceof Error ? e.message : 'Could not compress this audio file.');
     } finally {
       setBusy(false);

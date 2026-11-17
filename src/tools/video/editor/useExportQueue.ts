@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import type { Project } from '../../../lib/videoEditor/types';
 import type { ExportSettings } from '../../../lib/videoEditor/exportSettings';
 import { extensionFor } from '../../../lib/videoEditor/exportSettings';
-import { exportProject, ExportCancelled } from '../../../lib/videoEditor/exporter';
+import { engine, isCancelled } from '../../../engine';
 import { safeFileName } from '../../../lib/videoEditor/storage';
 import { tr } from '../../../lib/i18n';
 
@@ -43,7 +43,7 @@ export function useExportQueue(files: Map<string, File>) {
     running.current = { id: next.id, ctrl };
     patch(next.id, { status: 'running', progress: 0, stage: 'Starting', startedAt: Date.now(), error: undefined });
     try {
-      const blob = await exportProject(next.project, filesRef.current, {
+      const blob = await engine.video.exportProject(next.project, filesRef.current, {
         settings: next.settings,
         signal: ctrl.signal,
         onProgress: (progress, stage) => patch(next.id, { progress, stage }),
@@ -51,7 +51,7 @@ export function useExportQueue(files: Map<string, File>) {
       const fileName = `${safeFileName(next.name)}.${extensionFor(next.settings.format)}`;
       patch(next.id, { status: 'done', progress: 1, result: { url: URL.createObjectURL(blob), size: blob.size, fileName } });
     } catch (e) {
-      if (e instanceof ExportCancelled || ctrl.signal.aborted) patch(next.id, { status: 'cancelled' });
+      if (isCancelled(e) || ctrl.signal.aborted) patch(next.id, { status: 'cancelled' });
       else patch(next.id, { status: 'error', error: e instanceof Error ? e.message : tr('The export failed.') });
     } finally {
       running.current = null;

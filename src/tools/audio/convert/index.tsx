@@ -1,11 +1,11 @@
+import { engine, isCancelled, AUDIO_TARGETS } from '../../../engine';
+import type { AudioInfo, AudioTarget } from '../../../engine';
 import { useEffect, useRef, useState } from 'react';
 import FileDropzone from '../../../components/FileDropzone';
 import Button from '../../../components/Button';
 import ErrorMessage from '../../../components/ErrorMessage';
 import { audioBufferToWavBlob, decodeAudioFile, formatDuration } from '../../../lib/audioUtils';
 import { formatBytes } from '../../../lib/imageUtils';
-import { AUDIO_TARGETS, CancelledError, convertAudio, encodableAudioTargets, probeAudio } from '../../../lib/audioEngine';
-import type { AudioInfo, AudioTarget } from '../../../lib/audioEngine';
 import { ActionBar, SizeDelta } from '../../../components/tool';
 import { ConvertFlow, FormatPills, IconTile } from '../../../components/tool/ConvertFlow';
 import { tr } from '../../../lib/i18n';
@@ -31,7 +31,7 @@ export default function AudioConvertTool() {
   const abortRef = useRef<AbortController | null>(null);
 
   useEffect(() => {
-    void encodableAudioTargets().then((t) => {
+    void engine.audio.encodableTargets().then((t) => {
       setTargets(t);
       setTarget(t.has('mp3') ? 'mp3' : t.has('aac') ? 'aac' : t.has('opus') ? 'opus' : 'wav');
     });
@@ -50,7 +50,7 @@ export default function AudioConvertTool() {
     const f = files[0];
     reset();
     try {
-      setInfo(await probeAudio(f));
+      setInfo(await engine.audio.probe(f));
       setFile(f);
     } catch (e) {
       try {
@@ -76,11 +76,11 @@ export default function AudioConvertTool() {
         const blob = audioBufferToWavBlob(fallback);
         setResult({ url: URL.createObjectURL(blob), name: `${base}.wav`, size: blob.size });
       } else {
-        const out = await convertAudio(file, { target, bitrate: BITRATE, onProgress: setProgress, signal: controller.signal });
+        const out = await engine.audio.convert(file, { target, bitrate: BITRATE, onProgress: setProgress, signal: controller.signal });
         setResult({ url: URL.createObjectURL(out.blob), name: `${base}.${out.extension}`, size: out.blob.size });
       }
     } catch (e) {
-      if (e instanceof CancelledError) return;
+      if (isCancelled(e)) return;
       setError(e instanceof Error ? e.message : 'Could not convert this audio file.');
     } finally {
       setBusy(false);

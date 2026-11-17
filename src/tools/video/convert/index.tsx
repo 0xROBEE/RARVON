@@ -1,11 +1,11 @@
+import { engine, isCancelled, videoTooBig } from '../../../engine';
+import type { VideoInfo, WriteContainer } from '../../../engine';
 import { useEffect, useRef, useState } from 'react';
 import FileDropzone from '../../../components/FileDropzone';
 import Button from '../../../components/Button';
 import ErrorMessage from '../../../components/ErrorMessage';
 import { formatDuration } from '../../../lib/audioUtils';
 import { formatBytes } from '../../../lib/imageUtils';
-import { VideoCancelledError, probeVideo, runVideoConversion, checkFileSize, canEncodeVideoCodec, videoToGif } from '../../../lib/videoEngine';
-import type { VideoInfo, WriteContainer } from '../../../lib/videoEngine';
 import type { VideoCodec } from 'mediabunny';
 import { ActionBar, SizeDelta } from '../../../components/tool';
 import { ConvertFlow, FormatPills, VideoThumb } from '../../../components/tool/ConvertFlow';
@@ -52,7 +52,7 @@ export default function VideoConvertTool() {
   useEffect(() => () => { if (srcUrl) URL.revokeObjectURL(srcUrl); }, [srcUrl]);
 
   useEffect(() => {
-    void Promise.all(TARGETS.map(async (t) => [t.value, t.codec ? await canEncodeVideoCodec(t.codec) : true] as const)).then((list) => {
+    void Promise.all(TARGETS.map(async (t) => [t.value, t.codec ? await engine.video.canEncode(t.codec) : true] as const)).then((list) => {
       setCan(new Set(list.filter(([, ok]) => ok).map(([v]) => v)));
     });
   }, []);
@@ -64,13 +64,13 @@ export default function VideoConvertTool() {
     setResult(null);
     setError(null);
     setInfo(null);
-    const sizeError = checkFileSize(f);
+    const sizeError = videoTooBig(f);
     if (sizeError) {
       setError(sizeError);
       return;
     }
     try {
-      const probed = await probeVideo(f);
+      const probed = await engine.video.probe(f);
       setFile(f);
       setInfo(probed);
       setSrcUrl(URL.createObjectURL(f));
@@ -94,12 +94,12 @@ export default function VideoConvertTool() {
     abortRef.current = controller;
     try {
       const blob = t.container
-        ? await runVideoConversion(file, { container: t.container, forceVideoCodec: t.codec, onProgress: setProgress, signal: controller.signal })
-        : await videoToGif(file, { start: gifStart, seconds: Math.min(gifSeconds, info.durationSec - gifStart), width: gifWidth, fps: 10, onProgress: setProgress, signal: controller.signal });
+        ? await engine.video.convert(file, { container: t.container, forceVideoCodec: t.codec, onProgress: setProgress, signal: controller.signal })
+        : await engine.video.toGif(file, { start: gifStart, seconds: Math.min(gifSeconds, info.durationSec - gifStart), width: gifWidth, fps: 10, onProgress: setProgress, signal: controller.signal });
       const base = file.name.replace(/\.[^.]+$/, '');
       setResult({ url: URL.createObjectURL(blob), name: `${base}.${t.ext}`, size: blob.size });
     } catch (e) {
-      if (e instanceof VideoCancelledError) return;
+      if (isCancelled(e)) return;
       setError(e instanceof Error ? e.message : 'Could not convert this video.');
     } finally {
       setBusy(false);

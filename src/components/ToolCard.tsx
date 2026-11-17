@@ -1,3 +1,4 @@
+import { engine } from '../engine';
 import { Link } from 'react-router-dom';
 import type { ToolMeta } from '../lib/toolRegistry';
 import { getCategory, EXPERIMENTAL_NOTE } from '../lib/toolRegistry';
@@ -7,7 +8,8 @@ import { tr } from '../lib/i18n';
 
 export default function ToolCard({ tool, showCategory = false }: { tool: ToolMeta; showCategory?: boolean }) {
   const isSoon = tool.status === 'coming-soon';
-  const isExperimental = tool.status === 'experimental';
+  // The warning is about browser limits, so the engine decides whether it applies.
+  const isExperimental = tool.status === 'experimental' && engine.showsBrowserWarnings;
   const category = showCategory ? getCategory(tool.category) : null;
   const content = (
     <div

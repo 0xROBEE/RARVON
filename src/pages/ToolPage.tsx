@@ -1,3 +1,4 @@
+import { engine } from '../engine';
 import { Suspense, useEffect } from 'react';
 import { useParams, Navigate } from 'react-router-dom';
 import { getTool, getCategory, EXPERIMENTAL_NOTE } from '../lib/toolRegistry';
@@ -34,7 +35,7 @@ export default function ToolPage() {
   return (
     <ToolPageShell tool={tool}>
       {tool.status === 'coming-soon' && <div className="mb-4"><ComingSoonNotice reason={tool.comingSoonReason} /></div>}
-      {tool.status === 'experimental' && <ExperimentalNotice note={EXPERIMENTAL_NOTE} />}
+      {tool.status === 'experimental' && engine.showsBrowserWarnings && <ExperimentalNotice note={EXPERIMENTAL_NOTE} />}
       <Suspense fallback={<div className="py-12 text-center text-sm text-ink-3">{tr("Loading tool…")}</div>}>
         {Component ? <Component /> : null}
       </Suspense>

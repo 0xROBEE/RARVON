@@ -1,3 +1,5 @@
+import { engine, isCancelled, videoTooBig } from '../../../engine';
+import type { VideoInfo } from '../../../engine';
 import { useRef, useState } from 'react';
 import FileDropzone from '../../../components/FileDropzone';
 import Button from '../../../components/Button';
@@ -5,8 +7,6 @@ import ErrorMessage from '../../../components/ErrorMessage';
 import ProgressBar from '../../../components/ProgressBar';
 import { formatDuration } from '../../../lib/audioUtils';
 import { formatBytes } from '../../../lib/imageUtils';
-import { VideoCancelledError, probeVideo, runVideoConversion, checkFileSize } from '../../../lib/videoEngine';
-import type { VideoInfo } from '../../../lib/videoEngine';
 import { ResultCard, ActionBar } from '../../../components/tool';
 import { Link, useNavigate } from 'react-router-dom';
 import { handoff } from '../editor/openLock';
@@ -31,14 +31,14 @@ export default function TrimVideoTool() {
     setError(null);
     setInfo(null);
 
-    const sizeError = checkFileSize(f);
+    const sizeError = videoTooBig(f);
     if (sizeError) {
       setError(sizeError);
       return;
     }
 
     try {
-      const probed = await probeVideo(f);
+      const probed = await engine.video.probe(f);
       setFile(f);
       setInfo(probed);
       setStart(0);
@@ -60,7 +60,7 @@ export default function TrimVideoTool() {
     setProgress(0);
     abortRef.current = controller;
     try {
-      const blob = await runVideoConversion(file, {
+      const blob = await engine.video.convert(file, {
         container: info.container,
         trim: { start, end },
         onProgress: setProgress,
@@ -69,7 +69,7 @@ export default function TrimVideoTool() {
       const base = file.name.replace(/\.[^.]+$/, '');
       setResult({ url: URL.createObjectURL(blob), name: `${base}-trimmed.${info.container}` });
     } catch (e) {
-      if (e instanceof VideoCancelledError) return;
+      if (isCancelled(e)) return;
       setError(e instanceof Error ? e.message : 'Could not trim this video.');
     } finally {
       setBusy(false);
