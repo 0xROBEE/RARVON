@@ -1,4 +1,4 @@
-import type { Plugin } from 'vite'
+import type { Plugin, Rollup } from 'vite'
 import { existsSync, readFileSync, readdirSync, writeFileSync } from 'node:fs'
 import { join, resolve, sep } from 'node:path'
 
@@ -13,6 +13,13 @@ interface PkgInfo {
 const NOTES: Record<string, string> = {
   '@mediabunny/mp3-encoder': 'Contains the LAME MP3 encoder (GNU LGPL 2.0) compiled to WebAssembly; shipped unmodified in its own replaceable file (assets/mediabunny-mp3-encoder-*.js). LGPL text: /licenses/LAME-LGPL-2.0.txt. Source: https://lame.sourceforge.io/',
 }
+
+/**
+ * Packages found in worker bundles. Vite builds each worker as its own bundle
+ * (before the main bundle finishes), so the worker plugin records what it saw
+ * here and the main plugin adds it to the report.
+ */
+const workerPackages = new Set<string>()
 
 /** Returns the package name for a path inside node_modules, or null. */
 function packageOf(file: string): string | null {
@@ -51,26 +58,61 @@ export interface ModelLicense {
   revision: string
 }
 
+function collect(bundle: Rollup.OutputBundle, root: string, into: Set<string>) {
+  for (const item of Object.values(bundle)) {
+    if (item.type === 'chunk') {
+      for (const id of Object.keys(item.modules)) {
+        const n = packageOf(id.replace(/^\0/, '').split('?')[0])
+        if (n) into.add(n)
+      }
+    } else {
+      for (const f of item.originalFileNames ?? []) {
+        const n = packageOf(resolve(root, f))
+        if (n) into.add(n)
+      }
+    }
+  }
+}
+
+/** Add to `worker.plugins` so packages used only inside Web Workers are credited too. */
+export function workerLicenses(): Plugin {
+  const root = resolve(import.meta.dirname, '..')
+  return {
+    name: 'bench-licenses-worker',
+    apply: 'build',
+    generateBundle(_options, bundle) {
+      collect(bundle, root, workerPackages)
+    },
+  }
+}
+
+/** Where the last build's credits are kept, so the Credits page also works in development. */
+const SNAPSHOT = 'scripts/credits-snapshot.json'
+
+/** Serves /licenses/credits.json from the last build's snapshot while developing. */
+export function creditsDevServer(): Plugin {
+  const root = resolve(import.meta.dirname, '..')
+  return {
+    name: 'bench-credits-dev',
+    apply: 'serve',
+    configureServer(server) {
+      server.middlewares.use('/licenses/credits.json', (_req, res) => {
+        const file = join(root, SNAPSHOT)
+        res.setHeader('Content-Type', 'application/json; charset=utf-8')
+        res.end(existsSync(file) ? readFileSync(file, 'utf8') : '{"packages":[],"models":[]}')
+      })
+    },
+  }
+}
+
 export function licenseReport(extraPackages: () => string[], models: () => ModelLicense[] = () => []): Plugin {
   const root = resolve(import.meta.dirname, '..')
   return {
     name: 'bench-licenses',
     apply: 'build',
     generateBundle(_options, bundle) {
-      const names = new Set<string>(extraPackages())
-      for (const item of Object.values(bundle)) {
-        if (item.type === 'chunk') {
-          for (const id of Object.keys(item.modules)) {
-            const n = packageOf(id.replace(/^\0/, '').split('?')[0])
-            if (n) names.add(n)
-          }
-        } else {
-          for (const f of item.originalFileNames ?? []) {
-            const n = packageOf(resolve(root, f))
-            if (n) names.add(n)
-          }
-        }
-      }
+      const names = new Set<string>([...extraPackages(), ...workerPackages])
+      collect(bundle, root, names)
       const pkgs = [...names].sort().map((n) => readPkg(root, n)).filter((p): p is PkgInfo => Boolean(p))
 
       const txt = [
@@ -97,6 +139,14 @@ export function licenseReport(extraPackages: () => string[], models: () => Model
           : []),
       ].join('\n')
       this.emitFile({ type: 'asset', fileName: 'licenses/third-party.txt', source: txt })
+
+      // The same list as data for the /credits page.
+      const credits = JSON.stringify({
+        packages: pkgs.map((p) => ({ name: p.name, version: p.version, license: p.license, repository: p.repository.replace(/^git:\/\//, 'https://'), note: NOTES[p.name] ?? '', text: p.text })),
+        models: models().map((m) => ({ id: m.id, revision: m.revision.slice(0, 10), license: m.license, url: `https://huggingface.co/${m.id}` })),
+      })
+      this.emitFile({ type: 'asset', fileName: 'licenses/credits.json', source: credits })
+      writeFileSync(join(root, SNAPSHOT), credits + '\n')
 
       const mdPath = join(root, 'THIRD_PARTY_LICENSES.md')
       const marker = '<!-- generated-table -->'

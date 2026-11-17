@@ -24,7 +24,7 @@ export default function Footer() {
             <Link to="/privacy" className="hover:text-ink">{tr('Privacy')}</Link>
             <Link to="/about" className="hover:text-ink">{tr('About')}</Link>
             <Link to="/support" className="hover:text-ink">{tr('Support')}</Link>
-            <a href="/licenses/third-party.txt" className="hover:text-ink">{tr('Credits and licenses')}</a>
+            <Link to="/credits" className="hover:text-ink">{tr('Credits and licenses')}</Link>
             <SupportButton variant="footer" />
           </div>
         </div>

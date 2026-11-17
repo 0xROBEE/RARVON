@@ -5,7 +5,7 @@ import tailwindcss from '@tailwindcss/vite'
 import { createReadStream, existsSync, readdirSync, readFileSync } from 'node:fs'
 import { join, resolve } from 'node:path'
 import { createHash } from 'node:crypto'
-import { licenseReport } from './scripts/licensePlugin.ts'
+import { creditsDevServer, licenseReport, workerLicenses } from './scripts/licensePlugin.ts'
 import type { ModelLicense } from './scripts/licensePlugin.ts'
 import { aiAssets } from './scripts/aiAssetsPlugin.ts'
 
@@ -119,8 +119,9 @@ ${paths.map((p) => `  <url><loc>${origin}${p}</loc></url>`).join('\n')}
 }
 
 export default defineConfig(({ mode }) => ({
-  plugins: [react(), tailwindcss(), ocrAssets(), aiAssets(), benchPwa(), licenseReport(() => [...ocrPackages, 'onnxruntime-web'], aiModelLicenses), seoFiles(loadEnv(mode, process.cwd(), 'VITE_').VITE_SITE_URL ?? '')],
+  plugins: [react(), tailwindcss(), ocrAssets(), aiAssets(), benchPwa(), licenseReport(() => [...ocrPackages, 'onnxruntime-web'], aiModelLicenses), creditsDevServer(), seoFiles(loadEnv(mode, process.cwd(), 'VITE_').VITE_SITE_URL ?? '')],
   worker: {
     format: 'es',
+    plugins: () => [workerLicenses()],
   },
 }))

@@ -3,7 +3,7 @@ import { tools, categories } from '../src/lib/toolRegistry';
 
 test.describe('every page renders without errors', () => {
   test('home, static pages, categories and action pages', async ({ page }) => {
-    for (const path of ['/', '/about', '/privacy', '/support', '/compress', '/convert', ...categories.map((c) => `/tools/${c.slug}`)]) {
+    for (const path of ['/', '/about', '/privacy', '/support', '/credits', '/compress', '/convert', ...categories.map((c) => `/tools/${c.slug}`)]) {
       await page.goto(path);
       await expect(page.locator('h1').first(), path).toBeVisible();
     }
@@ -67,6 +67,22 @@ test.describe('every page renders without errors', () => {
     await page.goto('/about');
     await page.getByRole('button', { name: 'Ask for a tool' }).click();
     await expect(page.locator('dialog[open]').getByRole('heading', { name: 'Ask for a tool' })).toBeVisible();
+  });
+
+  test('the footer opens the Credits page, grouped and searchable', async ({ page }) => {
+    await page.goto('/');
+    await page.getByRole('contentinfo').getByRole('link', { name: 'Credits and licenses' }).click();
+    await expect(page).toHaveURL(/\/credits$/);
+    for (const group of ['PDF tools', 'Video and audio', 'AI (Background Remover)', 'Building blocks']) {
+      // Headings end with their count ("PDF tools 6"), so match the start.
+      await expect(page.getByRole('heading').filter({ hasText: group }).first()).toBeVisible();
+    }
+    // Packages used only inside background workers are credited too.
+    await expect(page.getByText('@huggingface/transformers', { exact: true })).toBeVisible();
+    await page.getByPlaceholder('Find a package or license').fill('pdf-lib');
+    await expect(page.getByRole('heading', { name: /^Fonts/ })).toHaveCount(0);
+    await page.getByText('pdf-lib', { exact: true }).click();
+    await expect(page.locator('details[open] pre')).toContainText('MIT');
   });
 
   test('the Privacy page has a summary, the full sections and a working contents list', async ({ page }) => {
