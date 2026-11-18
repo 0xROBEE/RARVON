@@ -5,10 +5,10 @@ import { resolve } from 'node:path';
 
 const root = resolve(import.meta.dirname, '..');
 const jobs = [
-  ['public/icons/icon.svg', 192, 'public/icons/icon-192.png'],
-  ['public/icons/icon.svg', 512, 'public/icons/icon-512.png'],
-  ['public/icons/icon-maskable.svg', 192, 'public/icons/icon-maskable-192.png'],
-  ['public/icons/icon-maskable.svg', 512, 'public/icons/icon-maskable-512.png'],
+  ['public/icons/rarvon-app-icon.svg', 192, 'public/icons/rarvon-192.png'],
+  ['public/icons/rarvon-app-icon.svg', 512, 'public/icons/rarvon-512.png'],
+  ['public/icons/rarvon-maskable.svg', 192, 'public/icons/rarvon-maskable-192.png'],
+  ['public/icons/rarvon-maskable.svg', 512, 'public/icons/rarvon-maskable-512.png'],
 ];
 const browser = await chromium.launch();
 const page = await browser.newPage();

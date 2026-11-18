@@ -8,15 +8,15 @@
   "background_color": "#131519",
   "theme_color": "#131519",
   "icons": [
-    { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
-    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png" },
-    { "src": "/icons/icon-maskable-192.png", "sizes": "192x192", "type": "image/png", "purpose": "maskable" },
-    { "src": "/icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" },
-    { "src": "/icons/icon.svg", "sizes": "any", "type": "image/svg+xml" }
+    { "src": "/icons/rarvon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/icons/rarvon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "/icons/rarvon-maskable-192.png", "sizes": "192x192", "type": "image/png", "purpose": "maskable" },
+    { "src": "/icons/rarvon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" },
+    { "src": "/icons/rarvon-app-icon.svg", "sizes": "any", "type": "image/svg+xml" }
   ],
   "shortcuts": [
-    { "name": "Image to Text", "url": "/tools/image/to-text", "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }] },
-    { "name": "PDF Editor", "url": "/tools/pdf/editor", "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }] },
-    { "name": "Compress", "url": "/compress", "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }] }
+    { "name": "Image to Text", "url": "/tools/image/to-text", "icons": [{ "src": "/icons/rarvon-192.png", "sizes": "192x192" }] },
+    { "name": "PDF Editor", "url": "/tools/pdf/editor", "icons": [{ "src": "/icons/rarvon-192.png", "sizes": "192x192" }] },
+    { "name": "Compress", "url": "/compress", "icons": [{ "src": "/icons/rarvon-192.png", "sizes": "192x192" }] }
   ]
 }

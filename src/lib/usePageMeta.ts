@@ -62,7 +62,7 @@ export function usePageMeta(title: string, description: string, extras: PageMeta
     setMeta('property', 'og:type', 'website');
     setMeta('property', 'og:site_name', SITE_NAME);
     setMeta('property', 'og:url', url);
-    setMeta('property', 'og:image', `${SITE_URL || window.location.origin}/icons/icon-512.png`);
+    setMeta('property', 'og:image', `${SITE_URL || window.location.origin}/icons/rarvon-512.png`);
     setMeta('name', 'twitter:card', 'summary');
     setCanonical(url);
     setJsonLd(jsonLd ? JSON.parse(jsonLd) : null);
