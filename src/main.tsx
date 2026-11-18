@@ -19,11 +19,11 @@ import './index.css'
 import App from './App.tsx'
 import { I18nProvider, loadArabic, storedLang } from './lib/i18n'
 
-// Inside Bench for desktop: tell the Bench Engine this window is still open, so
+// Inside Rarvon for desktop: tell the Rarvon Engine this window is still open, so
 // it closes itself once the window is gone (it needs no offline cache either).
 const app = window.__BENCH_APP__
 if (app) {
-  const alive = () => fetch('/__bench/alive', { method: 'POST', headers: { 'X-Bench-Key': app.key } }).catch(() => undefined)
+  const alive = () => fetch('/__bench/alive', { method: 'POST', headers: { 'X-Rarvon-Key': app.key } }).catch(() => undefined)
   void alive()
   setInterval(alive, 5000)
   // Closing (or reloading) says goodbye at once; a reload says hello again right after.

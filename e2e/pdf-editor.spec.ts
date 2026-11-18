@@ -128,7 +128,7 @@ test.describe('PDF Editor', () => {
     await page.keyboard.type('مرحبا بالعالم');
     await page.keyboard.press('Enter');
     await clickOnPage(page, [0.1, 0.4]);
-    await page.keyboard.type('تم إصدار Bench في شهر March');
+    await page.keyboard.type('تم إصدار Rarvon في شهر March');
     await page.keyboard.press('Enter');
     const pdf = await exportPdf(page);
     // Read the exported page back with the app's own OCR.
@@ -141,7 +141,7 @@ test.describe('PDF Editor', () => {
     await expect(box).toHaveValue(/مرحبا/, { timeout: 60_000 });
     const ocr = await box.inputValue();
     expect(ocr).toContain('بالعالم');
-    expect(ocr).toContain('Bench');
+    expect(ocr).toContain('Rarvon');
     expect(ocr).toContain('March');
   });
 

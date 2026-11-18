@@ -4,7 +4,7 @@ import type { Page } from '@playwright/test';
 import { test as base, expect, upload, makePdf, makeImage, makeWebm, makeWav } from '../../e2e/helpers';
 
 /**
- * Photographs Bench's real screens for the design map (design/README.md).
+ * Photographs Rarvon's real screens for the design map (design/README.md).
  * Each picture is saved with a small JSON note: which flow it belongs to, its
  * title, its variant, and the arrows that leave it (labelled with the button
  * that leads to the next screen). `node design/build-map.mjs` turns them into
@@ -16,7 +16,7 @@ mkdirSync(OUT, { recursive: true });
 
 const SITE = 'http://localhost:4321';
 const DEMO = 'http://localhost:5180'; // the website with a (pretend) app download link
-const APP = 'http://127.0.0.1:47821'; // Bench for desktop (the Bench Engine with FFmpeg)
+const APP = 'http://127.0.0.1:47821'; // Rarvon for desktop (the Rarvon Engine with FFmpeg)
 
 type Variant = 'desktop' | 'phone' | 'arabic' | 'app' | 'download-on';
 type Theme = 'light' | 'dark';
@@ -67,13 +67,13 @@ async function textImage(page: Page) {
     const g = c.getContext('2d')!;
     g.fillStyle = '#fff'; g.fillRect(0, 0, c.width, c.height);
     g.fillStyle = '#111'; g.font = '44px Arial';
-    ['Invoice 2041 — Bench Supplies', 'Total due: 1,250.00 EUR', 'Paid by bank transfer on 3 May'].forEach((l, i) => g.fillText(l, 60, 110 + i * 100));
+    ['Invoice 2041 — Rarvon Supplies', 'Total due: 1,250.00 EUR', 'Paid by bank transfer on 3 May'].forEach((l, i) => g.fillText(l, 60, 110 + i * 100));
     return c.toDataURL('image/png').split(',')[1];
   });
   return { name: 'invoice.png', mimeType: 'image/png', buffer: Buffer.from(data, 'base64') };
 }
 
-const SAMPLE_TEXT = 'Bench is a free toolbox for everyday files.\nIt runs on your device, so nothing is uploaded.\n\nNo ads. No account. Just the tools.';
+const SAMPLE_TEXT = 'Rarvon is a free toolbox for everyday files.\nIt runs on your device, so nothing is uploaded.\n\nNo ads. No account. Just the tools.';
 
 test.describe.configure({ mode: 'serial' });
 test.use({ viewport: DESKTOP, serviceWorkers: 'block' });
@@ -88,7 +88,7 @@ test('finding tools', async ({ page }) => {
   await shot(page, 'home', { flow: 'finding', title: 'Home', arrows: [
     { to: 'search', label: 'Search box or Ctrl+K' }, { to: 'menu', label: 'All tools' }, { to: 'category-pdf', label: 'A category card' },
     { to: 'action-convert', label: 'All Convert tools' }, { to: 'convert-image-empty', label: 'A tool name' }, { to: 'about', label: 'About (top bar)' },
-    { to: 'support', label: 'Support Bench' },
+    { to: 'support', label: 'Support Rarvon' },
   ] });
   await page.keyboard.press('Control+k');
   await page.getByRole('dialog', { name: 'Search tools' }).getByRole('textbox').fill('merge');
@@ -224,7 +224,7 @@ test('text and developer tools', async ({ page }) => {
   await page.locator('main textarea').first().fill(SAMPLE_TEXT);
   await shot(page, 'case-converter', { flow: 'text', title: 'Case Converter' });
   await page.goto(SITE + '/tools/developer/json-formatter');
-  await page.getByLabel('Paste JSON').fill('{"name":"Bench","tools":53,"free":true,"tags":["pdf","image","video"]}');
+  await page.getByLabel('Paste JSON').fill('{"name":"Rarvon","tools":53,"free":true,"tags":["pdf","image","video"]}');
   await page.getByRole('button', { name: 'Format' }).click();
   await shot(page, 'json-formatter', { flow: 'developer', title: 'JSON Formatter' });
   await page.goto(SITE + '/tools/developer/regex-tester');
@@ -244,7 +244,7 @@ test('utilities', async ({ page }) => {
 });
 
 test('information pages and feedback', async ({ page }) => {
-  for (const [id, path, title] of [['about', '/about', 'About'], ['privacy', '/privacy', 'Privacy'], ['support', '/support', 'Support Bench'], ['credits', '/credits', 'Credits and licenses'], ['app-coming', '/app', 'Bench for desktop: coming soon'], ['not-found', '/no-such-page', 'Page not found']] as const) {
+  for (const [id, path, title] of [['about', '/about', 'About'], ['privacy', '/privacy', 'Privacy'], ['support', '/support', 'Support Rarvon'], ['credits', '/credits', 'Credits and licenses'], ['app-coming', '/app', 'Rarvon for desktop: coming soon'], ['not-found', '/no-such-page', 'Page not found']] as const) {
     await page.goto(SITE + path);
     await shot(page, id, { flow: 'info', title, note: id === 'app-coming' ? 'What /app shows until a download link is set.' : undefined });
   }
@@ -307,7 +307,7 @@ test('with the download link set', async ({ page }) => {
   await shot(page, 'dl-app', { flow: 'download', title: 'Download page (/app)', variant: 'download-on', note: 'Download for Windows goes to the installer on GitHub Releases.' });
 });
 
-test('Bench for desktop', async ({ page }) => {
+test('Rarvon for desktop', async ({ page }) => {
   await prefs(page, APP, {});
   await page.goto(APP + '/');
   await expect.poll(() => page.evaluate(() => Boolean(window.__BENCH_APP__?.ffmpeg))).toBe(true);

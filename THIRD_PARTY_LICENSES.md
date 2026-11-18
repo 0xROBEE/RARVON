@@ -1,6 +1,6 @@
 # Third-party licenses
 
-Bench is built on open-source software. The notes below cover components whose licenses carry obligations
+Rarvon is built on open-source software. The notes below cover components whose licenses carry obligations
 beyond attribution; the generated table at the end lists every package in the production build.
 
 ## LAME MP3 encoder — GNU LGPL 2.0
@@ -12,7 +12,7 @@ WebAssembly and wrapped by **@mediabunny/mp3-encoder** (MPL-2.0, https://github.
   at [`/licenses/LAME-LGPL-2.0.txt`](public/licenses/LAME-LGPL-2.0.txt).
 - Source code: https://lame.sourceforge.io/ (LAME) and https://github.com/Vanilagy/mediabunny/tree/main/packages/mp3-encoder
   (the WebAssembly build and wrapper).
-- Bench uses the package **unmodified**. It is built into its own separately loaded file
+- Rarvon uses the package **unmodified**. It is built into its own separately loaded file
   (`assets/mediabunny-mp3-encoder-*.js`), which is downloaded only when someone exports an MP3. You can replace
   that file with your own build of the same package to use a modified LAME.
 

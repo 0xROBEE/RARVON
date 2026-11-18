@@ -1,7 +1,7 @@
 /**
  * Savers for icon, PostScript, Photoshop and OpenDocument files: ICO, ICNS,
  * EPS, PS, PSD and ODG. All written here, no libraries (ODG uses JSZip, which
- * Bench already has).
+ * Rarvon already has).
  */
 
 /** The picture scaled into a square of `size` pixels (kept in proportion, centred, transparent around). */
@@ -113,7 +113,7 @@ export async function encodePostScript(src: HTMLCanvasElement, eps: boolean): Pr
     : `%!PS-Adobe-3.0\n%%BoundingBox: 0 0 ${w} ${h}\n%%Pages: 1\n`;
   const body = [
     header,
-    '%%Creator: Bench\n%%LanguageLevel: 2\n%%EndComments\n',
+    '%%Creator: Rarvon\n%%LanguageLevel: 2\n%%EndComments\n',
     eps ? '' : `%%Page: 1 1\n<< /PageSize [${w} ${h}] >> setpagedevice\n`,
     'gsave\n',
     `${w} ${h} scale\n`,

@@ -6,7 +6,7 @@ import { ASPECTS, emptyProject, formatTime, hasEdits, totalDuration } from '../.
 import {
   browserStorageSupported, deleteProject, folderSaveSupported, importProject, listProjects, loadMediaFiles,
   pickFolder, projectFileBlob, readProjectFile, readProjectFolder, rememberFolder, safeFileName, saveProjectJson,
-  storageEstimate, PROJECT_EXT, requestPersistence,
+  storageEstimate, PROJECT_EXT, OLD_PROJECT_EXT, requestPersistence,
 } from '../../../lib/videoEditor/storage';
 import { formatBytes } from '../../../lib/imageUtils';
 import { useWorkspace } from '../../../lib/workspaceContext';
@@ -123,7 +123,7 @@ export default function VideoEditorProjects() {
       await rememberFolder(p.id, dir);
       navigate(editorPath(p.id));
     } catch {
-      setError(tr("That folder doesn't contain a Bench video project (project.json)."));
+      setError(tr("That folder doesn't contain a Rarvon video project (project.json)."));
     } finally {
       setBusy(null);
     }
@@ -175,7 +175,7 @@ export default function VideoEditorProjects() {
           <input
             ref={fileInput}
             type="file"
-            accept={`${PROJECT_EXT},application/zip`}
+            accept={`${PROJECT_EXT},${OLD_PROJECT_EXT},application/zip`}
             className="hidden"
             aria-label={tr("Open project file")}
             data-testid="open-project-file"
@@ -273,7 +273,7 @@ export default function VideoEditorProjects() {
       {recovery && !newOpen && (
         <Modal title={tr("You left a project without saving")} locked labelledBy="recovery-title">
           <p className="mb-4 text-sm text-ink-2">
-            “{recovery.name}{tr("” has changes you didn’t save. Bench kept a copy. Choose what to do with it before you continue.")}
+            “{recovery.name}{tr("” has changes you didn’t save. Rarvon kept a copy. Choose what to do with it before you continue.")}
           </p>
           <div className="grid gap-2">
             <ChoiceButton tone="primary" icon={ICONS.restore} title={tr("Restore and keep editing")} onClick={() => navigate(editorPath(recovery.id))} />

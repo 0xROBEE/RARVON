@@ -1,4 +1,4 @@
-# Bench
+# Rarvon
 
 A free, ad-free, account-free toolbox for everyday file and text tasks — PDF, image, developer, text and utility
 tools that run entirely in your browser.
@@ -149,9 +149,9 @@ npm run preview
 
 ## License
 
-Bench is free to use, but it is **not open source**. Copyright (c) 2026 ROBEE — all rights reserved; see
+Rarvon is free to use, but it is **not open source**. Copyright (c) 2026 ROBEE — all rights reserved; see
 [LICENSE](LICENSE). The code is public so people can see how it works and report bugs or ask for tools in the
 issues; it may not be copied, modified or republished without permission, and pull requests are not accepted.
 
-Bench is built on open-source libraries, which keep their own licenses: see
+Rarvon is built on open-source libraries, which keep their own licenses: see
 [THIRD_PARTY_LICENSES.md](THIRD_PARTY_LICENSES.md) (also shipped at `/licenses/third-party.txt`).

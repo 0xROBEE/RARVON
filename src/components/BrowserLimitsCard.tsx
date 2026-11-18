@@ -20,7 +20,7 @@ function differences(tool: ToolMeta): [string, string][] {
 
 /**
  * Shown on heavy tools (video and AI) while they run in the browser: the
- * honest warning, plus what the Bench app does differently and a way to get it.
+ * honest warning, plus what the Rarvon app does differently and a way to get it.
  */
 export default function BrowserLimitsCard({ tool }: { tool: ToolMeta }) {
   const rows = differences(tool);
@@ -40,7 +40,7 @@ export default function BrowserLimitsCard({ tool }: { tool: ToolMeta }) {
           </ul>
         </div>
         <div>
-          <p className="text-xs font-semibold uppercase tracking-wide text-workshop">{tr('In the Bench app')}</p>
+          <p className="text-xs font-semibold uppercase tracking-wide text-workshop">{tr('In the Rarvon app')}</p>
           <ul className="mt-1.5 space-y-1 text-sm font-medium text-ink">
             {rows.map(([web, app]) => (
               <li key={web} className="flex items-start gap-1.5">

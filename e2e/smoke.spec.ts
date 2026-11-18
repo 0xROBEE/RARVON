@@ -9,7 +9,7 @@ test.describe('every page renders without errors', () => {
     }
   });
 
-  test('the Support Bench button in the top bar opens the Support page', async ({ page }) => {
+  test('the Support Rarvon button in the top bar opens the Support page', async ({ page }) => {
     await page.goto('/tools/text/word-counter');
     await page.getByTestId('support-button').click();
     await expect(page).toHaveURL(/\/support$/);
@@ -17,7 +17,7 @@ test.describe('every page renders without errors', () => {
     // Without a configured Ko-fi link there is no dead button, only a calm note.
     await expect(page.getByTestId('kofi-button')).toHaveCount(0);
     await expect(page.getByText('The donation link is coming soon.')).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Share Bench with a friend' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Share Rarvon with a friend' })).toBeVisible();
   });
 
   test('About and Privacy stay in the top bar at every width without moving the search box', async ({ page }) => {
@@ -80,7 +80,7 @@ test.describe('every page renders without errors', () => {
     await expect(page.getByTestId('browser-limits')).toHaveCount(0);
     await expect(page.getByText(/hasn.t been verified across every browser/)).toBeVisible();
     await page.goto('/app');
-    await expect(page.getByRole('heading', { level: 1 })).toContainText('Bench for desktop');
+    await expect(page.getByRole('heading', { level: 1 })).toContainText('Rarvon for desktop');
     await expect(page.getByTestId('app-coming-soon')).toBeVisible();
     await expect(page.getByTestId('app-download')).toHaveCount(0);
   });
@@ -105,7 +105,7 @@ test.describe('every page renders without errors', () => {
     await page.setViewportSize({ width: 1280, height: 860 });
     await page.goto('/privacy');
     await expect(page.locator('#summary')).toContainText('Your files never leave your device');
-    await expect(page.getByText('Bench does not use cookies.')).toBeVisible();
+    await expect(page.getByText('Rarvon does not use cookies.')).toBeVisible();
     const toc = page.getByRole('navigation', { name: 'On this page' });
     await toc.getByRole('link', { name: '6. The website host' }).click();
     await expect(toc.getByRole('link', { name: '6. The website host' })).toHaveAttribute('aria-current', 'location');

@@ -1,9 +1,9 @@
 import { defineConfig, devices } from '@playwright/test';
 import { join } from 'node:path';
 
-// Photographs Bench's screens for the design map: `npm run design:capture`.
+// Photographs Rarvon's screens for the design map: `npm run design:capture`.
 // Three servers: the built website, the website with a pretend app download
-// link (to show the download buttons), and Bench for desktop's engine.
+// link (to show the download buttons), and Rarvon for desktop's engine.
 const engine = join('desktop', 'bench-engine', 'target', 'release', process.platform === 'win32' ? 'bench-engine.exe' : 'bench-engine');
 
 export default defineConfig<{ theme: 'light' | 'dark' }>({
@@ -27,8 +27,8 @@ export default defineConfig<{ theme: 'light' | 'dark' }>({
       timeout: 60_000,
       env: {
         VITE_APP_VERSION: '0.1.0',
-        VITE_APP_WINDOWS_URL: 'https://github.com/ROBEE404/bench/releases/download/v0.1.0/Bench-setup-0.1.0.exe',
-        VITE_APP_LINUX_APPIMAGE_URL: 'https://github.com/ROBEE404/bench/releases/download/v0.1.0/Bench-0.1.0.AppImage',
+        VITE_APP_WINDOWS_URL: 'https://github.com/ROBEE404/bench/releases/download/v0.1.0/Rarvon-setup-0.1.0.exe',
+        VITE_APP_LINUX_APPIMAGE_URL: 'https://github.com/ROBEE404/bench/releases/download/v0.1.0/Rarvon-0.1.0.AppImage',
       },
     },
     { command: `"${engine}"`, url: 'http://127.0.0.1:47821', env: { BENCH_NO_WINDOW: '1' }, reuseExistingServer: false, timeout: 30_000 },

@@ -8,8 +8,8 @@ import { browserEngine } from './browser';
 import { NATIVE_INFO } from './info';
 
 /**
- * Bench for desktop: video and audio run in FFmpeg on this computer (its
- * graphics card when it has a video encoder), through the Bench Engine. Files
+ * Rarvon for desktop: video and audio run in FFmpeg on this computer (its
+ * graphics card when it has a video encoder), through the Rarvon Engine. Files
  * go only to the engine on this same computer, never over the internet.
  * Everything else (pictures, PDFs, text recognition, AI) still runs the
  * browser way, as does the Video Editor's export.
@@ -20,11 +20,11 @@ const key = () => window.__BENCH_APP__?.key ?? '';
 async function call<T>(path: string, body?: unknown): Promise<T> {
   const res = await fetch(path, {
     method: 'POST',
-    headers: { 'X-Bench-Key': key(), 'Content-Type': 'application/json' },
+    headers: { 'X-Rarvon-Key': key(), 'Content-Type': 'application/json' },
     body: body === undefined ? undefined : JSON.stringify(body),
   });
   const data = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error(data.error || tr('The Bench app couldn’t do this.'));
+  if (!res.ok) throw new Error(data.error || tr('The Rarvon app couldn’t do this.'));
   return data as T;
 }
 
@@ -36,12 +36,12 @@ function upload(file: File): Promise<string> {
     const ext = file.name.includes('.') ? file.name.split('.').pop()! : '';
     id = fetch(`/__bench/upload?ext=${encodeURIComponent(ext)}`, {
       method: 'POST',
-      headers: { 'X-Bench-Key': key(), 'Content-Type': 'application/octet-stream' },
+      headers: { 'X-Rarvon-Key': key(), 'Content-Type': 'application/octet-stream' },
       body: file,
     })
       .then((r) => r.json())
       .then((d: { id?: string; error?: string }) => {
-        if (!d.id) throw new Error(d.error || tr('The Bench app couldn’t open this file.'));
+        if (!d.id) throw new Error(d.error || tr('The Rarvon app couldn’t open this file.'));
         return d.id;
       });
     id.catch(() => uploads.delete(file));
@@ -79,14 +79,14 @@ async function runJob(file: File, spec: Record<string, unknown>, onProgress?: (f
   signal?.addEventListener('abort', stop);
   try {
     for (;;) {
-      const res = await fetch(`/__bench/job/${id}`, { headers: { 'X-Bench-Key': key() } });
+      const res = await fetch(`/__bench/job/${id}`, { headers: { 'X-Rarvon-Key': key() } });
       const status = (await res.json()) as JobStatus;
       if (status.state === 'cancelled' || signal?.aborted) throw cancelled();
       if (status.state === 'failed') throw new Error(tr('The conversion failed: {reason}', { reason: status.error }));
       onProgress?.(status.progress);
       if (status.state === 'done') {
-        const result = await fetch(`/__bench/job/${id}/result`, { headers: { 'X-Bench-Key': key() } });
-        if (!result.ok) throw new Error(tr('The Bench app couldn’t do this.'));
+        const result = await fetch(`/__bench/job/${id}/result`, { headers: { 'X-Rarvon-Key': key() } });
+        if (!result.ok) throw new Error(tr('The Rarvon app couldn’t do this.'));
         return { blob: new Blob([await result.blob()], { type: status.mime }), status };
       }
       await new Promise((r) => setTimeout(r, 250));
@@ -142,7 +142,7 @@ export const nativeEngine: Engine = {
     thumbnail: async (file) => {
       const res = await fetch('/__bench/thumbnail', {
         method: 'POST',
-        headers: { 'X-Bench-Key': key(), 'Content-Type': 'application/json' },
+        headers: { 'X-Rarvon-Key': key(), 'Content-Type': 'application/json' },
         body: JSON.stringify({ file: await upload(file) }),
       });
       if (!res.ok) throw new Error('no picture');

@@ -79,7 +79,7 @@ function toMarkdown(text: string, source: string) {
     .map((p) => p.trim())
     .filter(Boolean)
     .join('\n\n');
-  return `<!-- Text extracted from ${source} with Bench Image to Text -->\n\n${body}\n`;
+  return `<!-- Text extracted from ${source} with Rarvon Image to Text -->\n\n${body}\n`;
 }
 
 function imageFromClipboardEvent(e: ClipboardEvent): File | null {

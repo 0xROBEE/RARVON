@@ -1,7 +1,7 @@
 import { getTool } from './toolRegistry';
 import type { ToolMeta } from './toolRegistry';
 
-/** Broad kinds of files Bench routes between tools. */
+/** Broad kinds of files Rarvon routes between tools. */
 export type FileKind = 'pdf' | 'image' | 'video' | 'audio' | 'zip' | 'text' | 'other';
 
 const EXT: Record<string, FileKind> = {

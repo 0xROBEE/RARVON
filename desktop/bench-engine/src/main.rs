@@ -1,17 +1,17 @@
-//! Bench for desktop (beta), milestone 1.
+//! Rarvon for desktop (beta), milestone 1.
 //!
-//! Serves Bench's own pages from this computer and opens them in a browser
+//! Serves Rarvon's own pages from this computer and opens them in a browser
 //! "app mode" window (Edge or Chrome: a clean window with no tabs or address
-//! bar). The program has no window of its own and exits when the Bench window
+//! bar). The program has no window of its own and exits when the Rarvon window
 //! is closed.
 //!
 //! Safety, from the first line:
 //! - listens on 127.0.0.1 only (never reachable from the network);
 //! - answers only requests addressed to that exact host and port, which stops
 //!   "DNS rebinding" (a bad website disguising itself as this computer);
-//! - serves files only from Bench's own folder, never paths outside it;
+//! - serves files only from Rarvon's own folder, never paths outside it;
 //! - the one command it accepts ("still open") requires a secret key that only
-//!   Bench's own page receives, so other websites can't use or detect it.
+//!   Rarvon's own page receives, so other websites can't use or detect it.
 
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
@@ -29,7 +29,7 @@ mod native;
 use native::Native;
 
 const VERSION: &str = env!("CARGO_PKG_VERSION");
-/// Bench's usual port. Staying on one address lets the window remember your
+/// Rarvon's usual port. Staying on one address lets the window remember your
 /// settings (theme, language) between launches; if it's taken, any free port is used.
 const USUAL_PORT: u16 = 47821;
 /// After the page says goodbye (window closed), exit unless it says hello again
@@ -38,10 +38,10 @@ const AFTER_BYE: Duration = Duration::from_secs(8);
 /// A minimized window may only say "still open" once a minute (browsers slow
 /// hidden pages down); with no word for this long, the window is gone.
 const SILENT_FOR: Duration = Duration::from_secs(180);
-/// If no Bench window ever reports in (the browser failed to open), give up after this long.
+/// If no Rarvon window ever reports in (the browser failed to open), give up after this long.
 const FIRST_CONTACT: Duration = Duration::from_secs(90);
 
-/// What the Bench window last told the engine.
+/// What the Rarvon window last told the engine.
 #[derive(Default)]
 struct Contact {
     alive: Option<Instant>,
@@ -52,12 +52,12 @@ fn main() {
     let web = match find_web_folder() {
         Some(dir) => dir,
         None => {
-            eprintln!("Bench could not find its pages (a 'web' folder next to the program).");
+            eprintln!("Rarvon could not find its pages (a 'web' folder next to the program).");
             std::process::exit(1);
         }
     };
 
-    // Bench already open? Open another window of it (same address, same settings).
+    // Rarvon already open? Open another window of it (same address, same settings).
     let window_wanted = std::env::var_os("BENCH_NO_WINDOW").is_none();
     if window_wanted && bench_already_running() {
         open_app_window(&format!("http://127.0.0.1:{USUAL_PORT}/"));
@@ -71,7 +71,7 @@ fn main() {
     let port = server.server_addr().to_ip().expect("ip address").port();
     let origin = format!("http://127.0.0.1:{port}");
 
-    // Video and audio on this computer's hardware, when FFmpeg is next to Bench.
+    // Video and audio on this computer's hardware, when FFmpeg is next to Rarvon.
     let native = Native::find().map(Arc::new);
     let shared = Arc::new(Shared {
         web,
@@ -94,11 +94,11 @@ fn main() {
 
     // BENCH_NO_WINDOW=1 (for testing): serve without opening a window.
     if window_wanted && !open_app_window(&format!("{origin}/")) {
-        eprintln!("Bench could not open a window: Microsoft Edge or Google Chrome is needed.");
+        eprintln!("Rarvon could not open a window: Microsoft Edge or Google Chrome is needed.");
         std::process::exit(1);
     }
 
-    // Stay alive while the Bench window is open.
+    // Stay alive while the Rarvon window is open.
     let started = Instant::now();
     loop {
         thread::sleep(Duration::from_secs(2));
@@ -127,7 +127,7 @@ struct Shared {
     native: Option<Arc<Native>>,
 }
 
-/// Whether a Bench Engine already answers on Bench's usual port.
+/// Whether a Rarvon Engine already answers on Rarvon's usual port.
 fn bench_already_running() -> bool {
     use std::io::Write;
     use std::net::{SocketAddr, TcpStream};
@@ -145,7 +145,7 @@ fn bench_already_running() -> bool {
     String::from_utf8_lossy(&page).contains("window.__BENCH_APP__")
 }
 
-/// Bench's pages: `web` next to the program; while developing, `BENCH_WEB_DIR` or the site's `dist`.
+/// Rarvon's pages: `web` next to the program; while developing, `BENCH_WEB_DIR` or the site's `dist`.
 fn find_web_folder() -> Option<PathBuf> {
     let mut candidates = Vec::new();
     if let Ok(dir) = std::env::var("BENCH_WEB_DIR") {
@@ -266,9 +266,9 @@ fn handle(request: Request, shared: &Shared) {
     let url = request.url().to_string();
     let path = url.split(['?', '#']).next().unwrap_or("/").to_string();
 
-    // "Still open" and "goodbye" from Bench's own page, with the secret key.
+    // "Still open" and "goodbye" from Rarvon's own page, with the secret key.
     if path == "/__bench/alive" || path == "/__bench/bye" {
-        let in_header = request.headers().iter().any(|h| h.field.equiv("X-Bench-Key") && h.value.as_str() == token);
+        let in_header = request.headers().iter().any(|h| h.field.equiv("X-Rarvon-Key") && h.value.as_str() == token);
         // A goodbye is sent as the window closes, which can only carry the key in the address.
         let in_query = url.split_once('?').is_some_and(|(_, q)| q.split('&').any(|p| p == format!("key={token}")));
         if *request.method() != Method::Post || !(in_header || in_query) {
@@ -286,7 +286,7 @@ fn handle(request: Request, shared: &Shared) {
     }
 
     if path.starts_with("/__bench/") {
-        let key_ok = request.headers().iter().any(|h| h.field.equiv("X-Bench-Key") && h.value.as_str() == token);
+        let key_ok = request.headers().iter().any(|h| h.field.equiv("X-Rarvon-Key") && h.value.as_str() == token);
         return match (&shared.native, key_ok) {
             (Some(native), true) => handle_native(request, &path, &url, native),
             (None, true) => reply(request, 404, "Not found"),
@@ -298,7 +298,7 @@ fn handle(request: Request, shared: &Shared) {
         return reply(request, 405, "Method not allowed");
     }
 
-    // Find the file, never outside Bench's own folder.
+    // Find the file, never outside Rarvon's own folder.
     let decoded = percent_encoding::percent_decode_str(&path).decode_utf8_lossy().to_string();
     let relative = Path::new(decoded.trim_start_matches('/'));
     if relative.components().any(|c| !matches!(c, Component::Normal(_))) {
@@ -316,7 +316,7 @@ fn handle(request: Request, shared: &Shared) {
 
     let name = file.file_name().and_then(|n| n.to_str()).unwrap_or("");
     if name == "index.html" {
-        // Tell Bench's page it is running in the app, with the key for "still open".
+        // Tell Rarvon's page it is running in the app, with the key for "still open".
         let marker = format!(
             "<script>window.__BENCH_APP__={{version:\"{VERSION}\",key:\"{token}\",ffmpeg:{}}}</script></head>",
             shared.native.is_some()
@@ -355,7 +355,7 @@ fn content_type(file: &Path) -> &'static str {
     }
 }
 
-/// Opens Bench in a browser app window (no tabs or address bar), reusing the
+/// Opens Rarvon in a browser app window (no tabs or address bar), reusing the
 /// browser already on the computer.
 fn open_app_window(url: &str) -> bool {
     let program_files = |var: &str| std::env::var(var).ok().map(PathBuf::from);

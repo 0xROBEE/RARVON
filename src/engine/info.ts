@@ -7,12 +7,12 @@ import type { EngineKind } from './types';
 
 declare global {
   interface Window {
-    /** Set by Bench for desktop (the Bench Engine) on the page it serves. */
+    /** Set by Rarvon for desktop (the Rarvon Engine) on the page it serves. */
     __BENCH_APP__?: { version: string; key: string; ffmpeg?: boolean };
   }
 }
 
-/** True inside Bench for desktop: the Bench Engine marks the page it serves. */
+/** True inside Rarvon for desktop: the Rarvon Engine marks the page it serves. */
 export function isBenchApp(): boolean {
   return typeof window !== 'undefined' && Boolean(window.__BENCH_APP__);
 }
@@ -40,7 +40,7 @@ export const BROWSER_INFO: EngineInfo = {
   videoHint: 'MP4, MOV, WebM or MKV, up to 250MB',
 };
 
-/** Bench for desktop with FFmpeg: video and audio on this computer, no size limit. */
+/** Rarvon for desktop with FFmpeg: video and audio on this computer, no size limit. */
 export const NATIVE_INFO: EngineInfo = {
   kind: 'native',
   maxVideoBytes: null,
@@ -50,7 +50,7 @@ export const NATIVE_INFO: EngineInfo = {
   videoHint: 'Any video: MP4, MOV, MKV, AVI, WMV and more, any size',
 };
 
-/** Whether this page runs in Bench for desktop with its FFmpeg engine. */
+/** Whether this page runs in Rarvon for desktop with its FFmpeg engine. */
 export const hasNativeEngine = typeof window !== 'undefined' && Boolean(window.__BENCH_APP__?.ffmpeg);
 
 export const engineInfo: EngineInfo = hasNativeEngine ? NATIVE_INFO : BROWSER_INFO;

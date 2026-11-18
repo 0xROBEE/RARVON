@@ -1,6 +1,6 @@
 # Security Policy
 
-Bench processes files entirely in the browser for every tool marked as available — nothing is
+Rarvon processes files entirely in the browser for every tool marked as available — nothing is
 uploaded to a server for those tools, so there's no server-side file-handling surface to attack for
 them.
 

@@ -166,7 +166,7 @@ export function IconTile({ kind, tone = 'workshop' }: { kind: 'audio' | 'video';
 }
 
 /**
- * The first frame of a video, as a still picture. With `file`, the Bench app
+ * The first frame of a video, as a still picture. With `file`, the Rarvon app
  * draws it with FFmpeg, so videos the browser can't play (AVI, WMV…) get one too.
  */
 export function VideoThumb({ url, file }: { url: string; file?: File | null }) {

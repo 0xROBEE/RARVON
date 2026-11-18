@@ -31,7 +31,7 @@ export function hasAnySupportLink(): boolean {
  */
 export const projectRepo: string = (import.meta.env.VITE_PROJECT_REPO_URL ?? '').replace(/\/+$/, '');
 
-/** Who makes Bench, shown on the About page. */
+/** Who makes Rarvon, shown on the About page. */
 export const maker = {
   name: 'ROBEE',
   url: 'https://github.com/ROBEE404',
@@ -40,6 +40,6 @@ export const maker = {
 /**
  * Where people can email bug reports and tool requests (VITE_FEEDBACK_EMAIL),
  * e.g. bench.feedback@example.com. It is shown publicly, so use an address
- * made for Bench. When empty, the feedback pop-up offers GitHub only.
+ * made for Rarvon. When empty, the feedback pop-up offers GitHub only.
  */
 export const feedbackEmail: string = (import.meta.env.VITE_FEEDBACK_EMAIL ?? '').trim();

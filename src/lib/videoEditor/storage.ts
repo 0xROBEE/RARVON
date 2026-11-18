@@ -13,12 +13,14 @@ import { tr } from '../i18n';
  *    person decides what to do with the project.
  * 2. Optionally, a folder on the computer (File System Access API, Chrome and
  *    Edge) with the same layout, written on every change.
- * 3. A downloadable project file (.benchvideo, a ZIP with the same layout) that
+ * 3. A downloadable project file (.rarvonvideo, a ZIP with the same layout) that
  *    can be opened again in any browser.
  */
 
 const ROOT = 'video-projects';
-export const PROJECT_EXT = '.benchvideo';
+export const PROJECT_EXT = '.rarvonvideo';
+/** Project files saved before the rename (Bench) still open. */
+export const OLD_PROJECT_EXT = '.benchvideo';
 
 type DirHandle = FileSystemDirectoryHandle;
 
@@ -50,7 +52,7 @@ async function readText(dir: DirHandle, name: string) {
   return (await (await dir.getFileHandle(name)).getFile()).text();
 }
 
-/** Asks the browser not to clear Bench's storage when the disk gets full. Best effort. */
+/** Asks the browser not to clear Rarvon's storage when the disk gets full. Best effort. */
 export async function requestPersistence() {
   try {
     if (navigator.storage?.persisted && !(await navigator.storage.persisted())) await navigator.storage.persist?.();
@@ -130,7 +132,7 @@ export async function storageEstimate() {
 // ---------- Folder on the computer ----------
 
 // Folder handles are kept in IndexedDB so the link survives a reload; the
-// browser asks for permission again before Bench can write to it.
+// browser asks for permission again before Rarvon can write to it.
 const DB = 'bench-video-editor';
 function idb(): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
@@ -227,7 +229,7 @@ export async function readProjectFolder(dir: DirHandle): Promise<{ project: Proj
   return { project, files };
 }
 
-// ---------- Project file (.benchvideo) ----------
+// ---------- Project file (.rarvonvideo) ----------
 
 export async function projectFileBlob(p: Project, files: Map<string, File>, onProgress?: (f: number) => void): Promise<Blob> {
   const { default: JSZip } = await import('jszip');
@@ -247,10 +249,10 @@ export async function readProjectFile(file: File): Promise<{ project: Project; f
   try {
     zip = await JSZip.loadAsync(file);
   } catch {
-    throw new Error(tr("This isn't a Bench project file. Project files end in {0}.", { 0: PROJECT_EXT }));
+    throw new Error(tr("This isn't a Rarvon project file. Project files end in {0}.", { 0: PROJECT_EXT }));
   }
   const json = zip.file('project.json');
-  if (!json) throw new Error(tr("This isn't a Bench project file. Project files end in {0}.", { 0: PROJECT_EXT }));
+  if (!json) throw new Error(tr("This isn't a Rarvon project file. Project files end in {0}.", { 0: PROJECT_EXT }));
   const project = JSON.parse(await json.async('string')) as Project;
   validate(project);
   const files = new Map<string, File>();

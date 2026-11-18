@@ -1,6 +1,6 @@
 import type { AudioCodec } from 'mediabunny';
 
-/** The audio formats Bench can write (kept apart from the heavy audio engine). */
+/** The audio formats Rarvon can write (kept apart from the heavy audio engine). */
 export type AudioTarget = 'opus' | 'aac' | 'mp3' | 'wav';
 
 export interface AudioTargetInfo {

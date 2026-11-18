@@ -432,7 +432,7 @@ export async function exportEditedPdf(
     onProgress?.((i + 1) / pages.length);
   }
 
-  outDoc.setProducer('Bench PDF Editor');
+  outDoc.setProducer('Rarvon PDF Editor');
   void PDFName;
   return outDoc.save();
 }

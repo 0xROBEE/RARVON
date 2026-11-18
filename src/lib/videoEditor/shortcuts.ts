@@ -76,9 +76,9 @@ const COMMON: Bindings = {
   tabEdit: 'Alt+1', tabAudio: 'Alt+2', tabExport: 'Alt+3', tabSettings: 'Alt+4', export: 'Ctrl+E',
 };
 
-/** Presets follow the familiar default keys of those editors for the actions Bench has. */
+/** Presets follow the familiar default keys of those editors for the actions Rarvon has. */
 export const PRESETS: Record<Exclude<PresetId, 'custom'>, { label: string; bindings: Bindings }> = {
-  bench: { label: 'Bench', bindings: COMMON },
+  bench: { label: 'Rarvon', bindings: COMMON },
   premiere: {
     label: 'Premiere Pro style',
     bindings: { ...COMMON, split: 'Ctrl+K', addText: 'Ctrl+T', toggleAudio: 'Shift+M', deselect: 'Ctrl+Shift+A', export: 'Ctrl+M' },

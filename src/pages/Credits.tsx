@@ -40,7 +40,7 @@ const GROUPS: { id: GroupId; title: string; icon: string; color: string }[] = [
   { id: 'base', title: 'Building blocks', icon: 'M4 7l8-4 8 4-8 4zM4 12l8 4 8-4M4 17l8 4 8-4', color: 'var(--color-ink-3)' },
 ];
 
-/** What each package does in Bench, and which group it belongs to. Anything not listed is a building block. */
+/** What each package does in Rarvon, and which group it belongs to. Anything not listed is a building block. */
 const KNOWN: Record<string, [GroupId, string]> = {
   'pdf-lib': ['pdf', 'Creates and edits PDF files'],
   'pdfjs-dist': ['pdf', 'Shows PDF pages and reads their text'],
@@ -73,7 +73,7 @@ function toRows(pkgs: Pkg[], models: Model[]): Map<GroupId, Row[]> {
   for (const p of pkgs) {
     if (p.name.startsWith('@tesseract.js-data/')) continue;
     const fonts = p.name.startsWith('@fontsource/');
-    const [group, what] = KNOWN[p.name] ?? (fonts ? ['fonts', 'A font used on this site'] : ['base', 'Part of how Bench is built']);
+    const [group, what] = KNOWN[p.name] ?? (fonts ? ['fonts', 'A font used on this site'] : ['base', 'Part of how Rarvon is built']);
     groups.get(group)!.push({ key: p.name, name: p.name, version: p.version, license: p.license, what, url: p.repository || undefined, note: p.note || undefined, text: p.text || undefined });
   }
   if (langs.length) {
@@ -97,7 +97,7 @@ function toRows(pkgs: Pkg[], models: Model[]): Map<GroupId, Row[]> {
 }
 
 export default function Credits() {
-  usePageMeta(tr('Credits and licenses'), tr('Bench is built on free software made by other people. Every package and AI model it uses, what it does, and its license.'));
+  usePageMeta(tr('Credits and licenses'), tr('Rarvon is built on free software made by other people. Every package and AI model it uses, what it does, and its license.'));
   const [data, setData] = useState<{ packages: Pkg[]; models: Model[] } | null>(null);
   const [failed, setFailed] = useState(false);
   const [query, setQuery] = useState('');
@@ -120,7 +120,7 @@ export default function Credits() {
       <header className="float-in">
         <h1 className="font-display text-3xl font-semibold tracking-tight sm:text-4xl">{tr('Credits')}</h1>
         <p className="mt-3 max-w-2xl text-sm leading-relaxed text-ink-2 sm:text-base">
-          {tr('Bench is built on free software made by other people. Thank you to everyone below. Each one keeps its own license, which you can read by opening it.')}
+          {tr('Rarvon is built on free software made by other people. Thank you to everyone below. Each one keeps its own license, which you can read by opening it.')}
         </p>
         {data && (
           <p className="mt-2 text-xs text-ink-3">{tr('{p} packages and {m} AI models', { p: data.packages.length, m: data.models.length })}</p>
@@ -182,7 +182,7 @@ export default function Credits() {
       {groups && q && shown === 0 && <p className="mt-8 text-sm text-ink-3">{tr('Nothing matches “{q}”.', { q: query })}</p>}
 
       <p className="mt-12 text-xs text-ink-3">
-        {tr('All of these are open source and allow use in Bench. Bench itself is not open source: see the License file.')}{' '}
+        {tr('All of these are open source and allow use in Rarvon. Rarvon itself is not open source: see the License file.')}{' '}
         <a href="/licenses/third-party.txt" className="font-medium text-workshop hover:underline">{tr('All license texts in one file')}</a>
       </p>
     </div>

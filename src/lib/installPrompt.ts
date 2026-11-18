@@ -26,7 +26,7 @@ function isInstalled() {
 }
 
 /**
- * Whether Bench can be installed as an app right now (Chromium browsers expose
+ * Whether Rarvon can be installed as an app right now (Chromium browsers expose
  * this; Safari and Firefox install from their own menus), and a function that
  * shows the browser's install dialog.
  */

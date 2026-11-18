@@ -9,7 +9,7 @@ import { tr } from './i18n';
 import { GifWriter } from './imageEncoders';
 
 export type OutputContainer = 'mp4' | 'webm';
-/** Every container Bench can write: the two above plus MOV (Apple) and MKV (Matroska). */
+/** Every container Rarvon can write: the two above plus MOV (Apple) and MKV (Matroska). */
 export type WriteContainer = OutputContainer | 'mov' | 'mkv';
 
 const encodeSupport = new Map<VideoCodec, Promise<boolean>>();

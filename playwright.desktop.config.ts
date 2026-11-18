@@ -1,7 +1,7 @@
 import { defineConfig, devices } from '@playwright/test';
 import { join } from 'node:path';
 
-// Bench for desktop: the built site served by the real Bench Engine (without
+// Rarvon for desktop: the built site served by the real Rarvon Engine (without
 // opening a window), so the tools run their video and audio jobs in FFmpeg.
 // `npm run test:desktop` builds both first.
 const exe = join('desktop', 'bench-engine', 'target', 'release', process.platform === 'win32' ? 'bench-engine.exe' : 'bench-engine');

@@ -19,7 +19,7 @@ const ARABIC = [
   'فهل نستطيع مواكبة هذا التغيير؟',
 ];
 const MIXED = [
-  'يعمل تطبيق Bench على متصفح Chrome و Firefox بدون إنترنت.',
+  'يعمل تطبيق Rarvon على متصفح Chrome و Firefox بدون إنترنت.',
   'تم إصدار النسخة 2.1 في شهر March الماضي.',
   'يدعم البرنامج ملفات PDF و PNG و JPEG.',
 ];
@@ -132,7 +132,7 @@ test.describe('Image to Text (OCR)', () => {
     await upload(page, await textImage(page, { lines: MIXED, font: 'Segoe UI' }));
     const text = await extracted(page);
     expect(cer(MIXED.join(' '), text)).toBeLessThan(4);
-    for (const w of ['Bench', 'Chrome', 'Firefox', 'PDF', 'JPEG', 'تطبيق', 'الماضي']) expect(text).toContain(w);
+    for (const w of ['Rarvon', 'Chrome', 'Firefox', 'PDF', 'JPEG', 'تطبيق', 'الماضي']) expect(text).toContain(w);
     expect(text).not.toMatch(/[‎‏]/); // no invisible bidi marks in copied text
     expect(await textarea(page).evaluate((el) => getComputedStyle(el).unicodeBidi)).toBe('plaintext');
     expect(await textarea(page).getAttribute('dir')).toBe('auto');

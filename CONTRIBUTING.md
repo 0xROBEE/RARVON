@@ -1,6 +1,6 @@
 # Bugs, ideas and changes
 
-Bench is free to use, but it is not open source: all rights are reserved (see [LICENSE](LICENSE)), and changes are
+Rarvon is free to use, but it is not open source: all rights are reserved (see [LICENSE](LICENSE)), and changes are
 made only by its maintainer, ROBEE. Pull requests are not accepted.
 
 You can still help a lot:
@@ -33,8 +33,8 @@ You can still help a lot:
   possible, it's Coming Soon, not faked.
 - **No dark patterns.** No donation nags, no fake urgency, no gating basic tools.
 - **Keep the homepage light.** Don't import a tool's processing library outside its own folder.
-- **Check licenses.** Bench is closed source, so a new dependency must allow use in a closed product
+- **Check licenses.** Rarvon is closed source, so a new dependency must allow use in a closed product
   (MIT, Apache-2.0, BSD, ISC, MPL-2.0 unmodified, or LGPL loaded as a separate replaceable file) and
   must be added to the credits.
-- **Keep the Privacy page true.** If a change affects what Bench stores or loads, update `/privacy`
+- **Keep the Privacy page true.** If a change affects what Rarvon stores or loads, update `/privacy`
   and its date in the same change.

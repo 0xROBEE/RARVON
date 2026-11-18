@@ -1,11 +1,11 @@
 import { isBenchApp } from '../engine/info';
 
 /**
- * The Bench app (beta) download links. Set them at build time, like the
+ * The Rarvon app (beta) download links. Set them at build time, like the
  * support links (see .env.example):
  *   VITE_APP_VERSION=0.1.0
- *   VITE_APP_WINDOWS_URL=https://github.com/you/bench/releases/download/v0.1.0/Bench-setup.exe
- *   VITE_APP_LINUX_APPIMAGE_URL=…/Bench.AppImage
+ *   VITE_APP_WINDOWS_URL=https://github.com/you/bench/releases/download/v0.1.0/Rarvon-setup.exe
+ *   VITE_APP_LINUX_APPIMAGE_URL=…/Rarvon.AppImage
  *   VITE_APP_LINUX_DEB_URL=…/bench.deb
  * While none is set, nothing on the site points to the app (no dead links);
  * the /app page can still be opened and says the beta is on its way.

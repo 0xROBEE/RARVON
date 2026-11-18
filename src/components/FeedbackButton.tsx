@@ -28,7 +28,7 @@ function feedbackLinks(kind: FeedbackKind, toolName?: string) {
       ].join('\n');
   const q = (s: string) => encodeURIComponent(s);
   return {
-    email: feedbackEmail ? `mailto:${feedbackEmail}?subject=${q(`Bench: ${title}`)}&body=${q(body)}` : null,
+    email: feedbackEmail ? `mailto:${feedbackEmail}?subject=${q(`Rarvon: ${title}`)}&body=${q(body)}` : null,
     github: projectRepo ? `${projectRepo}/issues/new?title=${q(title)}&body=${q(body)}` : maker.url,
   };
 }

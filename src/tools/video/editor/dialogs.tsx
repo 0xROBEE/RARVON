@@ -133,7 +133,7 @@ export function NewProjectDialog({ onCreate, onClose, startingFile }: { onCreate
           </div>
         </fieldset>
         <fieldset className="grid gap-2">
-          <legend className="mb-1.5 text-xs font-medium text-ink-2">{tr("How should Bench save your work? You can pick both.")}</legend>
+          <legend className="mb-1.5 text-xs font-medium text-ink-2">{tr("How should Rarvon save your work? You can pick both.")}</legend>
           <label className={clsx('flex cursor-pointer items-start gap-3 rounded-lg border p-3', browserSave ? 'border-workshop bg-workshop-dim' : 'border-line')}>
             <input type="checkbox" checked={browserSave} disabled={!browserStorageSupported()} onChange={(e) => setBrowserSave(e.target.checked)} className="mt-0.5 accent-[var(--color-workshop)]" />
             <span>

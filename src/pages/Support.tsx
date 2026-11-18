@@ -19,7 +19,7 @@ function Icon({ d, className }: { d: string; className?: string }) {
 }
 
 export default function Support() {
-  usePageMeta(tr('Support Bench'), tr('Bench is free, ad-free and account-free for everyone. Support is entirely optional and never unlocks features or changes access.'));
+  usePageMeta(tr('Support Rarvon'), tr('Rarvon is free, ad-free and account-free for everyone. Support is entirely optional and never unlocks features or changes access.'));
   const [shared, setShared] = useState<'idle' | 'copied'>('idle');
   const kofi = supportLinks.kofi || supportLinks.donation;
 
@@ -27,7 +27,7 @@ export default function Support() {
     const url = window.location.origin + '/';
     try {
       if (navigator.share) {
-        await navigator.share({ title: 'Bench', text: tr('Free file tools that run in your browser.'), url });
+        await navigator.share({ title: 'Rarvon', text: tr('Free file tools that run in your browser.'), url });
         return;
       }
       await navigator.clipboard.writeText(url);
@@ -48,9 +48,9 @@ export default function Support() {
             <path d="M12 21s-7.5-4.6-9.6-9.3C1 8.3 3.1 4.5 6.9 4.5c2.1 0 3.6 1.1 5.1 2.9 1.5-1.8 3-2.9 5.1-2.9 3.8 0 5.9 3.8 4.5 7.2C19.5 16.4 12 21 12 21z" />
           </svg>
         </div>
-        <h1 className="relative mt-5 font-display text-2xl font-semibold tracking-tight sm:text-3xl">{tr('Bench is free. If it helped you, you can help it.')}</h1>
+        <h1 className="relative mt-5 font-display text-2xl font-semibold tracking-tight sm:text-3xl">{tr('Rarvon is free. If it helped you, you can help it.')}</h1>
         <p className="relative mx-auto mt-4 max-w-xl text-sm leading-relaxed text-ink-2 sm:text-base">
-          {tr('I build Bench on my own, in my free time. No ads, no accounts, and your files never leave your device. That stays true whether you donate or not.')}
+          {tr('I build Rarvon on my own, in my free time. No ads, no accounts, and your files never leave your device. That stays true whether you donate or not.')}
         </p>
         <div className="relative mt-7">
           {kofi ? (
@@ -88,7 +88,7 @@ export default function Support() {
         <h2 className="font-display text-base font-semibold">{tr('No money? You can still help')}</h2>
         <div className={projectRepo ? 'mt-3 grid gap-2 sm:grid-cols-3' : 'mt-3 grid gap-2'}>
           <HelpButton onClick={() => void share()} icon="M4 12v7a1 1 0 001 1h14a1 1 0 001-1v-7M16 6l-4-4-4 4M12 2v13">
-            {shared === 'copied' ? tr('Link copied') : tr('Share Bench with a friend')}
+            {shared === 'copied' ? tr('Link copied') : tr('Share Rarvon with a friend')}
           </HelpButton>
           {projectRepo && (
             <>
@@ -100,7 +100,7 @@ export default function Support() {
       </section>
 
       <p className="float-in mt-8 text-center text-xs text-ink-3" style={{ animationDelay: '560ms' }}>
-        {tr('Donating never unlocks features. Everyone gets the same Bench.')}
+        {tr('Donating never unlocks features. Everyone gets the same Rarvon.')}
       </p>
     </div>
   );

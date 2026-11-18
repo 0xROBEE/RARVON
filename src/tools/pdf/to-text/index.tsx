@@ -138,7 +138,7 @@ export default function PdfToText() {
             {scanned.length === pages.length
               ? tr("This PDF has no text layer — it looks like a scan or photos of pages.")
               : tr("{0} page{1} ({2}{3}) look{4} scanned and ha{5} no text layer.", { 0: scanned.length, 1: scanned.length === 1 ? '' : 's', 2: scanned.slice(0, 8).join(', '), 3: scanned.length > 8 ? '…' : '', 4: scanned.length === 1 ? 's' : '', 5: scanned.length === 1 ? 's' : 've' })}
-            {' '}{tr("Bench can read them with OCR, on your device.")}
+            {' '}{tr("Rarvon can read them with OCR, on your device.")}
           </p>
           <div className="flex flex-wrap items-end gap-3">
             <label className="text-xs text-ink-2">

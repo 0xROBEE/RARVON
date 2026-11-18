@@ -133,7 +133,7 @@ test.describe('Video Editor', () => {
     await page.getByTestId('editor-import').setInputFiles([await makeImage(page, { width: 640, height: 360, name: 'pic.png' })]);
     await page.getByRole('button', { name: 'Add pic.png to the timeline' }).click();
     const file = await download(page, /Project file/);
-    expect(file.name).toBe('Portable.benchvideo');
+    expect(file.name).toBe('Portable.rarvonvideo');
 
     await page.getByRole('button', { name: 'Exit' }).click();
     await page.getByRole('dialog', { name: 'Before you leave' }).getByRole('button', { name: /Discard project/ }).click();

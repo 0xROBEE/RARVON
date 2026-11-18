@@ -30,7 +30,7 @@ function withExif(jpeg: UploadFile, make = 'BenchCam', model = 'Model T'): Uploa
 }
 
 test.describe('image tools with real files', () => {
-  test('image converter opens TGA and TIFF, and saves to every format Bench writes itself', async ({ page }) => {
+  test('image converter opens TGA and TIFF, and saves to every format Rarvon writes itself', async ({ page }) => {
     await openTool(page, '/tools/image/convert');
     // A 4×3 TGA (24-bit, bottom-up), made by hand: red top row, blue below.
     const w = 4, h = 3;
@@ -65,7 +65,7 @@ test.describe('image tools with real files', () => {
       expect(ok(out.buffer), label).toBe(true);
     }
 
-    // The TIFF Bench wrote opens again in Bench.
+    // The TIFF Rarvon wrote opens again in Rarvon.
     const tif = (await (async () => {
       await page.getByRole('radio', { name: 'TIFF', exact: true }).click();
       await page.getByRole('button', { name: 'Convert', exact: true }).click();

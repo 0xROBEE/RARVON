@@ -74,7 +74,7 @@ function benchPwa(): Plugin {
     apply: 'build',
     generateBundle(_options, bundle) {
       // ONNX Runtime (inside transformers.js) keeps a fallback reference to its
-      // 25.6 MB engine as a hashed asset. Bench always hands it the engine itself
+      // 25.6 MB engine as a hashed asset. Rarvon always hands it the engine itself
       // (from /ai/ort, see backgroundRemoval.worker.ts), so that copy is never
       // fetched: drop it, or offline mode would download it on every first visit
       // and some hosts (Cloudflare Pages) refuse files over 25 MB.

@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 
-const SITE_NAME = 'Bench';
+const SITE_NAME = 'Rarvon';
 /** Public origin of the deployed site (e.g. https://bench.example). Optional; enables absolute canonical/OG URLs. */
 const SITE_URL = (import.meta.env.VITE_SITE_URL as string | undefined)?.replace(/\/$/, '') ?? '';
 

@@ -5,7 +5,7 @@ import { join } from 'node:path';
 import { test, expect, upload, download, openTool } from '../../e2e/helpers';
 
 /**
- * Bench for desktop: the real tool pages, served by the real Bench Engine,
+ * Rarvon for desktop: the real tool pages, served by the real Rarvon Engine,
  * with video and audio done by FFmpeg. Run with `npm run test:desktop`.
  */
 
@@ -35,7 +35,7 @@ function details(buffer: Buffer, ext: string) {
 
 const avi = () => clip('old-camera.avi', ['-c:v', 'mpeg4', '-q:v', '4', '-c:a', 'libmp3lame']);
 
-test.describe('Bench for desktop (FFmpeg engine)', () => {
+test.describe('Rarvon for desktop (FFmpeg engine)', () => {
   test('the app hides "Get the app" and the browser warnings, and accepts any video', async ({ page }) => {
     await page.goto('/');
     expect(await page.evaluate(() => Boolean(window.__BENCH_APP__?.ffmpeg))).toBe(true);
@@ -45,7 +45,7 @@ test.describe('Bench for desktop (FFmpeg engine)', () => {
     await expect(page.getByText('Any video: MP4, MOV, MKV, AVI, WMV and more, any size')).toBeVisible();
     // The app's own description and answers, not the browser's.
     await expect(page.getByText(/Video Converter turns almost any video/)).toBeVisible();
-    await expect(page.getByText(/In the Bench app, FFmpeg does the work on your computer/)).toBeVisible();
+    await expect(page.getByText(/In the Rarvon app, FFmpeg does the work on your computer/)).toBeVisible();
     await expect(page.getByText(/WebCodecs|this browser/)).toHaveCount(0);
     // No "Beta" tag on tools FFmpeg runs; the Video Editor keeps it.
     await page.goto('/');

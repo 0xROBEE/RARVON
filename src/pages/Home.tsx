@@ -35,7 +35,7 @@ function imageFromPaste(e: ClipboardEvent): File | null {
   return null;
 }
 
-/** The drop area: Bench looks at the file and suggests the tools that take it. */
+/** The drop area: Rarvon looks at the file and suggests the tools that take it. */
 function DropStart() {
   const navigate = useNavigate();
   const { setPending } = useWorkspace();
@@ -157,7 +157,7 @@ function DropStart() {
 
 export default function Home() {
   usePageMeta(
-    tr('Bench — Free tools. No ads. No account.'),
+    tr('Rarvon — Free tools. No ads. No account.'),
     tr('Free, ad-free, account-free tools for PDFs, images, video, audio, text and data — processed on your device.'),
   );
   const { openSearch } = useToolSearch();
@@ -268,12 +268,12 @@ export default function Home() {
       </section>
 
       <section className="mx-auto max-w-6xl px-4 pb-4 sm:px-6" aria-labelledby="tips-heading">
-        <h2 id="tips-heading" className="font-display text-lg font-semibold">{tr('Get more out of Bench')}</h2>
+        <h2 id="tips-heading" className="font-display text-lg font-semibold">{tr('Get more out of Rarvon')}</h2>
         <div className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <Tip icon="M12 3v12m0 0l-4-4m4 4l4-4M5 21h14" title={tr('Works offline')}>
             {installed
-              ? tr('Bench is installed on this device. Every tool works without an internet connection.')
-              : tr('After your first visit every tool works without a connection. Install Bench to open it like an app.')}
+              ? tr('Rarvon is installed on this device. Every tool works without an internet connection.')
+              : tr('After your first visit every tool works without a connection. Install Rarvon to open it like an app.')}
             {canInstall && (
               <button onClick={() => void install()} className="mt-3 inline-flex items-center gap-1.5 rounded-md border border-line bg-paper px-3 py-1.5 text-xs font-medium text-ink hover:border-ink">
                 {tr('Install app')}
@@ -281,7 +281,7 @@ export default function Home() {
             )}
           </Tip>
           <Tip icon="M8 4h8l2 3h2v13H4V7h2zM12 11v5m-2.5-2.5h5" title={tr('Drop or paste anything')}>
-            {tr('Drop a file at the top of this page, or paste a screenshot with Ctrl+V, and Bench suggests the right tool.')}
+            {tr('Drop a file at the top of this page, or paste a screenshot with Ctrl+V, and Rarvon suggests the right tool.')}
           </Tip>
           <Tip icon="M4 12h12m0 0l-4-4m4 4l-4 4M20 5v14" title={tr('Keep going with a result')}>
             {tr('Every result has “Continue with” buttons that open the next tool with your file already loaded.')}
@@ -298,7 +298,7 @@ export default function Home() {
             </span>
             <span className="min-w-0 flex-1">
               <span className="flex flex-wrap items-center gap-2 font-display text-base font-semibold">
-                {tr('Bench for desktop')}
+                {tr('Rarvon for desktop')}
                 <span className="rounded-full bg-warn-dim px-2 py-0.5 text-[11px] font-semibold text-warn">{tr('Beta')}</span>
               </span>
               <span className="mt-0.5 block text-sm text-ink-2">{tr('Every tool at full power on your own computer: any file size, almost every format, your graphics card.')}</span>

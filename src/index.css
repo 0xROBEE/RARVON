@@ -4,6 +4,8 @@
   --font-display: "Space Grotesk", "Inter", sans-serif;
   --font-body: "Inter", system-ui, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, monospace;
+  /* The RARVON wordmark (Syne ExtraBold in the logo files). */
+  --font-brand: "Syne", "Space Grotesk", sans-serif;
 
   /* Semantic tokens — light values (default / [data-theme="light"]).
      Every component reads these by name (bg-paper, text-ink, border-line, ...),
@@ -56,6 +58,17 @@
 
 :root[data-theme='light'] {
   color-scheme: light;
+}
+
+/* The Rarvon mark (components/Logo.tsx): dark-bodied on light pages,
+   light-faced with a white shine on dark pages, like the logo files. */
+:root {
+  --logo-body: #1b1b22;
+  --logo-shine: transparent;
+}
+:root[data-theme='dark'] {
+  --logo-body: #e6e2f7;
+  --logo-shine: rgb(255 255 255 / 0.9);
 }
 
 /* Category hues: plain custom properties (not @theme) because they are read

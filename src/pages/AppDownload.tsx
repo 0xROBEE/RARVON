@@ -25,20 +25,20 @@ const COMPARE: [string, string, string][] = [
   ['Speed', 'What the browser allows', 'Your processor and graphics card'],
   ['Background Remover', 'Standard model', 'Sharper model on your graphics card'],
   ['Whole folders at once', '—', 'Yes'],
-  ['Right-click a file: Convert with Bench', '—', 'Yes'],
+  ['Right-click a file: Convert with Rarvon', '—', 'Yes'],
   ['Works offline', 'After the first visit', 'Always'],
 ];
 
 const FAQ: [string, string][] = [
   ['Is the app free?', 'Yes. Like the website: free, no ads, no account, and donating never unlocks anything.'],
   ['Does the app upload my files?', 'No. Everything runs on your computer. The only time the app goes online is to check for updates, and you can switch that off.'],
-  ['Does it connect to the Bench website?', 'Only if you choose to. The installer asks, and the answer is "no" unless you say otherwise. You can change it any time in the app’s Settings. Without it, the app works fully on its own.'],
+  ['Does it connect to the Rarvon website?', 'Only if you choose to. The installer asks, and the answer is "no" unless you say otherwise. You can change it any time in the app’s Settings. Without it, the app works fully on its own.'],
   ['What does "beta" mean here?', 'The app works, but it’s new: you may find rough edges. Please report anything odd, it helps a lot.'],
   ['Is there a Mac or phone version?', 'Not yet. The app is for Windows and Linux first; phones will come later.'],
 ];
 
 export default function AppDownload() {
-  usePageMeta(tr('Bench for desktop'), tr('Every Bench tool at full power on your own computer: any file size, almost every format, your graphics card. Free, offline, no account.'));
+  usePageMeta(tr('Rarvon for desktop'), tr('Every Rarvon tool at full power on your own computer: any file size, almost every format, your graphics card. Free, offline, no account.'));
   const system = detectSystem();
   const all: { system: AppSystem; label: string; detail: string; url: string }[] = [
     { system: 'windows', label: tr('Download for Windows'), detail: tr('Windows 10 and 11 · installer (.exe)'), url: appRelease.windows },
@@ -58,11 +58,11 @@ export default function AppDownload() {
           <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M3 5h18v12H3zM8 21h8M12 17v4" /></svg>
         </div>
         <h1 className="relative mt-5 flex flex-wrap items-center justify-center gap-2 font-display text-3xl font-semibold tracking-tight sm:text-4xl">
-          {tr('Bench for desktop')}
+          {tr('Rarvon for desktop')}
           <span className="rounded-full bg-warn-dim px-2.5 py-0.5 text-sm font-semibold text-warn">{tr('Beta')}</span>
         </h1>
         <p className="relative mx-auto mt-4 max-w-xl text-sm leading-relaxed text-ink-2 sm:text-base">
-          {tr('Every Bench tool at full power on your own computer. Any file size, almost every format, and your own graphics card. Free, offline, no account.')}
+          {tr('Every Rarvon tool at full power on your own computer. Any file size, almost every format, and your own graphics card. Free, offline, no account.')}
         </p>
 
         <div className="relative mt-8">
@@ -100,7 +100,7 @@ export default function AppDownload() {
               <tr>
                 <th scope="col" className="px-4 py-2.5 text-start font-semibold"><span className="sr-only">{tr('What')}</span></th>
                 <th scope="col" className="px-4 py-2.5 text-start font-semibold">{tr('Website')}</th>
-                <th scope="col" className="px-4 py-2.5 text-start font-semibold text-workshop">{tr('Bench app')}</th>
+                <th scope="col" className="px-4 py-2.5 text-start font-semibold text-workshop">{tr('Rarvon app')}</th>
               </tr>
             </thead>
             <tbody>
@@ -126,7 +126,7 @@ export default function AppDownload() {
         <div className="grid gap-3 sm:grid-cols-3">
           <Point icon="M4 5h16v11H4zM2 20h20" title={tr('Files stay on your computer')}>{tr('Nothing you open is uploaded, ever.')}</Point>
           <Point icon="M12 3l8 3v6c0 4.5-3.4 8.3-8 9-4.6-.7-8-4.5-8-9V6zM9 12l2 2 4-4" title={tr('Website connection: off')}>{tr('The installer asks; it stays off unless you choose it.')}</Point>
-          <Point icon="M4 4v6h6M20 20v-6h-6M5 15a7 7 0 0012 3M19 9A7 7 0 007 6" title={tr('Signed updates')}>{tr('Only genuine Bench updates install. You can switch update checks off.')}</Point>
+          <Point icon="M4 4v6h6M20 20v-6h-6M5 15a7 7 0 0012 3M19 9A7 7 0 007 6" title={tr('Signed updates')}>{tr('Only genuine Rarvon updates install. You can switch update checks off.')}</Point>
         </div>
       </Section>
 
@@ -146,7 +146,7 @@ export default function AppDownload() {
         {/* A div, not a p: the button brings its pop-up (with a heading) along. */}
         <div className="mt-4 text-sm text-ink-2">
           {tr('Found something odd in the beta?')}{' '}
-          <FeedbackButton kind="bug" toolName={tr('Bench for desktop')} className="font-semibold text-workshop hover:underline">{tr('Report a bug')}</FeedbackButton>
+          <FeedbackButton kind="bug" toolName={tr('Rarvon for desktop')} className="font-semibold text-workshop hover:underline">{tr('Report a bug')}</FeedbackButton>
         </div>
       </Section>
     </div>

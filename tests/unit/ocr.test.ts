@@ -5,7 +5,7 @@ import { join } from 'node:path';
 
 describe('cleanOcrText', () => {
   it('removes invisible bidi marks Tesseract adds around Latin words', () => {
-    expect(cleanOcrText('يعمل \u200eBench\u200f على \u200eChrome\u200f')).toBe('يعمل Bench على Chrome');
+    expect(cleanOcrText('يعمل \u200eRarvon\u200f على \u200eChrome\u200f')).toBe('يعمل Rarvon على Chrome');
   });
   it('collapses repeated spaces and excess blank lines, keeps paragraphs', () => {
     expect(cleanOcrText('a   b\r\n\n\n\n c  \n')).toBe('a b\n\nc');

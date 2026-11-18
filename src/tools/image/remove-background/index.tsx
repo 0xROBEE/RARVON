@@ -674,7 +674,7 @@ export default function RemoveBackground() {
         <FileDropzone accept="image/png,image/jpeg,image/webp,image/avif,image/bmp,image/gif" onFiles={(f) => void handleFile(f)} hint={tr("JPG, PNG or WebP")} />
         {error && <ErrorMessage>{error}</ErrorMessage>}
         <p className="text-sm text-ink-2">
-          {tr("Click “Remove background” to cut out the main object automatically, or click the object you want to keep. The first time, Bench downloads its AI model once")}
+          {tr("Click “Remove background” to cut out the main object automatically, or click the object you want to keep. The first time, Rarvon downloads its AI model once")}
           {sizes ? ` (${formatBytes(sizes.standard)})` : ''}{tr(". After that it works offline.")}
         </p>
       </div>

@@ -32,13 +32,13 @@ test.describe('developer tools', () => {
   test('Base64: UTF-8 text round-trip, URL-safe input, binary output', async ({ page }) => {
     await page.goto('/tools/developer/base64');
     const box = page.getByPlaceholder('Text or Base64 to convert');
-    await box.fill('مرحبا Bench ✓');
+    await box.fill('مرحبا Rarvon ✓');
     await page.getByRole('button', { name: 'Encode' }).click();
-    const encoded = Buffer.from('مرحبا Bench ✓').toString('base64');
+    const encoded = Buffer.from('مرحبا Rarvon ✓').toString('base64');
     await expect(result(page)).toHaveText(encoded);
     await box.fill(encoded);
     await page.getByRole('button', { name: 'Decode' }).click();
-    await expect(result(page)).toHaveText('مرحبا Bench ✓');
+    await expect(result(page)).toHaveText('مرحبا Rarvon ✓');
     // URL-safe alphabet, no padding
     await box.fill(Buffer.from('subjects?_d=1&x=~').toString('base64url'));
     await page.getByRole('button', { name: 'Decode' }).click();
@@ -86,7 +86,7 @@ test.describe('developer tools', () => {
 
   test('hash generator matches Node for text and files', async ({ page }) => {
     await page.goto('/tools/developer/hash');
-    const text = 'Bench ✓ مرحبا';
+    const text = 'Rarvon ✓ مرحبا';
     await page.locator('main textarea').fill(text);
     await page.getByRole('button', { name: 'Generate hashes' }).click();
     for (const [algo, node] of [['SHA-1', 'sha1'], ['SHA-256', 'sha256'], ['SHA-512', 'sha512']] as const) {

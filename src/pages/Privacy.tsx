@@ -26,14 +26,14 @@ function Ul({ children }: { children: ReactNode }) {
 }
 
 const SUMMARY: { icon: string; text: string }[] = [
-  { icon: 'M4 5h16v11H4zM2 20h20', text: 'Your files never leave your device. Every tool works inside your browser. Nothing you open in Bench is uploaded to me or to anyone else.' },
+  { icon: 'M4 5h16v11H4zM2 20h20', text: 'Your files never leave your device. Every tool works inside your browser. Nothing you open in Rarvon is uploaded to me or to anyone else.' },
   { icon: 'M12 3l8 3v6c0 4.5-3.4 8.3-8 9-4.6-.7-8-4.5-8-9V6zM9 12l2 2 4-4', text: 'No account, no ads, no tracking. There are no cookies, no analytics and no trackers, and there never will be.' },
-  { icon: 'M4 6c0-1.7 3.6-3 8-3s8 1.3 8 3-3.6 3-8 3-8-1.3-8-3zM4 6v12c0 1.7 3.6 3 8 3s8-1.3 8-3V6M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3', text: 'A few things are saved on your device, like your theme, your language and your Video Editor projects, so Bench remembers them next time. They stay on your device, and you can delete them at any time.' },
+  { icon: 'M4 6c0-1.7 3.6-3 8-3s8 1.3 8 3-3.6 3-8 3-8-1.3-8-3zM4 6v12c0 1.7 3.6 3 8 3s8-1.3 8-3V6M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3', text: 'A few things are saved on your device, like your theme, your language and your Video Editor projects, so Rarvon remembers them next time. They stay on your device, and you can delete them at any time.' },
   { icon: 'M4 4h16v6H4zM4 14h16v6H4zM8 7h.01M8 17h.01', text: 'The website’s host sees ordinary visit logs, like any website. They never include your files.' },
 ];
 
 const KEPT: [string, string, string][] = [
-  ['Theme (light or dark) and language', 'So Bench opens the way you left it', 'Clear this site’s data in your browser settings'],
+  ['Theme (light or dark) and language', 'So Rarvon opens the way you left it', 'Clear this site’s data in your browser settings'],
   ['Recently used tools', 'To show them first on the home page', 'Clear this site’s data in your browser settings'],
   ['Image to Text settings and Video Editor shortcuts', 'So you don’t set them up again', 'Clear this site’s data in your browser settings'],
   ['Video Editor projects, including copies of the videos you add', 'So your project is saved and can be recovered after a crash', 'Delete the project in the Video Editor, or clear this site’s data'],
@@ -47,17 +47,17 @@ interface Section {
 }
 
 export default function Privacy() {
-  usePageMeta(tr('Privacy'), tr('Your files never leave your device: every Bench tool works inside your browser. No account, no ads, no cookies, no analytics, no tracking.'));
+  usePageMeta(tr('Privacy'), tr('Your files never leave your device: every Rarvon tool works inside your browser. No account, no ads, no cookies, no analytics, no tracking.'));
 
   const sections: Section[] = [
     {
       id: 'why',
-      title: tr('Why Bench exists'),
+      title: tr('Why Rarvon exists'),
       body: (
         <>
           <P>{tr('Most online file tools work the same way: you upload your file to their server, they process it there, and you download the result. That means a stranger’s computer gets a copy of your photos, documents and videos, and you have to trust what happens to it afterwards. On top of that, every small job lives on a different website, each with its own ads, sign-ups and “upgrade to Pro” pop-ups.')}</P>
-          <P>{tr('I built Bench to do it differently: one place for everyday file jobs, where all the work happens in your own browser. Your browser is already powerful enough to convert, compress and edit files, so there’s no reason to send them anywhere.')}</P>
-          <P>{tr('This page explains exactly what that means, what Bench stores, and what it never does.')}</P>
+          <P>{tr('I built Rarvon to do it differently: one place for everyday file jobs, where all the work happens in your own browser. Your browser is already powerful enough to convert, compress and edit files, so there’s no reason to send them anywhere.')}</P>
+          <P>{tr('This page explains exactly what that means, what Rarvon stores, and what it never does.')}</P>
         </>
       ),
     },
@@ -66,11 +66,11 @@ export default function Privacy() {
       title: tr('How your files are handled'),
       body: (
         <>
-          <P>{tr('When you open a file in a Bench tool, it is read by the browser tab you have open. The converting, compressing, editing or reading happens on your device, using your device’s processor and memory. The result is created on your device too, and saved straight back to you when you press Download.')}</P>
+          <P>{tr('When you open a file in a Rarvon tool, it is read by the browser tab you have open. The converting, compressing, editing or reading happens on your device, using your device’s processor and memory. The result is created on your device too, and saved straight back to you when you press Download.')}</P>
           <Ul>
-            <Li lead={tr('Your files are not uploaded.')}>{tr('Bench has no server that receives them, so it couldn’t store or look at them even if it wanted to.')}</Li>
+            <Li lead={tr('Your files are not uploaded.')}>{tr('Rarvon has no server that receives them, so it couldn’t store or look at them even if it wanted to.')}</Li>
             <Li lead={tr('“Continue with…” stays in your browser.')}>{tr('When you pass a result to another tool, the file is handed over inside your browser tab. It still never leaves your device.')}</Li>
-            <Li lead={tr('Closing the tab clears your files.')}>{tr('When you close the tab, the files you worked on are gone from Bench. The only exception is the Video Editor, which can keep your projects (see below).')}</Li>
+            <Li lead={tr('Closing the tab clears your files.')}>{tr('When you close the tab, the files you worked on are gone from Rarvon. The only exception is the Video Editor, which can keep your projects (see below).')}</Li>
             <Li lead={tr('Paste reads only when you ask.')}>{tr('The Paste button in the text tools reads your clipboard only at the moment you press it.')}</Li>
           </Ul>
         </>
@@ -78,10 +78,10 @@ export default function Privacy() {
     },
     {
       id: 'kept',
-      title: tr('What Bench keeps on your device'),
+      title: tr('What Rarvon keeps on your device'),
       body: (
         <>
-          <P>{tr('To remember your choices, Bench saves a few small things in your browser’s own storage. This storage belongs to your browser on your device. Nothing in it is sent to me.')}</P>
+          <P>{tr('To remember your choices, Rarvon saves a few small things in your browser’s own storage. This storage belongs to your browser on your device. Nothing in it is sent to me.')}</P>
           <div className="mt-4 overflow-x-auto rounded-xl border border-line">
             <table className="w-full min-w-[34rem] text-start text-sm">
               <thead className="bg-elevated text-xs text-ink-3">
@@ -102,23 +102,23 @@ export default function Privacy() {
               </tbody>
             </table>
           </div>
-          <P><strong className="font-semibold text-ink">{tr('Bench does not use cookies.')}</strong></P>
+          <P><strong className="font-semibold text-ink">{tr('Rarvon does not use cookies.')}</strong></P>
         </>
       ),
     },
     {
       id: 'downloads',
-      title: tr('What Bench downloads'),
+      title: tr('What Rarvon downloads'),
       body: (
         <>
-          <P>{tr('Some tools need extra parts the first time you use them: the AI models for the Background Remover, the language files for Image to Text, and the MP3 encoder. These are downloaded from Bench’s own website, never from other companies, and stored in your browser so you only download them once.')}</P>
-          <P>{tr('Downloading them sends nothing about you or your files. Bench is simply fetching its own parts, the same way it loads its pages.')}</P>
+          <P>{tr('Some tools need extra parts the first time you use them: the AI models for the Background Remover, the language files for Image to Text, and the MP3 encoder. These are downloaded from Rarvon’s own website, never from other companies, and stored in your browser so you only download them once.')}</P>
+          <P>{tr('Downloading them sends nothing about you or your files. Rarvon is simply fetching its own parts, the same way it loads its pages.')}</P>
         </>
       ),
     },
     {
       id: 'never',
-      title: tr('What Bench never does'),
+      title: tr('What Rarvon never does'),
       body: (
         <Ul>
           <Li>{tr('It never uploads, stores or looks at your files.')}</Li>
@@ -135,27 +135,27 @@ export default function Privacy() {
       title: tr('The website host'),
       body: (
         <>
-          <P>{tr('Bench’s pages have to be served from somewhere, like every website. The company that hosts Bench can see the ordinary information every web server sees when a page is loaded: your IP address, your browser type, the page you asked for and the time. Hosting companies usually keep these logs for a short time to keep their service running and safe.')}</P>
-          <P>{tr('These logs never contain your files, because your files never reach the server. I don’t use these logs to track or identify anyone. I’ll name the hosting company here once Bench is online.')}</P>
+          <P>{tr('Rarvon’s pages have to be served from somewhere, like every website. The company that hosts Rarvon can see the ordinary information every web server sees when a page is loaded: your IP address, your browser type, the page you asked for and the time. Hosting companies usually keep these logs for a short time to keep their service running and safe.')}</P>
+          <P>{tr('These logs never contain your files, because your files never reach the server. I don’t use these logs to track or identify anyone. I’ll name the hosting company here once Rarvon is online.')}</P>
         </>
       ),
     },
     {
       id: 'links',
       title: tr('Links to other websites'),
-      body: <P>{tr('Bench links to a few other websites, like Ko-fi (if you choose to support Bench) and GitHub. When you click one of those links you leave Bench, and that website’s own privacy policy applies.')}</P>,
+      body: <P>{tr('Rarvon links to a few other websites, like Ko-fi (if you choose to support Rarvon) and GitHub. When you click one of those links you leave Rarvon, and that website’s own privacy policy applies.')}</P>,
     },
     {
       id: 'children',
       title: tr('Children'),
-      body: <P>{tr('Bench doesn’t collect personal information from anyone, including children. It can be used safely at any age.')}</P>,
+      body: <P>{tr('Rarvon doesn’t collect personal information from anyone, including children. It can be used safely at any age.')}</P>,
     },
     {
       id: 'changes',
       title: tr('The plan, and changes to this page'),
       body: (
         <>
-          <P>{tr('The plan for Bench is simple: keep adding useful tools, and keep every one of them working on your device. Privacy isn’t a feature that might change later. It is how Bench is built.')}</P>
+          <P>{tr('The plan for Rarvon is simple: keep adding useful tools, and keep every one of them working on your device. Privacy isn’t a feature that might change later. It is how Rarvon is built.')}</P>
           <P>{tr('If anything on this page ever changes, I’ll update this page and its date first, and explain what changed.')}</P>
         </>
       ),

@@ -1,6 +1,6 @@
-# Running Bench on your computer
+# Running Rarvon on your computer
 
-Bench is ROBEE's closed-source project (see `LICENSE`). This guide is for running your own copy.
+Rarvon is ROBEE's closed-source project (see `LICENSE`). This guide is for running your own copy.
 
 ## What you need
 
@@ -17,7 +17,7 @@ Open a terminal in this folder, then:
    npm ci
    ```
 
-2. Run Bench while developing (it reloads as you edit), then open http://localhost:5173:
+2. Run Rarvon while developing (it reloads as you edit), then open http://localhost:5173:
 
    ```bash
    npm run dev
@@ -50,9 +50,9 @@ npx playwright install chromium
 npx playwright test
 ```
 
-## Bench for desktop (Windows)
+## Rarvon for desktop (Windows)
 
-To use the app, run the installer: `Bench-setup-<version>.exe`.
+To use the app, run the installer: `Rarvon-setup-<version>.exe`.
 
 To build the app yourself, you also need [Rust](https://rustup.rs), Microsoft Edge (already on Windows 10 and
 11), FFmpeg and Inno Setup. `desktop/README.md` explains each step.

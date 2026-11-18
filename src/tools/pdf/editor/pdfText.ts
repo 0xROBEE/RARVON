@@ -20,7 +20,7 @@ import arabicUrl from '@fontsource/noto-sans-arabic/files/noto-sans-arabic-arabi
  *    Greek runs are embedded as real, selectable text;
  *  - mixed-direction text (Arabic with English words or numbers) is split
  *    into visual runs with the Unicode Bidirectional Algorithm (bidi-js),
- *    so "تم إصدار Bench 2.1" lays out exactly as a browser would show it.
+ *    so "تم إصدار Rarvon 2.1" lays out exactly as a browser would show it.
  * Text using a script none of these fonts covers (CJK, Devanagari, emoji…)
  * reports `false` from canDraw(), and the caller falls back to an image.
  */

@@ -1,4 +1,4 @@
-// Windows resources for Bench.exe: the icon Explorer and the taskbar show,
+// Windows resources for Rarvon.exe: the icon Explorer and the taskbar show,
 // and the details in the file's Properties.
 1 ICON "bench.ico"
 
@@ -11,12 +11,12 @@ BEGIN
     BLOCK "040904B0"
     BEGIN
       VALUE "CompanyName", "ROBEE"
-      VALUE "FileDescription", "Bench"
+      VALUE "FileDescription", "Rarvon"
       VALUE "FileVersion", "0.1.0"
-      VALUE "ProductName", "Bench for desktop (beta)"
+      VALUE "ProductName", "Rarvon for desktop (beta)"
       VALUE "ProductVersion", "0.1.0"
       VALUE "LegalCopyright", "Copyright ROBEE. All rights reserved."
-      VALUE "OriginalFilename", "Bench.exe"
+      VALUE "OriginalFilename", "Rarvon.exe"
     END
   END
   BLOCK "VarFileInfo"

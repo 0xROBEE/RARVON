@@ -2,7 +2,7 @@ import { hasNativeEngine } from '../engine/info';
 import type { CategoryMeta, ToolMeta } from './toolRegistry';
 
 /**
- * Inside the Bench app, the tools FFmpeg runs describe themselves the app's
+ * Inside the Rarvon app, the tools FFmpeg runs describe themselves the app's
  * way (any video, any size); everywhere else, the website's text.
  */
 export function toolText(tool: ToolMeta): { description: string; faq: ToolMeta['faq'] } {

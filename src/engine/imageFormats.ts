@@ -1,7 +1,7 @@
 import { getSupportedEncodeFormats } from '../lib/imageFormatSupport';
 import type { ImageFormatOption } from '../lib/imageFormatSupport';
 
-/** Formats Bench writes itself (the browser can't), listed after the ones the browser makes. */
+/** Formats Rarvon writes itself (the browser can't), listed after the ones the browser makes. */
 export const BENCH_FORMATS: ImageFormatOption[] = [
   { mime: 'image/gif', label: 'GIF', extension: 'gif' },
   { mime: 'image/bmp', label: 'BMP', extension: 'bmp' },
@@ -14,7 +14,7 @@ export const BENCH_FORMATS: ImageFormatOption[] = [
   { mime: 'application/vnd.oasis.opendocument.graphics', label: 'ODG', extension: 'odg' },
 ];
 
-/** Every format the browser engine can save a picture as: the browser's own first, then Bench's. */
+/** Every format the browser engine can save a picture as: the browser's own first, then Rarvon's. */
 export function imageOutputFormats(): ImageFormatOption[] {
   return [...getSupportedEncodeFormats(), ...BENCH_FORMATS];
 }

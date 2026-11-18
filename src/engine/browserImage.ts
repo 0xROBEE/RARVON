@@ -1,6 +1,6 @@
 /**
  * The browser engine's image formats: what the browser decodes and encodes
- * itself, plus the formats Bench reads and writes with its own code.
+ * itself, plus the formats Rarvon reads and writes with its own code.
  */
 import { canvasToBlob } from '../lib/imageUtils';
 import { encodeBmp, encodeGif, encodeTiff } from '../lib/imageEncoders';
@@ -26,12 +26,12 @@ export async function encodeImage(canvas: HTMLCanvasElement, mime: string, quali
   }
 }
 
-/** True when the browser can't open this file but Bench's own readers can (TIFF, TGA, PPM, ICNS). */
+/** True when the browser can't open this file but Rarvon's own readers can (TIFF, TGA, PPM, ICNS). */
 export async function needsBenchReader(file: File): Promise<boolean> {
   return customImageKind(file.name, new Uint8Array(await file.slice(0, 8).arrayBuffer())) !== null;
 }
 
-/** Opens a file with Bench's own readers, as a PNG picture the rest of the tool can use. */
+/** Opens a file with Rarvon's own readers, as a PNG picture the rest of the tool can use. */
 export async function openWithBench(file: File): Promise<{ url: string; width: number; height: number }> {
   const out = await decodeCustomImage(file);
   if (out instanceof Blob) {

@@ -16,7 +16,7 @@ test('after one visit, tools work offline (PWA)', async ({ page, context }) => {
     throw new Error('precache did not complete');
   });
   const manifest = await page.evaluate(() => fetch('/manifest.webmanifest').then((r) => r.json()));
-  expect(manifest.short_name).toBe('Bench');
+  expect(manifest.short_name).toBe('Rarvon');
 
   await context.setOffline(true);
   // A tool never opened before, loaded fresh while offline.

@@ -4,7 +4,7 @@
 //     order, arrows labelled with the button that leads on. Dragged into Figma,
 //     an SVG becomes editable layers (pictures, arrows, text).
 //   design/out/figma/README.md                   how to bring it into Figma
-//   design/out/Bench-figma-pack.zip              all of the above
+//   design/out/Rarvon-figma-pack.zip              all of the above
 import { copyFileSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import JSZip from 'jszip';
@@ -36,7 +36,7 @@ const FLOWS = [
   ['11-utilities', 'Utilities', ['qr', 'password', 'archive-loaded']],
   ['12-info-feedback', 'Information pages and feedback', ['about', 'privacy', 'support', 'credits', 'app-coming', 'not-found', 'feedback']],
   ['13-download-on', 'Download button switched on', ['dl-home', 'dl-app', 'dl-video-tool']],
-  ['14-desktop-app', 'Bench for desktop', ['app-home', 'app-convert-done']],
+  ['14-desktop-app', 'Rarvon for desktop', ['app-home', 'app-convert-done']],
   ['15-phone', 'Phone (390 px)', ['phone-home', 'phone-menu', 'phone-convert-image-loaded', 'phone-merge-loaded', 'phone-word-counter', 'phone-about']],
   ['16-arabic', 'Arabic (right to left)', ['ar-home', 'ar-menu', 'ar-convert-image-loaded', 'ar-merge-loaded', 'ar-word-counter', 'ar-about']],
 ];
@@ -136,6 +136,6 @@ const guide = readFileSync(join(ROOT, 'design', 'FIGMA.md'), 'utf8');
 writeFileSync(join(PACK, 'README.md'), guide);
 zip.file('figma/README.md', guide);
 const buf = await zip.generateAsync({ type: 'nodebuffer', compression: 'DEFLATE' });
-writeFileSync(join(OUT, 'Bench-figma-pack.zip'), buf);
+writeFileSync(join(OUT, 'Rarvon-figma-pack.zip'), buf);
 const count = ALL_FLOWS.reduce((n, f) => n + f[2].length, 0);
-console.log(`${ALL_FLOWS.length} flow sheets, ${count} screens → design/out/Bench-figma-pack.zip (${(buf.length / 1024 / 1024).toFixed(1)} MB)`);
+console.log(`${ALL_FLOWS.length} flow sheets, ${count} screens → design/out/Rarvon-figma-pack.zip (${(buf.length / 1024 / 1024).toFixed(1)} MB)`);

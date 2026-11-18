@@ -106,7 +106,7 @@ function decodeTga(b: Uint8Array): Pixels {
   const height = b[14] | (b[15] << 8);
   const bpp = b[16];
   const desc = b[17];
-  if (![1, 2, 3, 9, 10, 11].includes(type) || !width || !height) throw new UnsupportedImageError('This TGA file uses a kind Bench can’t read.');
+  if (![1, 2, 3, 9, 10, 11].includes(type) || !width || !height) throw new UnsupportedImageError('This TGA file uses a kind Rarvon can’t read.');
   let p = 18 + idLen;
   const cmap: number[][] = [];
   if (cmapType === 1) {
@@ -179,7 +179,7 @@ function decodeIcns(b: Uint8Array): Blob {
     if (isJp2 && !best) best = null;
     p += len;
   }
-  if (!best) throw new UnsupportedImageError('This icon only has old-style pictures inside that Bench can’t read yet.');
+  if (!best) throw new UnsupportedImageError('This icon only has old-style pictures inside that Rarvon can’t read yet.');
   return new Blob([best as BlobPart], { type: 'image/png' });
 }
 
@@ -275,9 +275,9 @@ async function decodeTiff(b: Uint8Array): Promise<Pixels> {
   const predictor = one(317, 1);
   const planar = one(284, 1);
   if (!width || !height) throw new UnsupportedImageError('Damaged TIFF file.');
-  if (bits !== 8 && bits !== 1) throw new UnsupportedImageError('This TIFF uses 16- or 32-bit colour, which Bench can’t read yet.');
+  if (bits !== 8 && bits !== 1) throw new UnsupportedImageError('This TIFF uses 16- or 32-bit colour, which Rarvon can’t read yet.');
   if (planar !== 1 || ![1, 5, 8, 32946, 32773].includes(compression) || ![0, 1, 2, 3].includes(photometric)) {
-    throw new UnsupportedImageError('This TIFF uses a kind of compression or colour Bench can’t read yet (for example JPEG-in-TIFF or CMYK).');
+    throw new UnsupportedImageError('This TIFF uses a kind of compression or colour Rarvon can’t read yet (for example JPEG-in-TIFF or CMYK).');
   }
   const tiled = tags.has(322);
   const offsets = tags.get(tiled ? 324 : 273) ?? [];

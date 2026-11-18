@@ -116,7 +116,7 @@ export function licenseReport(extraPackages: () => string[], models: () => Model
       const pkgs = [...names].sort().map((n) => readPkg(root, n)).filter((p): p is PkgInfo => Boolean(p))
 
       const txt = [
-        'Bench — third-party software included in this site',
+        'Rarvon — third-party software included in this site',
         '='.repeat(52),
         '',
         ...pkgs.flatMap((p) => [

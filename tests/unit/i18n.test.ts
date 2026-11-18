@@ -6,7 +6,7 @@ import { ar } from '../../src/lib/i18n/ar';
 
 /** Text that is the same in both languages on purpose (sample data, file formats, product names). */
 const SAME_IN_BOTH = new Set([
-  'Bench', 'Tab', 'UUID', 'PNG', 'JPG', 'VP9', 'UTC:', 'ISO 8601:', '{total}', 'undefined',
+  'Rarvon', 'Tab', 'UUID', 'PNG', 'JPG', 'VP9', 'UTC:', 'ISO 8601:', '{total}', 'undefined',
   '{"example": true, "values": [1, 2, 3]}', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9....',
   'https://example.com/search?q=hello world', 'https://example.com/a/very/long/path',
 ]);
@@ -19,7 +19,7 @@ describe('Arabic interface', () => {
     for (const t of tools) {
       texts.push(t.name, t.shortDescription, t.description, ...(t.faq ?? []).flatMap((f) => [f.q, f.a]));
       if (t.comingSoonReason) texts.push(t.comingSoonReason);
-      // The Bench app's own texts for the tools FFmpeg runs.
+      // The Rarvon app's own texts for the tools FFmpeg runs.
       if (t.app?.description) texts.push(t.app.description);
       texts.push(...(t.app?.faq ?? []).flatMap((f) => [f.q, f.a]));
     }

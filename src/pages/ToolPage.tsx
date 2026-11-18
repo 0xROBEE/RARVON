@@ -15,7 +15,7 @@ import { tr } from '../lib/i18n';
 export default function ToolPage() {
   const { category, slug } = useParams<{ category: string; slug: string }>();
   const tool = getTool(category ?? '', slug ?? '');
-  usePageMeta(tool ? tr(tool.name) : 'Bench', tool ? tr(tool.shortDescription) : '', {
+  usePageMeta(tool ? tr(tool.name) : 'Rarvon', tool ? tr(tool.shortDescription) : '', {
     jsonLd: tool ? toolJsonLd(tool, getCategory(tool.category)?.name ?? '') : null,
   });
   const key = tool ? `${tool.category}/${tool.slug}` : '';

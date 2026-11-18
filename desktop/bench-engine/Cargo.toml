@@ -1,7 +1,7 @@
 [package]
 name = "bench-engine"
 version = "0.1.0"
-description = "Bench for desktop (beta): serves Bench on this computer and opens it in a browser app window"
+description = "Rarvon for desktop (beta): serves Rarvon on this computer and opens it in a browser app window"
 authors = ["ROBEE"]
 edition = "2021"
 publish = false

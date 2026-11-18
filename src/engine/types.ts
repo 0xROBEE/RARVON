@@ -1,7 +1,7 @@
 /**
  * The engine: everything a tool asks to have done to a file, separated from
  * the tool's screen. The website runs the browser engine (WebCodecs, Web
- * Audio, WebAssembly). The Bench app will run a native engine with the same
+ * Audio, WebAssembly). The Rarvon app will run a native engine with the same
  * shape (FFmpeg and friends on the user's own hardware), so every tool page
  * works unchanged in both.
  *

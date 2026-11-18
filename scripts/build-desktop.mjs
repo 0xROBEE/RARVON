@@ -1,7 +1,7 @@
-// Builds Bench for desktop's Windows installer:
-//   1. the website (dist) and the Bench Engine (release),
-//   2. desktop/stage: Bench.exe + web/ + ffmpeg/ + notices,
-//   3. desktop/out/Bench-setup-<version>.exe with Inno Setup.
+// Builds Rarvon for desktop's Windows installer:
+//   1. the website (dist) and the Rarvon Engine (release),
+//   2. desktop/stage: Rarvon.exe + web/ + ffmpeg/ + notices,
+//   3. desktop/out/Rarvon-setup-<version>.exe with Inno Setup.
 // FFmpeg must already be in desktop/bench-engine/ffmpeg (see desktop/README.md).
 import { execFileSync } from 'node:child_process';
 import { cpSync, existsSync, mkdirSync, readFileSync, rmSync, statSync } from 'node:fs';
@@ -23,7 +23,7 @@ run('cargo', ['build', '--release', '--manifest-path', join(engine, 'Cargo.toml'
 
 rmSync(stage, { recursive: true, force: true });
 mkdirSync(join(stage, 'ffmpeg'), { recursive: true });
-cpSync(join(engine, 'target', 'release', 'bench-engine.exe'), join(stage, 'Bench.exe'));
+cpSync(join(engine, 'target', 'release', 'bench-engine.exe'), join(stage, 'Rarvon.exe'));
 cpSync(join(root, 'dist'), join(stage, 'web'), {
   recursive: true,
   // The app serves the pages itself: no offline cache or web-host settings needed.
@@ -34,5 +34,5 @@ cpSync(join(engine, 'ffmpeg', 'LICENSE.txt'), join(stage, 'ffmpeg', 'LICENSE.txt
 cpSync(join(root, 'desktop', 'installer', 'license.txt'), join(stage, 'LICENSE.txt'));
 
 run(iscc, ['/Qp', `/DAppVersion=${version}`, join(root, 'desktop', 'installer', 'bench.iss')], { shell: false });
-const out = join(root, 'desktop', 'out', `Bench-setup-${version}.exe`);
+const out = join(root, 'desktop', 'out', `Rarvon-setup-${version}.exe`);
 console.log(`\n${out}\n${(statSync(out).size / 1024 / 1024).toFixed(1)} MB`);

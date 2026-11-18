@@ -107,7 +107,7 @@ export async function makeImage(page: Page, opts: { width?: number; height?: num
       }
       x.fillStyle = '#000';
       x.font = `${Math.round(height / 10)}px sans-serif`;
-      x.fillText('Bench test 123', width * 0.1, height * 0.5);
+      x.fillText('Rarvon test 123', width * 0.1, height * 0.5);
       const blob: Blob = await new Promise((r) => c.toBlob((b) => r(b!), type, 0.95));
       const bytes = new Uint8Array(await blob.arrayBuffer());
       let s = '';

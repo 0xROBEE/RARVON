@@ -61,20 +61,20 @@ function Section({ title, children, delay = 0 }: { title: string; children: Reac
 }
 
 export default function About() {
-  usePageMeta(tr('About'), tr('Why Bench exists: one free toolbox for everyday file jobs that runs in your browser, so your files never leave your device.'));
+  usePageMeta(tr('About'), tr('Why Rarvon exists: one free toolbox for everyday file jobs that runs in your browser, so your files never leave your device.'));
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-12 sm:px-6 sm:py-16">
       {/* Story */}
       <section className="float-in relative overflow-hidden rounded-2xl border border-line bg-elevated p-6 sm:p-10">
         <div aria-hidden="true" className="pointer-events-none absolute -end-20 -top-20 h-56 w-56 rounded-full bg-workshop/10 blur-3xl" />
-        <p className="relative text-xs font-semibold uppercase tracking-wider text-workshop">{tr('About Bench')}</p>
+        <p className="relative text-xs font-semibold uppercase tracking-wider text-workshop">{tr('About Rarvon')}</p>
         <h1 className="relative mt-2 font-display text-3xl font-semibold tracking-tight sm:text-4xl">{tr('One toolbox. Your files stay yours.')}</h1>
         <p className="relative mt-5 max-w-2xl text-sm leading-relaxed text-ink-2 sm:text-base">
           {tr("Most online tools make you upload your files to someone else's server, and every small job lives on a different website. I wanted one tidy place where everything runs right in your browser, so your files never leave your device.")}
         </p>
         <p className="relative mt-3 max-w-2xl text-sm leading-relaxed text-ink-2 sm:text-base">
-          {tr('So I built Bench: converters, compressors, PDF, image, video, audio and text tools, all free, all in one place.')}
+          {tr('So I built Rarvon: converters, compressors, PDF, image, video, audio and text tools, all free, all in one place.')}
         </p>
         <a href={maker.url} target="_blank" rel="noopener noreferrer" className="group relative mt-6 inline-flex items-center gap-3 rounded-full border border-line bg-paper py-1.5 pe-4 ps-1.5 transition-colors hover:border-workshop">
           <span className="grid h-9 w-9 place-items-center rounded-full bg-workshop text-sm font-bold text-white">{maker.name.slice(0, 1)}</span>
@@ -107,7 +107,7 @@ export default function About() {
       </Section>
 
       {/* Numbers */}
-      <Section title={tr('Bench in numbers')} delay={200}>
+      <Section title={tr('Rarvon in numbers')} delay={200}>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
           {([
             [toolCount, tr('tools')],
@@ -147,7 +147,7 @@ export default function About() {
           </FeedbackButton>
           <Link to="/support" className="heart-beat inline-flex min-h-10 items-center gap-2 rounded-full border border-heart/50 bg-heart-dim px-4 text-sm font-semibold text-heart hover:border-heart">
             <svg className="heart" width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 21s-7.5-4.6-9.6-9.3C1 8.3 3.1 4.5 6.9 4.5c2.1 0 3.6 1.1 5.1 2.9 1.5-1.8 3-2.9 5.1-2.9 3.8 0 5.9 3.8 4.5 7.2C19.5 16.4 12 21 12 21z" /></svg>
-            {tr('Support Bench')}
+            {tr('Support Rarvon')}
           </Link>
         </div>
       </Section>

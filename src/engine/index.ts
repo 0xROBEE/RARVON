@@ -1,5 +1,5 @@
 /**
- * The one place that decides which engine Bench runs on. Tools import
+ * The one place that decides which engine Rarvon runs on. Tools import
  * `engine` and the helpers below from here, never from `src/lib` directly.
  */
 import type { Engine } from './types';
@@ -14,7 +14,7 @@ export type { Engine, EngineKind, VideoEngine, AudioEngine, ImageEngine, PdfEngi
 export { isBenchApp, engineInfo, showsBrowserWarning } from './info';
 
 /**
- * The engine for this session: in Bench for desktop, video and audio run in
+ * The engine for this session: in Rarvon for desktop, video and audio run in
  * FFmpeg on this computer; on the website, everything runs in the browser.
  */
 export const engine: Engine = hasNativeEngine ? nativeEngine : browserEngine;
@@ -49,5 +49,5 @@ export type { OcrLanguage, OcrLayout, OcrProgress, OcrResult } from '../lib/ocrE
 export type { BackgroundRemover, MaskResult } from '../lib/backgroundRemoval';
 // Picture preparation for text recognition: plain canvas work, the same in every engine.
 export { decodeImage, preprocessForOcr } from '../lib/ocrPreprocess';
-// Bench's own still/animated writers, for tools that build pictures themselves.
+// Rarvon's own still/animated writers, for tools that build pictures themselves.
 export { encodeBmp, encodeGif, encodeTiff } from '../lib/imageEncoders';

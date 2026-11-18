@@ -4,7 +4,7 @@
 //! small job description (which format, how long, how big), every field is
 //! checked, and the engine builds the FFmpeg command itself. Files are known
 //! only by random ids the engine handed out, and everything lives in one
-//! private temporary folder that is deleted when Bench closes.
+//! private temporary folder that is deleted when Rarvon closes.
 
 use std::collections::HashMap;
 use std::fs;
@@ -101,7 +101,7 @@ impl Native {
         })
     }
 
-    /// Stops running jobs and deletes every file Bench made.
+    /// Stops running jobs and deletes every file Rarvon made.
     pub fn shut_down(&self) {
         for job in self.jobs.lock().unwrap().values() {
             if let Some(child) = job.lock().unwrap().child.as_mut() {
@@ -123,7 +123,7 @@ impl Native {
         cmd
     }
 
-    /// Saves a file the person chose into Bench's private folder.
+    /// Saves a file the person chose into Rarvon's private folder.
     pub fn upload(&self, body: &mut dyn Read, ext: &str) -> Result<Value, String> {
         let ext: String = ext.chars().filter(|c| c.is_ascii_alphanumeric()).take(8).collect::<String>().to_ascii_lowercase();
         let id = crate::secret_key()[..24].to_string();
@@ -521,7 +521,7 @@ fn plan_audio(s: &JobSpec, p: &Probe) -> Result<Plan, String> {
     Ok(Plan { before_input: before, after_input: after, length, mime, extension, copied: false })
 }
 
-/// FFmpeg's codec names → the names Bench's tools use.
+/// FFmpeg's codec names → the names Rarvon's tools use.
 fn video_codec_name(ffmpeg: &str) -> String {
     match ffmpeg {
         "h264" => "avc".into(),
@@ -594,7 +594,7 @@ fn channel_count(layout: &str) -> u32 {
     }
 }
 
-/// Removes leftovers from a Bench that didn't close normally (older than a day).
+/// Removes leftovers from a Rarvon that didn't close normally (older than a day).
 fn clean_old_folders(temp: &Path) {
     let Ok(entries) = fs::read_dir(temp) else { return };
     let day = Duration::from_secs(24 * 3600);

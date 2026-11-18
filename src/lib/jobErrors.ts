@@ -1,5 +1,5 @@
 /**
- * Errors shared by Bench's jobs, kept in a tiny file with no heavy imports so
+ * Errors shared by Rarvon's jobs, kept in a tiny file with no heavy imports so
  * the engine can recognise them without loading the libraries that throw them.
  */
 
@@ -24,5 +24,5 @@ export class ExportCancelled extends Error {
   }
 }
 
-/** The PDF needs a password Bench doesn't have. */
+/** The PDF needs a password Rarvon doesn't have. */
 export class PasswordRequired extends Error {}

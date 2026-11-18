@@ -1,4 +1,4 @@
-; Bench for desktop (beta): the Windows installer.
+; Rarvon for desktop (beta): the Windows installer.
 ; Built by `npm run build:desktop`, which fills ..\stage first and passes the version.
 ; Installs for the current user only: no administrator rights needed.
 
@@ -8,13 +8,13 @@
 
 [Setup]
 AppId={{6F1B7C2E-4A5D-4E8B-9C3F-B3E1C0A1D7E2}
-AppName=Bench
+AppName=Rarvon
 AppVersion={#AppVersion}
-AppVerName=Bench {#AppVersion} (beta)
+AppVerName=Rarvon {#AppVersion} (beta)
 AppPublisher=ROBEE
 AppPublisherURL=https://github.com/ROBEE404
 AppCopyright=Copyright (c) 2026 ROBEE. All rights reserved.
-DefaultDirName={localappdata}\Programs\Bench
+DefaultDirName={localappdata}\Programs\Rarvon
 DisableProgramGroupPage=yes
 DisableDirPage=auto
 PrivilegesRequired=lowest
@@ -22,10 +22,10 @@ MinVersion=10.0
 ArchitecturesAllowed=x64compatible
 ArchitecturesInstallIn64BitMode=x64compatible
 OutputDir=..\out
-OutputBaseFilename=Bench-setup-{#AppVersion}
+OutputBaseFilename=Rarvon-setup-{#AppVersion}
 SetupIconFile=..\bench-engine\bench.ico
-UninstallDisplayIcon={app}\Bench.exe
-UninstallDisplayName=Bench (beta)
+UninstallDisplayIcon={app}\Rarvon.exe
+UninstallDisplayName=Rarvon (beta)
 LicenseFile=license.txt
 WizardStyle=modern
 Compression=lzma2/ultra64
@@ -49,12 +49,12 @@ Type: filesandordirs; Name: "{app}\web"
 Source: "..\stage\*"; DestDir: "{app}"; Flags: recursesubdirs createallsubdirs ignoreversion
 
 [Icons]
-Name: "{autoprograms}\Bench"; Filename: "{app}\Bench.exe"; Comment: "Free tools for your files, on your computer"
-Name: "{autodesktop}\Bench"; Filename: "{app}\Bench.exe"; Tasks: desktopicon
+Name: "{autoprograms}\Rarvon"; Filename: "{app}\Rarvon.exe"; Comment: "Free tools for your files, on your computer"
+Name: "{autodesktop}\Rarvon"; Filename: "{app}\Rarvon.exe"; Tasks: desktopicon
 
 [Run]
-Filename: "{app}\Bench.exe"; Description: "{cm:LaunchProgram,Bench}"; Flags: nowait postinstall skipifsilent
+Filename: "{app}\Rarvon.exe"; Description: "{cm:LaunchProgram,Rarvon}"; Flags: nowait postinstall skipifsilent
 
 [UninstallRun]
-; Close Bench (and any FFmpeg job it started) before removing its files.
-Filename: "{sys}\taskkill.exe"; Parameters: "/F /T /IM Bench.exe"; Flags: runhidden; RunOnceId: "CloseBench"
+; Close Rarvon (and any FFmpeg job it started) before removing its files.
+Filename: "{sys}\taskkill.exe"; Parameters: "/F /T /IM Rarvon.exe"; Flags: runhidden; RunOnceId: "CloseBench"

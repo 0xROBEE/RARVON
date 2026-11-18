@@ -1,4 +1,4 @@
-/* Bench service worker — generated at build time by the `bench-pwa` plugin in vite.config.ts.
+/* Rarvon service worker — generated at build time by the `bench-pwa` plugin in vite.config.ts.
  * The version, precache list and OCR cache version below are filled in at build time. */
 const VERSION = '__VERSION__';
 const PRECACHE = __PRECACHE__;

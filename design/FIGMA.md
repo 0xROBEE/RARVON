@@ -1,6 +1,6 @@
-# Bench in Figma
+# Rarvon in Figma
 
-Every Bench screen as it looks today, taken from the real site and app, with arrows showing which button
+Every Rarvon screen as it looks today, taken from the real site and app, with arrows showing which button
 leads where.
 
 ## What's in the pack
@@ -12,7 +12,7 @@ leads where.
 | `01-finding-tools-dark/` … `16-arabic-dark/` | The same screens in the dark theme. |
 
 Flows 01–12 are the website on a desktop (1440 px wide), 13 is the website once the app download link is
-set, 14 is Bench for desktop, 15 is the phone and 16 is Arabic. Every flow is there twice: light and dark.
+set, 14 is Rarvon for desktop, 15 is the phone and 16 is Arabic. Every flow is there twice: light and dark.
 
 ## Bring it into Figma
 
@@ -25,7 +25,7 @@ set, 14 is Bench for desktop, 15 is the phone and 16 is Arabic. Every flow is th
 
 ## Editable layers from the live site (later)
 
-The screenshots are pictures. To get Bench's pages as real Figma layers (text, buttons, colours), use the
+The screenshots are pictures. To get Rarvon's pages as real Figma layers (text, buttons, colours), use the
 free **html.to.design** plugin in Figma once the site is online: give it a page address (for example
 `https://<your-site>/tools/image/convert`) and it imports the page as editable layers.
 

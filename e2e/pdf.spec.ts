@@ -89,7 +89,7 @@ test.describe('PDF tools with real files', () => {
     const one = await download(page);
     expect(one.name).toBe('page-page-2.jpg');
 
-    // Formats the browser can't make itself: written by Bench's own encoders.
+    // Formats the browser can't make itself: written by Rarvon's own encoders.
     for (const [label, ext, magic] of [['GIF', 'gif', 'GIF89a'], ['BMP', 'bmp', 'BM'], ['TIFF', 'tif', 'II*']] as const) {
       await page.getByRole('radio', { name: label, exact: true }).click();
       await page.getByRole('button', { name: 'Convert to images' }).click();
@@ -127,11 +127,11 @@ test.describe('PDF tools with real files', () => {
     await openTool(page, '/tools/pdf/metadata');
     await upload(page, await makePdf({ pages: 1 }));
     await page.getByLabel('Title').fill('Quarterly report');
-    await page.getByLabel('Author').fill('Bench Tester');
+    await page.getByLabel('Author').fill('Rarvon Tester');
     await page.getByRole('button', { name: 'Save changes' }).click();
     const info = await pdfInfo((await download(page)).buffer);
     expect(info.title).toBe('Quarterly report');
-    expect(info.author).toBe('Bench Tester');
+    expect(info.author).toBe('Rarvon Tester');
   });
 
   test('page numbers are stamped on every page', async ({ page }) => {

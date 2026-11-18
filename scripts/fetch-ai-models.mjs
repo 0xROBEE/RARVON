@@ -1,5 +1,5 @@
 // Downloads the Background Remover's AI models into ./ai-models (not committed
-// to git). The build then serves them from Bench itself, split into pieces
+// to git). The build then serves them from Rarvon itself, split into pieces
 // small enough for any static host (see aiAssets() in vite.config.ts).
 //
 // Each model is pinned to an exact Hugging Face commit, recorded in

@@ -4,7 +4,7 @@ import { join, relative, resolve } from 'node:path';
 import type { Plugin } from 'vite';
 
 /**
- * Serves the Background Remover's AI engine and models from Bench itself
+ * Serves the Background Remover's AI engine and models from Rarvon itself
  * under /ai/ (no third-party downloads at run time).
  *
  * Some static hosts reject files over 25 MB, so any file larger than PART_SIZE

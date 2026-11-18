@@ -12,7 +12,7 @@ export default function CategoryPage() {
   const meta = getCategory(category ?? '');
   useScrollTint(meta?.slug);
   usePageMeta(
-    meta ? tr('{name} tools', { name: tr(meta.name) }) : 'Bench',
+    meta ? tr('{name} tools', { name: tr(meta.name) }) : 'Rarvon',
     meta ? tr(categoryDescription(meta)) : '',
   );
   if (!meta) return <Navigate to="/" replace />;

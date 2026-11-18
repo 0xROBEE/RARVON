@@ -9,7 +9,7 @@ import { categoryDescription } from '../lib/appText';
 
 export default function AllToolsPage() {
   const count = tools.filter((t) => t.status !== 'coming-soon').length;
-  usePageMeta(tr('All tools'), tr('All {n} Bench tools for PDFs, images, video, audio, text and data, grouped by category.', { n: count }));
+  usePageMeta(tr('All tools'), tr('All {n} Rarvon tools for PDFs, images, video, audio, text and data, grouped by category.', { n: count }));
   return (
     <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6">
       <nav aria-label={tr("Breadcrumb")} className="mb-4 text-xs text-ink-3">
