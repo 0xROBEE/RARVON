@@ -7,8 +7,8 @@ a white glint and a flicked amber brow.
 
 | Need | File |
 |---|---|
-| Logo with the name, on a **light** background | `png/rarvon-logo-for-light@2x.png` (1x, 2x, 4x sizes) |
-| Logo with the name, on a **dark** background | `png/rarvon-logo-for-dark@2x.png` (1x, 2x, 4x sizes) |
+| Logo with the name, on a **light** background | `svg/rarvon-logo-for-light.svg` (letters as shapes, no font needed), `png/rarvon-logo-for-light@2x.png` (1x, 2x, 4x) |
+| Logo with the name, on a **dark** background | `svg/rarvon-logo-for-dark.svg` (letters as shapes, no font needed), `png/rarvon-logo-for-dark@2x.png` (1x, 2x, 4x) |
 | The raven alone, on light | `svg/rarvon-mark-for-light.svg`, `png/rarvon-mark-for-light-*.png` |
 | The raven alone, on dark | `svg/rarvon-mark-for-dark.svg`, `png/rarvon-mark-for-dark-*.png` |
 | App icon (rounded, deep violet) | `svg/rarvon-app-icon.svg`, `png/rarvon-app-icon-*.png` (16 to 1024 px) |

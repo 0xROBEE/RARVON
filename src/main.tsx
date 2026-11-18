@@ -10,6 +10,8 @@ import '@fontsource/inter/500.css'
 import '@fontsource/inter/600.css'
 import '@fontsource/jetbrains-mono/400.css'
 import '@fontsource/jetbrains-mono/500.css'
+// The RARVON wordmark in the top bar (Syne ExtraBold, OFL-1.1).
+import '@fontsource/syne/800.css'
 // Arabic interface font (only downloaded when Arabic text is on screen).
 import '@fontsource/noto-sans-arabic/400.css'
 import '@fontsource/noto-sans-arabic/500.css'
