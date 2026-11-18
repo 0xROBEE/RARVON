@@ -2,7 +2,7 @@
   "version": "0.0.1",
   "configurations": [
     {
-      "name": "bench-dev",
+      "name": "rarvon-dev",
       "runtimeExecutable": "npm",
       "runtimeArgs": [
         "run",
@@ -15,7 +15,7 @@
       "port": 5173
     },
     {
-      "name": "bench-app-demo",
+      "name": "rarvon-app-demo",
       "runtimeExecutable": "npx",
       "runtimeArgs": [
         "vite",
