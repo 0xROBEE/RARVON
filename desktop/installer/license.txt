@@ -35,6 +35,9 @@ THIRD-PARTY SOFTWARE
   - The libraries in Rarvon's pages are listed with their licenses in
     web\licenses\third-party.txt, and inside Rarvon on the "Credits and
     licenses" page.
+  - Rarvon.exe itself is built with Rust libraries (MIT or Apache-2.0
+    licensed); their copyright notices and licenses are in
+    licenses\rust-crates.txt in the install folder.
 
 NO WARRANTY
 

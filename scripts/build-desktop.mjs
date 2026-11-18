@@ -32,6 +32,9 @@ cpSync(join(root, 'dist'), join(stage, 'web'), {
 cpSync(ffmpeg, join(stage, 'ffmpeg', 'ffmpeg.exe'));
 cpSync(join(engine, 'ffmpeg', 'LICENSE.txt'), join(stage, 'ffmpeg', 'LICENSE.txt'));
 cpSync(join(root, 'desktop', 'installer', 'license.txt'), join(stage, 'LICENSE.txt'));
+// Copyright notices of the Rust libraries compiled into Rarvon.exe.
+mkdirSync(join(stage, 'licenses'), { recursive: true });
+run('node', [join(root, 'scripts', 'rust-licenses.mjs'), join(stage, 'licenses', 'rust-crates.txt')], { shell: false });
 
 run(iscc, ['/Qp', `/DAppVersion=${version}`, join(root, 'desktop', 'installer', 'bench.iss')], { shell: false });
 const out = join(root, 'desktop', 'out', `Rarvon-setup-${version}.exe`);

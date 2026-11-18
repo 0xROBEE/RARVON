@@ -12,7 +12,13 @@ interface PkgInfo {
 
 const NOTES: Record<string, string> = {
   '@mediabunny/mp3-encoder': 'Contains the LAME MP3 encoder (GNU LGPL 2.0) compiled to WebAssembly; shipped unmodified in its own replaceable file (assets/mediabunny-mp3-encoder-*.js). LGPL text: /licenses/LAME-LGPL-2.0.txt. Source: https://lame.sourceforge.io/',
+  mediabunny: 'Used unmodified under the Mozilla Public License 2.0. Its source code is available at the repository linked here.',
+  jszip: 'Dual-licensed (MIT or GPL-3.0-or-later); Rarvon uses it under the MIT license.',
 }
+
+/** The language packages are MIT, but the recognition models inside them come from Google's Tesseract project. */
+const TESSDATA_NOTE = 'The trained language model inside comes from tesseract-ocr/tessdata_best (https://github.com/tesseract-ocr/tessdata_best), licensed under Apache-2.0.';
+const noteFor = (name: string) => NOTES[name] ?? (name.startsWith('@tesseract.js-data/') ? TESSDATA_NOTE : '');
 
 /**
  * Packages found in worker bundles. Vite builds each worker as its own bundle
@@ -122,7 +128,7 @@ export function licenseReport(extraPackages: () => string[], models: () => Model
         ...pkgs.flatMap((p) => [
           `${p.name} ${p.version}`,
           `License: ${p.license}${p.repository ? `  ·  ${p.repository}` : ''}`,
-          ...(NOTES[p.name] ? [`Note: ${NOTES[p.name]}`] : []),
+          ...(noteFor(p.name) ? [`Note: ${noteFor(p.name)}`] : []),
           '',
           p.text || '(No license file in the package; see the license field above.)',
           '',
@@ -142,7 +148,7 @@ export function licenseReport(extraPackages: () => string[], models: () => Model
 
       // The same list as data for the /credits page.
       const credits = JSON.stringify({
-        packages: pkgs.map((p) => ({ name: p.name, version: p.version, license: p.license, repository: p.repository.replace(/^git:\/\//, 'https://'), note: NOTES[p.name] ?? '', text: p.text })),
+        packages: pkgs.map((p) => ({ name: p.name, version: p.version, license: p.license, repository: p.repository.replace(/^git:\/\//, 'https://'), note: noteFor(p.name), text: p.text })),
         models: models().map((m) => ({ id: m.id, revision: m.revision.slice(0, 10), license: m.license, url: `https://huggingface.co/${m.id}` })),
       })
       this.emitFile({ type: 'asset', fileName: 'licenses/credits.json', source: credits })
