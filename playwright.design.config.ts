@@ -28,7 +28,9 @@ export default defineConfig<{ theme: 'light' | 'dark' }>({
       env: {
         VITE_APP_VERSION: '0.1.0',
         VITE_APP_WINDOWS_URL: 'https://github.com/ROBEE404/bench/releases/download/v0.1.0/Rarvon-setup-0.1.0.exe',
-        VITE_APP_LINUX_APPIMAGE_URL: 'https://github.com/ROBEE404/bench/releases/download/v0.1.0/Rarvon-0.1.0.AppImage',
+        VITE_APP_LINUX_DEB_URL: 'https://github.com/ROBEE404/RARVON/releases/download/v0.1.0/rarvon_0.1.0_amd64.deb',
+        VITE_APP_LINUX_RPM_URL: 'https://github.com/ROBEE404/RARVON/releases/download/v0.1.0/rarvon-0.1.0-1.x86_64.rpm',
+        VITE_APP_LINUX_TAR_URL: 'https://github.com/ROBEE404/RARVON/releases/download/v0.1.0/rarvon-0.1.0-linux-x86_64.tar.gz',
       },
     },
     { command: `"${engine}"`, url: 'http://127.0.0.1:47821', env: { BENCH_NO_WINDOW: '1' }, reuseExistingServer: false, timeout: 30_000 },

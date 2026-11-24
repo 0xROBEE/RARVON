@@ -74,7 +74,7 @@ npx playwright install chromium
 npx playwright test
 ```
 
-## 6. The desktop app (Windows)
+## 6. The desktop app (Windows and Linux)
 
 To **use** the app, run the installer `Rarvon-setup-0.1.0.exe` (it isn't inside this zip, because of its
 size; it's in `desktop\out\` on the computer it was built on).
@@ -90,7 +90,14 @@ Then:
 npm run build:desktop
 ```
 
-The installer appears in `desktop\out\`. The desktop app's own tests:
+The installer appears in `desktop\out\`. For the Linux versions (.deb, .rpm, .tar.gz), see
+"The Linux packages" in `desktop\README.md`, then:
+
+```bash
+npm run build:linux
+```
+
+The desktop app's own tests:
 
 ```bash
 npm run test:desktop

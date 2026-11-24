@@ -1,0 +1,3 @@
+#!/bin/sh
+# Starts Rarvon for desktop, installed in /opt/rarvon.
+exec /opt/rarvon/rarvon "$@"

@@ -51,8 +51,39 @@ inside Rarvon. The version comes from `bench-engine/Cargo.toml`. The installer:
 
 Opening Rarvon while it's already running opens another window of the same Rarvon.
 
-To show the download buttons on the website, upload the installer (for example to GitHub Releases) and
-build the site with `VITE_APP_VERSION` and `VITE_APP_WINDOWS_URL` set (see `src/lib/appRelease.ts`).
+## The Linux packages
+
+```bash
+npm run build:linux
+```
+
+This works on Windows too. It builds the engine for Linux as one static program (Rust's
+`x86_64-unknown-linux-musl` target, linked with Rust's own `rust-lld`; see `bench-engine/.cargo/config.toml`),
+so it runs on any 64-bit Linux without extra libraries, and makes three files in `desktop/out/`:
+
+| File | For |
+|---|---|
+| `rarvon_<version>_amd64.deb` | Debian, Ubuntu, Linux Mint, Pop!_OS, elementary… (`sudo apt install ./rarvon_….deb`) |
+| `rarvon-<version>-1.x86_64.rpm` | Fedora, openSUSE, RHEL, Rocky, Alma… (`sudo dnf install ./rarvon-….rpm`) |
+| `rarvon-<version>-linux-x86_64.tar.gz` | Any Linux: unpack, run `./rarvon`; `./install.sh` adds it to the menu |
+
+The .deb and .rpm install into `/opt/rarvon`, with the `rarvon` command, a menu entry and icons. The files
+for them are in `desktop/linux/`. It needs, once:
+
+- `rustup target add x86_64-unknown-linux-musl`
+- `cargo install cargo-generate-rpm` (a free build tool for the .rpm; not shipped)
+- FFmpeg for Linux: `ffmpeg-n9.0-latest-linux64-lgpl-9.0.tar.xz` from the same FFmpeg-Builds page. Only
+  `bin/ffmpeg` and `LICENSE.txt` go in `bench-engine/ffmpeg-linux/`.
+
+On Linux, Rarvon opens in an app window of Chromium, Chrome, Edge, Brave or Vivaldi, or, with none of
+those (for example only Firefox), in a tab of the default browser.
+
+## Download buttons on the website
+
+Upload the installer and packages (for example to a GitHub Release) and build the site with
+`VITE_APP_VERSION`, `VITE_APP_WINDOWS_URL`, `VITE_APP_LINUX_DEB_URL`, `VITE_APP_LINUX_RPM_URL` and
+`VITE_APP_LINUX_TAR_URL` set (see `src/lib/appRelease.ts`). Linux visitors get the .deb first, or the
+.rpm when their browser says Fedora or openSUSE.
 To preview them with pretend links, run `npx vite --mode appdemo` with a `.env.appdemo` file.
 
 ## Tests
@@ -90,5 +121,5 @@ ever opens, it gives up after 90 seconds.
 ## Still to come
 
 The website-connection question in the installer (off by default; it comes with that feature), signed
-installers and updates, Linux packages, and
+installers and updates, an AppImage and Flatpak, and
 the app-only features: whole folders, the right-click menu, "Open with Rarvon", and saving beside the original.

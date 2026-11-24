@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import { usePageMeta } from '../lib/usePageMeta';
-import { appRelease, detectSystem } from '../lib/appRelease';
+import { appRelease, detectLinuxPackage, detectSystem } from '../lib/appRelease';
 import type { AppSystem } from '../lib/appRelease';
 import FeedbackButton from '../components/FeedbackButton';
 import { tr } from '../lib/i18n';
@@ -40,13 +40,16 @@ const FAQ: [string, string][] = [
 export default function AppDownload() {
   usePageMeta(tr('Rarvon for desktop'), tr('Every Rarvon tool at full power on your own computer: any file size, almost every format, your graphics card. Free, offline, no account.'));
   const system = detectSystem();
-  const all: { system: AppSystem; label: string; detail: string; url: string }[] = [
+  const linuxFirst = detectLinuxPackage();
+  const all: { system: AppSystem; kind?: 'deb' | 'rpm' | 'tar'; label: string; detail: string; url: string }[] = [
     { system: 'windows', label: tr('Download for Windows'), detail: tr('Windows 10 and 11 · installer (.exe)'), url: appRelease.windows },
-    { system: 'linux', label: tr('Download for Linux'), detail: tr('Most distributions · .AppImage'), url: appRelease.linuxAppImage },
-    { system: 'linux', label: tr('Linux (.deb)'), detail: tr('Ubuntu, Debian and similar'), url: appRelease.linuxDeb },
+    { system: 'linux', kind: 'deb', label: tr('Linux (.deb)'), detail: tr('Ubuntu, Debian, Mint and similar · .deb'), url: appRelease.linuxDeb },
+    { system: 'linux', kind: 'rpm', label: tr('Linux (.rpm)'), detail: tr('Fedora, openSUSE and similar · .rpm'), url: appRelease.linuxRpm },
+    { system: 'linux', kind: 'tar', label: tr('Linux (.tar.gz)'), detail: tr('Any distribution · unpack and run · .tar.gz'), url: appRelease.linuxTar },
   ];
   const options = all.filter((o) => o.url);
-  const main = options.find((o) => o.system === system) ?? options[0];
+  const main =
+    (system === 'linux' && options.find((o) => o.kind === linuxFirst)) || options.find((o) => o.system === system) || options[0];
   const others = options.filter((o) => o !== main);
 
   return (
@@ -70,10 +73,10 @@ export default function AppDownload() {
             <>
               <a href={main.url} className="inline-flex min-h-12 items-center gap-2.5 rounded-xl bg-workshop px-7 text-base font-semibold text-white shadow-[0_8px_24px_-8px_var(--color-workshop)] transition-transform hover:-translate-y-0.5" data-testid="app-download">
                 <Icon d={main.system === 'windows' ? ICONS.windows : main.system === 'linux' ? ICONS.linux : ICONS.download} size={20} />
-                {main.label}
+                {main.system === 'linux' ? tr('Download for Linux') : main.label}
               </a>
               <p className="mt-3 text-xs text-ink-3">
-                {[appRelease.version && tr('Version {v}', { v: appRelease.version }), tr('about {n} MB', { n: appRelease.sizeMb }), main.detail].filter(Boolean).join(' · ')}
+                {[appRelease.version && tr('Version {v}', { v: appRelease.version }), tr('about {n} MB', { n: appRelease.sizeMb[main.kind ?? 'windows'] }), main.detail].filter(Boolean).join(' · ')}
               </p>
               {others.length > 0 && (
                 <p className="mt-3 flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-sm">

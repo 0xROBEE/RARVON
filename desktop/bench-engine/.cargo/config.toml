@@ -1,0 +1,5 @@
+# Building the Linux program on Windows: Rust's own linker and the static musl
+# C library, so the program runs on any Linux without other files.
+[target.x86_64-unknown-linux-musl]
+linker = "rust-lld"
+rustflags = ["-C", "linker-flavor=ld.lld"]

@@ -1,0 +1,13 @@
+[Desktop Entry]
+Type=Application
+Name=Rarvon
+GenericName=File tools
+GenericName[ar]=أدوات الملفات
+Comment=Free tools for PDFs, images, video, audio and text, on your own computer
+Comment[ar]=أدوات مجانية لملفات PDF والصور والفيديو والصوت والنصوص، على حاسوبك
+Exec=rarvon
+Icon=rarvon
+Terminal=false
+Categories=Utility;Office;AudioVideo;Graphics;
+Keywords=pdf;image;video;audio;convert;compress;ocr;
+StartupNotify=true

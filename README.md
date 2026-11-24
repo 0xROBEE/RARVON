@@ -72,7 +72,8 @@ The same Rarvon, on your computer, with more power:
 - **Its own window,** with no tabs or address bar. It closes itself when you close it.
 - **Light:** about 7 MB of memory for the engine.
 
-Windows 10 and 11 today (beta); Linux is planned. Downloads will be on the website once it launches.
+For Windows 10 and 11, and Linux: .deb (Debian, Ubuntu, Mint), .rpm (Fedora, openSUSE) and .tar.gz (any
+distribution). All in beta. Downloads will be on the website once it launches.
 
 ## ✦ Run it yourself
 

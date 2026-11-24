@@ -94,7 +94,7 @@ fn main() {
 
     // BENCH_NO_WINDOW=1 (for testing): serve without opening a window.
     if window_wanted && !open_app_window(&format!("{origin}/")) {
-        eprintln!("Rarvon could not open a window: Microsoft Edge or Google Chrome is needed.");
+        eprintln!("Rarvon could not open a window: a browser such as Microsoft Edge, Google Chrome or Chromium is needed.");
         std::process::exit(1);
     }
 
@@ -364,18 +364,36 @@ fn open_app_window(url: &str) -> bool {
         browsers.push(base.join("Microsoft/Edge/Application/msedge.exe"));
         browsers.push(base.join("Google/Chrome/Application/chrome.exe"));
     }
-    // Linux: whichever is installed.
-    for name in ["microsoft-edge", "google-chrome", "chromium", "chromium-browser"] {
-        browsers.push(PathBuf::from(name));
+    // Linux: the first Chromium-family browser on the PATH (these have app windows).
+    #[cfg(target_os = "linux")]
+    for name in [
+        "microsoft-edge", "microsoft-edge-stable", "google-chrome", "google-chrome-stable",
+        "chromium", "chromium-browser", "brave-browser", "brave", "vivaldi-stable", "vivaldi",
+    ] {
+        if let Some(found) = on_path(name) {
+            browsers.push(found);
+        }
     }
     for browser in browsers {
-        let is_path = browser.components().count() > 1;
-        if is_path && !browser.is_file() {
+        if !browser.is_file() {
             continue;
         }
         if Command::new(&browser).arg(format!("--app={url}")).arg("--new-window").spawn().is_ok() {
             return true;
         }
     }
+    // Linux without one of those (for example only Firefox): a normal tab in the default browser.
+    #[cfg(target_os = "linux")]
+    if Command::new("xdg-open").arg(url).spawn().is_ok() {
+        return true;
+    }
     false
+}
+
+/// The full path of a program on the PATH, if it is there.
+#[cfg(target_os = "linux")]
+fn on_path(name: &str) -> Option<PathBuf> {
+    std::env::split_paths(&std::env::var_os("PATH")?)
+        .map(|dir| dir.join(name))
+        .find(|p| p.is_file())
 }

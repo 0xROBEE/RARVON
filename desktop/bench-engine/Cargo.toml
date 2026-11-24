@@ -22,3 +22,8 @@ opt-level = 3
 lto = true
 codegen-units = 1
 strip = true
+
+# The Fedora/openSUSE package (.rpm). scripts/build-linux.mjs adds the file list.
+[package.metadata.generate-rpm]
+name = "rarvon"
+assets = []
