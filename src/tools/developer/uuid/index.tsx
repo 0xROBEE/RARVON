@@ -1,50 +1,72 @@
-import { useState } from 'react';
-import Button from '../../../components/Button';
-import { CopyButton } from '../../../components/tool';
+import { useCallback, useEffect, useState } from 'react';
+import { ChoicePills, ToggleChip } from '../../../components/tool/TextPanes';
+import { CodeView, DevWorkspace, PaneAction, StatusBar } from '../../../components/tool/CodePanes';
 import { tr } from '../../../lib/i18n';
+
+type Version = 'v4' | 'v7';
+
+/** UUID v7: the time in milliseconds first, then random bits, so new IDs sort after older ones. */
+function uuidV7(): string {
+  const b = crypto.getRandomValues(new Uint8Array(16));
+  let ms = Date.now();
+  for (let i = 5; i >= 0; i--) {
+    b[i] = ms % 256;
+    ms = Math.floor(ms / 256);
+  }
+  b[6] = (b[6] & 0x0f) | 0x70;
+  b[8] = (b[8] & 0x3f) | 0x80;
+  const h = Array.from(b, (x) => x.toString(16).padStart(2, '0')).join('');
+  return `${h.slice(0, 8)}-${h.slice(8, 12)}-${h.slice(12, 16)}-${h.slice(16, 20)}-${h.slice(20)}`;
+}
 
 export default function UuidTool() {
   const [count, setCount] = useState(5);
+  const [version, setVersion] = useState<Version>('v4');
   const [uppercase, setUppercase] = useState(false);
-  const [ids, setIds] = useState<string[]>(() => [crypto.randomUUID()]);
+  const [hyphens, setHyphens] = useState(true);
+  const [ids, setIds] = useState<string[]>([]);
 
-  function generate() {
-    const list = Array.from({ length: count }, () => crypto.randomUUID());
-    setIds(uppercase ? list.map((u) => u.toUpperCase()) : list);
-  }
+  const generate = useCallback(() => {
+    setIds(Array.from({ length: count }, () => (version === 'v7' ? uuidV7() : crypto.randomUUID())));
+  }, [count, version]);
+  useEffect(generate, [generate]);
 
-  const text = ids.join('\n');
+  const shown = ids.map((u) => {
+    const s = hyphens ? u : u.replace(/-/g, '');
+    return uppercase ? s.toUpperCase() : s;
+  });
+  const text = shown.join('\n');
 
   return (
-    <div className="space-y-4">
-      <div className="flex flex-wrap items-center gap-4">
-        <label className="flex items-center gap-2 text-xs text-ink-2">
-          {tr("Count")}
-          <input
-            type="number"
-            min={1}
-            max={100}
-            value={count}
-            onChange={(e) => setCount(Math.min(100, Math.max(1, Number(e.target.value))))}
-            className="w-16 rounded-md border border-line bg-paper px-2 py-1.5 text-xs"
-          />
-        </label>
-        <label className="flex items-center gap-2 text-xs text-ink-2">
-          <input type="checkbox" checked={uppercase} onChange={(e) => setUppercase(e.target.checked)} />
-          {tr("Uppercase")}
-        </label>
-        <Button onClick={generate}>{tr("Generate")}</Button>
+    <DevWorkspace
+      single
+      status={
+        <StatusBar
+          state="ok"
+          message={version === 'v7' ? tr('Version 7 · time-ordered') : tr('Version 4 · random')}
+          items={[tr(shown.length === 1 ? '{n} UUID' : '{n} UUIDs', { n: shown.length })]}
+          right={
+            <label className="inline-flex items-center gap-1.5 text-[11px] text-ink-3">
+              {tr('Count')}
+              <input
+                type="number"
+                min={1}
+                max={1000}
+                value={count}
+                onChange={(e) => setCount(Math.min(1000, Math.max(1, Number(e.target.value) || 1)))}
+                className="w-16 rounded border border-line bg-paper px-1.5 py-0.5 text-[11px] text-ink"
+              />
+            </label>
+          }
+        />
+      }
+    >
+      <div className="flex flex-wrap items-center gap-2">
+        <ChoicePills<Version> label={tr('UUID version')} value={version} onChange={setVersion} options={[{ value: 'v4', label: tr('v4 · random') }, { value: 'v7', label: tr('v7 · time-ordered') }]} />
+        <ToggleChip on={uppercase} onChange={setUppercase}>{tr('Uppercase')}</ToggleChip>
+        <ToggleChip on={hyphens} onChange={setHyphens}>{tr('Hyphens')}</ToggleChip>
       </div>
-
-      <div>
-        <div className="mb-1.5 flex items-center justify-between">
-          <span className="text-xs font-medium text-ink-2">{ids.length}{' '}{tr("UUID")}{ids.length !== 1 ? 's' : ''}</span>
-          <CopyButton text={text} label={tr("Copy all")} />
-        </div>
-        <pre className="max-h-72 overflow-auto rounded-md border border-line bg-paper-dim px-3 py-2 font-mono text-xs leading-relaxed">
-          {text}
-        </pre>
-      </div>
-    </div>
+      <CodeView file="uuids.txt" label={tr('UUIDs')} text={text} minRows={Math.min(count, 12)} download="uuids.txt" actions={<PaneAction onClick={generate}>{tr('Generate new')}</PaneAction>} />
+    </DevWorkspace>
   );
 }

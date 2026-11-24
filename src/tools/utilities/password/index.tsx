@@ -1,6 +1,7 @@
-import { useMemo, useState } from 'react';
-import Button from '../../../components/Button';
+import { useCallback, useEffect, useState } from 'react';
 import { CopyButton } from '../../../components/tool';
+import { ToggleChip } from '../../../components/tool/TextPanes';
+import { RefreshIcon, ResultStage, SettingRow, StageButton, StageSettings } from '../../../components/tool/Stage';
 import { tr } from '../../../lib/i18n';
 
 const SETS = {
@@ -9,6 +10,9 @@ const SETS = {
   digits: '0123456789',
   symbols: '!@#$%^&*()_+-=[]{}|;:,.<>?',
 };
+type SetName = keyof typeof SETS;
+/** Characters people confuse when reading or typing a password. */
+const LOOK_ALIKES = /[Il1O0o|]/g;
 
 /** Unbiased random integer in [0, n) from the CSPRNG (rejection sampling). */
 function randomIndex(n: number): number {
@@ -19,8 +23,12 @@ function randomIndex(n: number): number {
   return buf[0] % n;
 }
 
-function generate(length: number, sets: (keyof typeof SETS)[]): string {
-  const pool = sets.map((s) => SETS[s]).join('');
+function charset(s: SetName, plain: boolean) {
+  return plain ? SETS[s].replace(LOOK_ALIKES, '') : SETS[s];
+}
+
+function generate(length: number, sets: SetName[], plain: boolean): string {
+  const pool = sets.map((s) => charset(s, plain)).join('');
   if (!pool) return '';
   const chars = Array.from({ length }, () => pool[randomIndex(pool.length)]);
   // Guarantee at least one character from every selected set, at random positions.
@@ -29,77 +37,89 @@ function generate(length: number, sets: (keyof typeof SETS)[]): string {
     if (k >= length) return;
     const j = k + randomIndex(length - k);
     [positions[k], positions[j]] = [positions[j], positions[k]];
-    chars[positions[k]] = SETS[s][randomIndex(SETS[s].length)];
+    const set = charset(s, plain);
+    chars[positions[k]] = set[randomIndex(set.length)];
   });
   return chars.join('');
 }
 
-function estimateStrength(length: number, sets: (keyof typeof SETS)[]) {
-  const poolSize = sets.reduce((sum, s) => sum + SETS[s].length, 0);
-  const bits = poolSize > 0 ? Math.log2(poolSize) * length : 0;
-  if (bits < 40) return { label: 'Weak', color: 'bg-warn' };
-  if (bits < 70) return { label: 'Okay', color: 'bg-workshop' };
-  return { label: 'Strong', color: 'bg-signal' };
+function strength(length: number, sets: SetName[], plain: boolean) {
+  const poolSize = sets.reduce((sum, s) => sum + charset(s, plain).length, 0);
+  const bits = poolSize > 0 ? Math.round(Math.log2(poolSize) * length) : 0;
+  if (bits < 40) return { bits, label: 'Weak', level: 1, color: 'var(--color-warn)' };
+  if (bits < 70) return { bits, label: 'Okay', level: 2, color: 'var(--color-workshop)' };
+  if (bits < 100) return { bits, label: 'Strong', level: 3, color: 'var(--color-signal)' };
+  return { bits, label: 'Very strong', level: 4, color: 'var(--color-signal)' };
+}
+
+/** The password with digits and symbols in their own colours, so it's easy to read out. */
+function Colored({ value }: { value: string }) {
+  return (
+    <>
+      {Array.from(value).map((c, i) => (
+        <span key={i} className={/[0-9]/.test(c) ? 'text-[color:var(--color-cat-developer)]' : /[A-Za-z]/.test(c) ? undefined : 'text-warn'}>{c}</span>
+      ))}
+    </>
+  );
 }
 
 export default function PasswordTool() {
   const [length, setLength] = useState(20);
-  const [sets, setSets] = useState<(keyof typeof SETS)[]>(['lower', 'upper', 'digits', 'symbols']);
-  const [password, setPassword] = useState(() => generate(20, ['lower', 'upper', 'digits', 'symbols']));
+  const [sets, setSets] = useState<SetName[]>(['lower', 'upper', 'digits', 'symbols']);
+  const [plain, setPlain] = useState(false);
+  const [password, setPassword] = useState('');
+  const [round, setRound] = useState(0);
 
-  const strength = useMemo(() => estimateStrength(length, sets), [length, sets]);
+  const regenerate = useCallback(() => {
+    setPassword(generate(length, sets.length ? sets : ['lower'], plain));
+    setRound((r) => r + 1);
+  }, [length, sets, plain]);
+  // A new password whenever a setting changes.
+  useEffect(regenerate, [regenerate]);
 
-  function toggle(set: keyof typeof SETS) {
-    const next = sets.includes(set) ? sets.filter((x) => x !== set) : [...sets, set];
-    setSets(next);
-    // Keep the shown password in sync with the settings (and strength label).
-    setPassword(generate(length, next.length ? next : ['lower']));
-  }
-  function changeLength(n: number) {
-    setLength(n);
-    setPassword(generate(n, sets.length ? sets : ['lower']));
-  }
-
-  function regenerate() {
-    setPassword(generate(length, sets.length ? sets : ['lower']));
-  }
+  const s = strength(length, sets.length ? sets : ['lower'], plain);
+  const toggle = (set: SetName) => setSets((prev) => (prev.includes(set) ? prev.filter((x) => x !== set) : [...prev, set]));
 
   return (
-    <div className="space-y-5">
-      <div className="rounded-md border border-line bg-paper-dim p-4">
-        <p className="break-all font-mono text-lg">{password || '—'}</p>
-      </div>
-      <div className="flex items-center gap-2">
-        <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-paper-dim">
-          <div className={`h-full rounded-full ${strength.color}`} style={{ width: `${Math.min(100, (length / 32) * 100)}%` }} />
+    <div>
+      <ResultStage
+        label={tr('Your password')}
+        actions={
+          <>
+            <StageButton primary onClick={regenerate}><RefreshIcon />{tr('Generate new password')}</StageButton>
+            <CopyButton variant="button" text={password} label="Copy" disabled={!password} className="!rounded-full !px-5" />
+          </>
+        }
+        footer={tr('Made on your device with a secure random source. Rarvon never sees it.')}
+      >
+        <p key={round} data-testid="password" dir="ltr" className="tile-pop max-w-full break-all font-mono text-2xl font-medium tracking-wide text-ink sm:text-3xl">
+          <Colored value={password} />
+        </p>
+        <div className="grid w-full max-w-sm gap-1.5">
+          <div className="grid grid-cols-4 gap-1" aria-hidden="true">
+            {[1, 2, 3, 4].map((n) => (
+              <span key={n} className="h-1.5 rounded-full transition-colors" style={{ background: n <= s.level ? s.color : 'var(--color-line)' }} />
+            ))}
+          </div>
+          <p className="text-xs font-semibold" style={{ color: s.color }}>{tr(s.label)} · {tr('{n} bits', { n: s.bits })}</p>
         </div>
-        <span className="text-xs font-medium text-ink-2">{tr(strength.label)}</span>
-      </div>
+      </ResultStage>
 
-      <label className="flex items-center gap-3 text-xs text-ink-2">
-        {tr("Length")}
-        <input type="range" min={6} max={64} value={length} onChange={(e) => changeLength(Number(e.target.value))} className="flex-1" />
-        <span className="w-6 text-end font-mono">{length}</span>
-      </label>
-
-      <div className="grid grid-cols-2 gap-2">
-        {[
-          ['lower', 'Lowercase (a-z)'],
-          ['upper', 'Uppercase (A-Z)'],
-          ['digits', 'Digits (0-9)'],
-          ['symbols', 'Symbols (!@#…)'],
-        ].map(([key, label]) => (
-          <label key={key} className="flex items-center gap-2 text-xs text-ink-2">
-            <input type="checkbox" checked={sets.includes(key as keyof typeof SETS)} onChange={() => toggle(key as keyof typeof SETS)} />
-            {tr(label)}
-          </label>
-        ))}
-      </div>
-
-      <div className="flex gap-2">
-        <Button onClick={regenerate}>{tr("Generate new password")}</Button>
-        <CopyButton variant="button" text={password} label={tr("Copy")} disabled={!password} />
-      </div>
+      <StageSettings>
+        <SettingRow label={tr('Length')} htmlFor="pw-length">
+          <input id="pw-length" type="range" min={6} max={64} value={length} onChange={(e) => setLength(Number(e.target.value))} className="min-w-32 flex-1 accent-[var(--color-cat-utilities)]" />
+          <span className="w-10 rounded-full bg-elevated py-0.5 text-center font-mono text-sm font-semibold">{length}</span>
+        </SettingRow>
+        <SettingRow label={tr('Characters')}>
+          <ToggleChip on={sets.includes('lower')} onChange={() => toggle('lower')}>{tr('Lowercase (a-z)')}</ToggleChip>
+          <ToggleChip on={sets.includes('upper')} onChange={() => toggle('upper')}>{tr('Uppercase (A-Z)')}</ToggleChip>
+          <ToggleChip on={sets.includes('digits')} onChange={() => toggle('digits')}>{tr('Digits (0-9)')}</ToggleChip>
+          <ToggleChip on={sets.includes('symbols')} onChange={() => toggle('symbols')}>{tr('Symbols (!@#…)')}</ToggleChip>
+        </SettingRow>
+        <SettingRow label={tr('Easier to read')}>
+          <ToggleChip on={plain} onChange={setPlain}>{tr('Avoid look-alikes (I l 1 O 0)')}</ToggleChip>
+        </SettingRow>
+      </StageSettings>
     </div>
   );
 }

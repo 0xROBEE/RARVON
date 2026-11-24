@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
-import ErrorMessage from '../../../components/ErrorMessage';
+import { ToggleChip } from '../../../components/tool/TextPanes';
+import { CodeEditor, DevWorkspace, Pane, StatusBar } from '../../../components/tool/CodePanes';
 import { tr } from '../../../lib/i18n';
 
 const FLAG_OPTIONS = [
@@ -13,6 +14,7 @@ export default function RegexTester() {
   const [pattern, setPattern] = useState('\\b[\\w.-]+@[\\w.-]+\\.\\w+\\b');
   const [flags, setFlags] = useState<Set<string>>(new Set(['g']));
   const [text, setText] = useState('Contact us at hello@example.com or support@example.org for help.');
+  const flagString = ['g', 'i', 'm', 's'].filter((f) => flags.has(f)).join('');
 
   function toggleFlag(f: string) {
     setFlags((prev) => {
@@ -23,122 +25,92 @@ export default function RegexTester() {
     });
   }
 
-  const { regex, error } = useMemo(() => {
+  const { matches, error } = useMemo(() => {
+    let re: RegExp;
     try {
-      return { regex: new RegExp(pattern, Array.from(flags).join('')), error: null };
+      re = new RegExp(pattern, flagString.includes('g') ? flagString : flagString + 'g');
     } catch (e) {
-      return { regex: null, error: e instanceof Error ? e.message : 'Invalid regular expression.' };
+      return { matches: [] as RegExpExecArray[], error: e instanceof Error ? e.message : tr('Invalid regular expression.') };
     }
-  }, [pattern, flags]);
-
-  const matches = useMemo(() => {
-    if (!regex) return [];
-    const results: RegExpExecArray[] = [];
-    if (flags.has('g')) {
-      const re = new RegExp(pattern, Array.from(flags).join(''));
-      let m: RegExpExecArray | null;
-      let guard = 0;
-      while ((m = re.exec(text)) !== null && guard < 5000) {
-        results.push(m);
-        if (m[0] === '') re.lastIndex++;
-        guard++;
-      }
-    } else {
-      const m = regex.exec(text);
-      if (m) results.push(m);
+    const found: RegExpExecArray[] = [];
+    let m: RegExpExecArray | null;
+    while ((m = re.exec(text)) !== null && found.length < 5000) {
+      found.push(m);
+      if (m[0] === '') re.lastIndex++;
+      if (!flagString.includes('g')) break;
     }
-    return results;
-  }, [regex, text, pattern, flags]);
+    return { matches: found, error: null };
+  }, [pattern, flagString, text]);
 
   const highlighted = useMemo(() => {
-    if (!matches.length) return [{ text, isMatch: false }];
-    const parts: { text: string; isMatch: boolean }[] = [];
+    const parts: { text: string; match?: number }[] = [];
     let cursor = 0;
-    for (const m of matches) {
-      if (m.index > cursor) parts.push({ text: text.slice(cursor, m.index), isMatch: false });
-      parts.push({ text: m[0], isMatch: true });
+    matches.forEach((m, i) => {
+      if (m.index > cursor) parts.push({ text: text.slice(cursor, m.index) });
+      parts.push({ text: m[0], match: i });
       cursor = m.index + m[0].length;
-    }
-    if (cursor < text.length) parts.push({ text: text.slice(cursor), isMatch: false });
+    });
+    if (cursor < text.length) parts.push({ text: text.slice(cursor) });
     return parts;
   }, [matches, text]);
 
+  const withGroups = matches.some((m) => m.length > 1);
+
   return (
-    <div className="space-y-4">
-      <div>
-        <label htmlFor="regex-pattern" className="mb-1.5 block text-xs font-medium text-ink-2">{tr("Pattern")}</label>
-        <div className="flex items-center gap-1 rounded-md border border-line bg-paper px-3 py-2 font-mono text-sm focus-within:border-workshop">
-          <span className="text-ink-3">/</span>
-          <input
-            id="regex-pattern"
-            value={pattern}
-            onChange={(e) => setPattern(e.target.value)}
-            spellCheck={false}
-            className="w-full bg-transparent outline-none"
-          />
-          <span className="text-ink-3">/{Array.from(flags).join('')}</span>
-        </div>
-      </div>
-
-      <div className="flex flex-wrap gap-3">
-        {FLAG_OPTIONS.map((f) => (
-          <label key={f.flag} className="flex items-center gap-2 text-xs text-ink-2">
-            <input type="checkbox" checked={flags.has(f.flag)} onChange={() => toggleFlag(f.flag)} />
-            {tr(f.label)} ({f.flag})
+    <div className="space-y-3">
+      <Pane file="pattern" label={tr('Pattern')}>
+        <div className="grid gap-3 p-3">
+          <label className="flex items-center gap-1 rounded-lg border border-line bg-elevated px-3 py-2.5 font-mono text-base focus-within:border-[color:var(--color-cat-developer)]" dir="ltr">
+            <span className="text-ink-3">/</span>
+            <input aria-label={tr('Pattern')} value={pattern} onChange={(e) => setPattern(e.target.value)} spellCheck={false} className="code-field w-full bg-transparent text-ink outline-none" />
+            <span className="text-[color:var(--color-cat-developer)]">/{flagString}</span>
           </label>
-        ))}
-      </div>
-
-      <div>
-        <label htmlFor="regex-text" className="mb-1.5 block text-xs font-medium text-ink-2">{tr("Test text")}</label>
-        <textarea
-          id="regex-text"
-          value={text}
-          onChange={(e) => setText(e.target.value)}
-          rows={6}
-          spellCheck={false}
-          className="w-full rounded-md border border-line bg-paper px-3 py-2 font-mono text-xs leading-relaxed focus:border-workshop"
-        />
-      </div>
-
-      {error && <ErrorMessage>{error}</ErrorMessage>}
-
-      {!error && (
-        <>
-          <div>
-            <p className="mb-1.5 text-xs font-medium text-ink-2">
-              {tr(matches.length === 1 ? '{n} match' : '{n} matches', { n: matches.length })}
-            </p>
-            <pre className="whitespace-pre-wrap break-all rounded-md border border-line bg-paper-dim px-3 py-2 font-mono text-xs leading-relaxed">
-              {highlighted.map((p, i) =>
-                p.isMatch ? (
-                  <mark key={i} className="rounded bg-workshop/30 px-0.5 text-ink">{p.text}</mark>
-                ) : (
-                  <span key={i}>{p.text}</span>
-                ),
-              )}
-            </pre>
+          <div className="flex flex-wrap gap-2">
+            {FLAG_OPTIONS.map((f) => (
+              <ToggleChip key={f.flag} on={flags.has(f.flag)} onChange={() => toggleFlag(f.flag)}>
+                {tr(f.label)} <span className="font-mono opacity-70">{f.flag}</span>
+              </ToggleChip>
+            ))}
           </div>
+        </div>
+      </Pane>
 
-          {matches.length > 0 && matches.some((m) => m.length > 1) && (
-            <div>
-              <p className="mb-1.5 text-xs font-medium text-ink-2">{tr("Capture groups")}</p>
-              <div className="space-y-2">
-                {matches.map((m, i) => (
-                  <div key={i} className="rounded-md border border-line bg-paper-dim p-2.5 text-xs">
-                    <span className="text-ink-3">{tr("Match")}{' '}{i + 1}:</span>{' '}
-                    {Array.from(m).slice(1).map((g, gi) => (
-                      <span key={gi} className="me-3 font-mono">
-                        ${gi + 1}: {g ?? <span className="text-ink-3">{tr("undefined")}</span>}
-                      </span>
-                    ))}
-                  </div>
-                ))}
-              </div>
+      <DevWorkspace
+        status={
+          <StatusBar
+            state={error ? 'error' : matches.length ? 'ok' : 'idle'}
+            message={error ?? tr(matches.length === 1 ? '{n} match' : '{n} matches', { n: matches.length })}
+            items={withGroups && !error ? [tr('Capture groups')] : []}
+          />
+        }
+      >
+        <CodeEditor file="test.txt" label={tr('Test text')} value={text} onChange={setText} wrap minRows={10} />
+        <Pane file="matches" label={tr('Matches')}>
+          {error ? (
+            <p role="alert" className="px-3 py-4 font-mono text-xs text-warn">{error}</p>
+          ) : (
+            <div className="fade-in">
+              <pre dir="ltr" className="whitespace-pre-wrap break-all px-3 py-2.5 font-mono text-xs leading-relaxed">
+                {highlighted.map((p, i) =>
+                  p.match !== undefined ? <mark key={i} className="rounded bg-[color:color-mix(in_srgb,var(--color-cat-developer)_25%,transparent)] px-0.5 text-ink">{p.text}</mark> : <span key={i}>{p.text}</span>,
+                )}
+              </pre>
+              {withGroups && (
+                <div className="border-t border-line">
+                  {matches.slice(0, 200).map((m, i) => (
+                    <div key={i} className="flex flex-wrap gap-x-3 gap-y-1 border-b border-line px-3 py-1.5 font-mono text-[11px] last:border-b-0" dir="ltr">
+                      <span className="text-ink-3">#{i + 1}</span>
+                      {Array.from(m).slice(1).map((g, gi) => (
+                        <span key={gi}><span className="text-[color:var(--color-cat-developer)]">${gi + 1}</span> {g ?? <span className="text-ink-3">{tr('undefined')}</span>}</span>
+                      ))}
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           )}
-        </>
-      )}
+        </Pane>
+      </DevWorkspace>
     </div>
   );
 }

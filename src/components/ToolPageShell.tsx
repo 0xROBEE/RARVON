@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import type { ToolMeta } from '../lib/toolRegistry';
 import { getCategory, relatedTools } from '../lib/toolRegistry';
 import { CategoryIcon } from '../lib/categoryIcons';
@@ -65,6 +65,37 @@ function NextSteps({ tool, wide }: { tool: ToolMeta; wide: boolean }) {
   );
 }
 
+/**
+ * Back to wherever the person came from inside Rarvon (search, home, another
+ * tool…), or to the tool's category when the page was opened directly.
+ * A real link, so middle-click and "open in new tab" still work.
+ */
+function BackButton({ category }: { category: string }) {
+  const navigate = useNavigate();
+  const { key } = useLocation();
+  const cameFromRarvon = key !== 'default';
+  return (
+    <Link
+      to={`/tools/${category}`}
+      onClick={(e) => {
+        if (!cameFromRarvon || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+        e.preventDefault();
+        navigate(-1);
+      }}
+      className="inline-flex h-7 items-center gap-1 rounded-full border border-line pe-2.5 ps-1.5 font-medium text-ink-2 transition-colors hover:border-ink hover:text-ink"
+      data-testid="tool-back"
+    >
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" className="rtl:-scale-x-100">
+        <path d="M15 18l-6-6 6-6" />
+      </svg>
+      {tr('Back')}
+    </Link>
+  );
+}
+
+/** Tools that open their own full-screen workspace get no back button. */
+const NO_BACK_BUTTON = new Set(['video/editor']);
+
 export default function ToolPageShell({ tool, children }: { tool: ToolMeta; children: ReactNode }) {
   const category = getCategory(tool.category);
   const wide = tool.layout === 'wide';
@@ -77,6 +108,9 @@ export default function ToolPageShell({ tool, children }: { tool: ToolMeta; chil
           collapses to a compact full-width bar above it. */}
       <div className={wide ? 'mx-auto max-w-3xl pt-6 group-has-[[data-workspace]]/shell:max-w-none group-has-[[data-workspace]]/shell:pt-0' : undefined}>
         <nav aria-label={tr("Breadcrumb")} className="mb-2 flex flex-wrap items-center gap-1 text-xs text-ink-3">
+          {!NO_BACK_BUTTON.has(`${tool.category}/${tool.slug}`) && (
+            <span className="me-2"><BackButton category={tool.category} /></span>
+          )}
           <Link to="/tools" className="hover:text-ink">{tr('All tools')}</Link>
           <span aria-hidden="true">/</span>
           <Link to={`/tools/${tool.category}`} className="hover:text-ink">{tr(category?.name ?? '')}</Link>

@@ -26,5 +26,7 @@ export default defineConfig({
     url: `http://localhost:${PORT}`,
     reuseExistingServer: !process.env.CI,
     timeout: 180_000,
+    // The tests check the site as it is before the app is published, whatever your own .env says.
+    env: { VITE_APP_VERSION: '', VITE_APP_WINDOWS_URL: '', VITE_APP_LINUX_DEB_URL: '', VITE_APP_LINUX_RPM_URL: '', VITE_APP_LINUX_TAR_URL: '' },
   },
 });

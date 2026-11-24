@@ -1,120 +1,129 @@
-import { useState } from 'react';
-import Button from '../../../components/Button';
-import ErrorMessage from '../../../components/ErrorMessage';
+import { useEffect, useMemo, useState } from 'react';
 import FileDropzone from '../../../components/FileDropzone';
 import DownloadButton from '../../../components/DownloadButton';
 import { CopyButton } from '../../../components/tool';
+import { CodeEditor, CodeView, DevWorkspace, ModeTabs, Pane, StatusBar } from '../../../components/tool/CodePanes';
+import { formatBytes } from '../../../lib/imageUtils';
 import { tr } from '../../../lib/i18n';
 
+type Mode = 'encode' | 'decode' | 'file';
+
+type Decoded = { text: string } | { binary: Uint8Array } | { error: string };
+
+function encodeText(s: string): string {
+  const bytes = new TextEncoder().encode(s);
+  let bin = '';
+  for (let i = 0; i < bytes.length; i += 0x8000) bin += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
+  return btoa(bin);
+}
+
+function decodeText(s: string): Decoded {
+  let bytes: Uint8Array;
+  try {
+    // Accept URL-safe Base64 (-, _) and missing padding as well.
+    const clean = s.replace(/\s+/g, '').replace(/-/g, '+').replace(/_/g, '/');
+    const padded = clean + '='.repeat((4 - (clean.length % 4)) % 4);
+    bytes = Uint8Array.from(atob(padded), (c) => c.charCodeAt(0));
+  } catch {
+    return { error: tr("That doesn't look like valid Base64.") };
+  }
+  try {
+    return { text: new TextDecoder('utf-8', { fatal: true }).decode(bytes) };
+  } catch {
+    // Valid Base64, but the data isn't text (an image, a PDF…): offer it as a file.
+    return { binary: bytes };
+  }
+}
+
 export default function Base64Tool() {
-  const [mode, setMode] = useState<'text' | 'file'>('text');
+  const [mode, setMode] = useState<Mode>('encode');
   const [input, setInput] = useState('');
-  const [output, setOutput] = useState('');
-  const [error, setError] = useState<string | null>(null);
-  const [fileResult, setFileResult] = useState<{ url: string; name: string } | null>(null);
-  const [binary, setBinary] = useState<{ url: string; size: number } | null>(null);
+  const [file, setFile] = useState<{ name: string; size: number; base64: string } | null>(null);
+  const [fileError, setFileError] = useState<string | null>(null);
 
-  function encode() {
-    try {
-      setOutput(btoa(unescape(encodeURIComponent(input))));
-      setError(null);
-    } catch {
-      setError(tr("Could not encode this text."));
-    }
-  }
+  const decoded = useMemo<Decoded | null>(() => (mode === 'decode' && input.trim() ? decodeText(input) : null), [mode, input]);
+  const encoded = mode === 'encode' && input ? encodeText(input) : '';
 
-  function decode() {
-    setBinary(null);
-    let bytes: Uint8Array;
-    try {
-      // Accept URL-safe Base64 (-, _) and missing padding as well.
-      const clean = input.replace(/\s+/g, '').replace(/-/g, '+').replace(/_/g, '/');
-      const padded = clean + '='.repeat((4 - (clean.length % 4)) % 4);
-      bytes = Uint8Array.from(atob(padded), (c) => c.charCodeAt(0));
-    } catch {
-      setOutput('');
-      setError(tr("That doesn't look like valid Base64."));
-      return;
-    }
-    try {
-      setOutput(new TextDecoder('utf-8', { fatal: true }).decode(bytes));
-      setError(null);
-    } catch {
-      // Valid Base64, but the data isn't text (an image, a PDF…): offer it as a file.
-      setOutput('');
-      setError(null);
-      setBinary({ url: URL.createObjectURL(new Blob([bytes as BlobPart])), size: bytes.length });
-    }
-  }
+  const binaryUrl = useMemo(() => (decoded && 'binary' in decoded ? URL.createObjectURL(new Blob([decoded.binary as BlobPart])) : null), [decoded]);
+  useEffect(() => () => { if (binaryUrl) URL.revokeObjectURL(binaryUrl); }, [binaryUrl]);
+  const fileUrl = useMemo(() => (file ? URL.createObjectURL(new Blob([file.base64], { type: 'text/plain' })) : null), [file]);
+  useEffect(() => () => { if (fileUrl) URL.revokeObjectURL(fileUrl); }, [fileUrl]);
 
-  function handleFile(files: File[]) {
-    const file = files[0];
+  function readFile(files: File[]) {
+    const f = files[0];
     const reader = new FileReader();
     reader.onload = () => {
-      const result = reader.result as string; // data:...;base64,XXXX
-      const base64 = result.split(',')[1] ?? '';
-      const blob = new Blob([base64], { type: 'text/plain' });
-      setFileResult({ url: URL.createObjectURL(blob), name: `${file.name}.base64.txt` });
-      setError(null);
+      setFile({ name: f.name, size: f.size, base64: (reader.result as string).split(',')[1] ?? '' });
+      setFileError(null);
     };
-    reader.onerror = () => setError(tr("Could not read that file."));
-    reader.readAsDataURL(file);
+    reader.onerror = () => setFileError(tr('Could not read that file.'));
+    reader.readAsDataURL(f);
   }
 
-  return (
-    <div className="space-y-4">
-      <div className="flex gap-1 rounded-md border border-line bg-paper-dim p-1 text-xs font-medium">
-        {(['text', 'file'] as const).map((m) => (
-          <button
-            key={m}
-            onClick={() => setMode(m)}
-            className={`flex-1 rounded px-3 py-1.5 capitalize transition-colors ${mode === m ? 'bg-ink text-paper' : 'text-ink-2 hover:text-ink'}`}
-          >
-            {tr(m)}
-          </button>
-        ))}
-      </div>
+  const tabs = (
+    <ModeTabs<Mode>
+      label={tr('What to do')}
+      value={mode}
+      onChange={setMode}
+      options={[{ value: 'encode', label: tr('Encode') }, { value: 'decode', label: tr('Decode') }, { value: 'file', label: tr('File') }]}
+    />
+  );
 
-      {mode === 'text' ? (
-        <>
-          <textarea
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            rows={6}
-            spellCheck={false}
-            placeholder={tr("Text or Base64 to convert")}
-            className="w-full rounded-md border border-line bg-paper px-3 py-2 font-mono text-xs leading-relaxed focus:border-workshop"
-          />
-          <div className="flex gap-2">
-            <Button onClick={encode} disabled={!input}>{tr("Encode")}</Button>
-            <Button variant="secondary" onClick={decode} disabled={!input}>{tr("Decode")}</Button>
-          </div>
-          {error && <ErrorMessage>{error}</ErrorMessage>}
-          {binary && (
-            <div className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-line bg-paper-dim p-3 text-sm">
-              <span>{tr("Decoded")}{' '}{binary.size.toLocaleString()}{' '}{tr("bytes of binary data (not text).")}</span>
-              <DownloadButton url={binary.url} filename="decoded.bin" label={tr("Download decoded file")} />
-            </div>
-          )}
-          {output && (
-            <div>
-              <div className="mb-1.5 flex items-center justify-between">
-                <span className="text-xs font-medium text-ink-2">{tr("Result")}</span>
-                <CopyButton text={output} label={tr("Copy")} />
+  if (mode === 'file') {
+    return (
+      <DevWorkspace
+        status={<StatusBar state={fileError ? 'error' : file ? 'ok' : 'idle'} message={fileError ?? (file ? tr('Encoded {name}', { name: file.name }) : tr('Choose a file to encode'))} items={file ? [tr('{a} → {b}', { a: formatBytes(file.size), b: formatBytes(file.base64.length) })] : []} />}
+      >
+        <Pane tabs={tabs} label={tr('File to encode')}>
+          <div className="p-3"><FileDropzone onFiles={readFile} hint={tr('Any file type')} /></div>
+        </Pane>
+        <Pane file={file ? `${file.name}.base64.txt` : 'result.base64.txt'} label={tr('Result')}>
+          {file && fileUrl ? (
+            <div className="grid min-h-[14rem] place-items-center gap-3 p-6 text-center">
+              <p className="break-all font-mono text-[11px] leading-relaxed text-ink-3" dir="ltr">{file.base64.slice(0, 240)}{file.base64.length > 240 ? '…' : ''}</p>
+              <div className="flex flex-wrap justify-center gap-2">
+                <CopyButton text={file.base64} label="Copy" variant="button" />
+                <DownloadButton url={fileUrl} filename={`${file.name}.base64.txt`} label={tr('Download .base64.txt')} />
               </div>
-              <pre className="max-h-64 overflow-auto whitespace-pre-wrap break-all rounded-md border border-line bg-paper-dim px-3 py-2 font-mono text-xs leading-relaxed">
-                {output}
-              </pre>
             </div>
+          ) : (
+            <p className="grid min-h-[14rem] place-items-center px-6 text-center text-xs text-ink-3">{tr('The Base64 text appears here.')}</p>
           )}
-        </>
+        </Pane>
+      </DevWorkspace>
+    );
+  }
+
+  const error = decoded && 'error' in decoded ? decoded.error : null;
+  const outText = mode === 'encode' ? encoded : decoded && 'text' in decoded ? decoded.text : '';
+  return (
+    <DevWorkspace
+      status={
+        <StatusBar
+          state={!input.trim() ? 'idle' : error ? 'error' : 'ok'}
+          message={!input.trim() ? (mode === 'encode' ? tr('Type or paste text to encode') : tr('Paste Base64 to decode')) : error ?? (mode === 'encode' ? tr('Encoded') : decoded && 'binary' in decoded ? tr('Decoded: a file, not text') : tr('Decoded'))}
+          items={outText ? [tr('{n} characters', { n: outText.length.toLocaleString() })] : []}
+        />
+      }
+    >
+      <CodeEditor
+        tabs={tabs}
+        label={mode === 'encode' ? tr('Text to encode') : tr('Base64 to decode')}
+        value={input}
+        onChange={setInput}
+        wrap
+        placeholder={mode === 'encode' ? tr('Hello, Rarvon') : 'SGVsbG8sIFJhcnZvbg=='}
+      />
+      {decoded && 'binary' in decoded && binaryUrl ? (
+        <Pane file="decoded.bin" label={tr('Result')}>
+          <div className="grid min-h-[14rem] place-items-center gap-3 p-6 text-center">
+            <p className="text-sm text-ink-2">{tr('{n} bytes of binary data (not text).', { n: decoded.binary.length.toLocaleString() })}</p>
+            <DownloadButton url={binaryUrl} filename="decoded.bin" label={tr('Download decoded file')} />
+          </div>
+        </Pane>
       ) : (
-        <>
-          <FileDropzone onFiles={handleFile} hint={tr("Any file type")} />
-          {error && <ErrorMessage>{error}</ErrorMessage>}
-          {fileResult && <DownloadButton url={fileResult.url} filename={fileResult.name} label={tr("Download .base64.txt")} />}
-        </>
+        <CodeView file={mode === 'encode' ? 'encoded.txt' : 'decoded.txt'} label={tr('Result')} text={outText} wrap />
       )}
-    </div>
+    </DevWorkspace>
   );
 }

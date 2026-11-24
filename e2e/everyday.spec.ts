@@ -9,54 +9,51 @@ const main = (page: Page) => page.locator('main');
 const result = (page: Page) => page.locator('main pre').first();
 
 test.describe('developer tools', () => {
-  test('JSON formatter: indent options and parse errors', async ({ page }) => {
+  const box = (page: Page, name: string) => page.getByRole('textbox', { name, exact: true });
+  const status = (page: Page) => page.locator('main [role=status]').first();
+
+  test('JSON formatter: live, indent options and parse errors', async ({ page }) => {
     await page.goto('/tools/developer/json-formatter');
-    await page.getByLabel('Paste JSON').fill('{"a":1,"b":[true,null,"ü"]}');
-    await page.getByRole('button', { name: 'Format' }).click();
+    await box(page, 'Paste JSON').fill('{"a":1,"b":[true,null,"ü"]}');
     await expect(result(page)).toHaveText('{\n  "a": 1,\n  "b": [\n    true,\n    null,\n    "ü"\n  ]\n}');
+    await expect(status(page)).toContainText('Valid JSON');
     await page.getByLabel('Indent').selectOption({ label: 'Tab' });
-    await page.getByRole('button', { name: 'Format' }).click();
     await expect(result(page)).toHaveText('{\n\t"a": 1,\n\t"b": [\n\t\ttrue,\n\t\tnull,\n\t\t"ü"\n\t]\n}');
-    await page.getByLabel('Paste JSON').fill('{"a": 1,\n "b": }');
-    await page.getByRole('button', { name: 'Format' }).click();
-    await expect(page.getByRole('alert')).toContainText("Couldn't parse JSON");
+    await box(page, 'Paste JSON').fill('{"a": 1,\n "b": }');
+    await expect(status(page)).toContainText('Invalid JSON: line 2');
   });
 
   test('JSON minifier', async ({ page }) => {
     await page.goto('/tools/developer/json-minifier');
-    await page.getByLabel('Paste JSON').fill('{\n  "a": 1,\n  "b": [ 2, 3 ]\n}');
-    await page.getByRole('button', { name: 'Minify' }).click();
+    await box(page, 'Paste JSON').fill('{\n  "a": 1,\n  "b": [ 2, 3 ]\n}');
     await expect(result(page)).toHaveText('{"a":1,"b":[2,3]}');
+    await expect(status(page)).toContainText('smaller');
   });
 
   test('Base64: UTF-8 text round-trip, URL-safe input, binary output', async ({ page }) => {
     await page.goto('/tools/developer/base64');
-    const box = page.getByPlaceholder('Text or Base64 to convert');
-    await box.fill('مرحبا Rarvon ✓');
-    await page.getByRole('button', { name: 'Encode' }).click();
+    const input = page.locator('main textarea');
+    await input.fill('مرحبا Rarvon ✓');
     const encoded = Buffer.from('مرحبا Rarvon ✓').toString('base64');
     await expect(result(page)).toHaveText(encoded);
-    await box.fill(encoded);
-    await page.getByRole('button', { name: 'Decode' }).click();
+    await page.getByRole('tab', { name: 'Decode' }).click();
+    await input.fill(encoded);
     await expect(result(page)).toHaveText('مرحبا Rarvon ✓');
     // URL-safe alphabet, no padding
-    await box.fill(Buffer.from('subjects?_d=1&x=~').toString('base64url'));
-    await page.getByRole('button', { name: 'Decode' }).click();
+    await input.fill(Buffer.from('subjects?_d=1&x=~').toString('base64url'));
     await expect(result(page)).toHaveText('subjects?_d=1&x=~');
     // Binary data (PNG header) is offered as a file instead of an error
     const png = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0xff, 0x00]);
-    await box.fill(png.toString('base64'));
-    await page.getByRole('button', { name: 'Decode', exact: true }).click();
+    await input.fill(png.toString('base64'));
     const out = await download(page, 'Download decoded file');
     expect(out.buffer.equals(png)).toBe(true);
-    await box.fill('not base64 at all!!');
-    await page.getByRole('button', { name: 'Decode', exact: true }).click();
-    await expect(page.getByRole('alert')).toContainText('valid Base64');
+    await input.fill('not base64 at all!!');
+    await expect(status(page)).toContainText('valid Base64');
   });
 
   test('Base64: encode a file', async ({ page }) => {
     await page.goto('/tools/developer/base64');
-    await page.getByRole('button', { name: 'file' }).click();
+    await page.getByRole('tab', { name: 'File' }).click();
     const data = Buffer.from('hello file');
     await upload(page, { name: 'a.txt', mimeType: 'text/plain', buffer: data });
     const out = await download(page, 'Download .base64.txt');
@@ -65,35 +62,42 @@ test.describe('developer tools', () => {
 
   test('URL encoder/decoder', async ({ page }) => {
     await page.goto('/tools/developer/url-encode');
-    const box = page.locator('main textarea');
-    await box.fill('a b&c=د');
-    await page.getByRole('button', { name: 'Encode' }).click();
+    const input = page.locator('main textarea');
+    await input.fill('a b&c=د');
     await expect(result(page)).toHaveText(encodeURIComponent('a b&c=د'));
-    await box.fill('%E0%A4%A');
-    await page.getByRole('button', { name: 'Decode' }).click();
-    await expect(page.getByRole('alert')).toBeVisible();
+    await page.getByRole('switch', { name: /Whole URL/ }).click();
+    await input.fill('https://x.com/a b?q=د');
+    await expect(result(page)).toHaveText(encodeURI('https://x.com/a b?q=د'));
+    await page.getByRole('tab', { name: 'Decode' }).click();
+    await input.fill('%E0%A4%A');
+    await expect(status(page)).toContainText('percent-encoded');
   });
 
-  test('UUID generator', async ({ page }) => {
+  test('UUID generator: v4 and v7', async ({ page }) => {
     await page.goto('/tools/developer/uuid');
     await page.locator('main input[type=number]').fill('10');
-    await page.getByRole('button', { name: 'Generate' }).click();
+    await expect.poll(async () => (await result(page).innerText()).split('\n').length).toBe(10);
     const ids = (await result(page).innerText()).split('\n');
-    expect(ids).toHaveLength(10);
     expect(new Set(ids).size).toBe(10);
     for (const id of ids) expect(id).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/);
+    await page.getByRole('radio', { name: /v7/ }).click();
+    await expect(result(page)).toContainText(/-7[0-9a-f]{3}-/);
+    const v7 = (await result(page).innerText()).split('\n');
+    for (const id of v7) expect(id).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/);
+    // The first 12 hex digits are the time, so v7 IDs start with the current millisecond time.
+    expect(Math.abs(parseInt(v7[0].replace(/-/g, '').slice(0, 12), 16) - Date.now())).toBeLessThan(60_000);
   });
 
-  test('hash generator matches Node for text and files', async ({ page }) => {
+  test('hash generator matches Node for text and files, and compares', async ({ page }) => {
     await page.goto('/tools/developer/hash');
     const text = 'Rarvon ✓ مرحبا';
     await page.locator('main textarea').fill(text);
-    await page.getByRole('button', { name: 'Generate hashes' }).click();
-    for (const [algo, node] of [['SHA-1', 'sha1'], ['SHA-256', 'sha256'], ['SHA-512', 'sha512']] as const) {
+    for (const node of ['sha1', 'sha256', 'sha512']) {
       await expect(main(page)).toContainText(createHash(node).update(text).digest('hex'), { useInnerText: true });
-      void algo;
     }
-    await page.getByRole('button', { name: 'file' }).click();
+    await page.getByPlaceholder('Paste a hash to compare').fill(createHash('sha256').update(text).digest('hex').toUpperCase());
+    await expect(status(page)).toContainText('Matches the SHA-256 hash');
+    await page.getByRole('tab', { name: 'File' }).click();
     const pdf = await makePdf({ pages: 1 });
     await upload(page, pdf);
     await expect(main(page)).toContainText(createHash('sha256').update(pdf.buffer).digest('hex'));
@@ -101,11 +105,13 @@ test.describe('developer tools', () => {
 
   test('timestamp converter', async ({ page }) => {
     await page.goto('/tools/developer/timestamp');
-    await page.locator('main input').first().fill('1700000000');
+    await box(page, 'Unix timestamp').fill('1700000000');
     await expect(main(page)).toContainText('2023-11-14T22:13:20.000Z');
-    await page.locator('main select').selectOption('milliseconds');
-    await page.locator('main input').first().fill('1700000000123');
+    await page.getByRole('radio', { name: 'Milliseconds' }).click();
+    await box(page, 'Unix timestamp').fill('1700000000123');
     await expect(main(page)).toContainText('2023-11-14T22:13:20.123Z');
+    await box(page, 'Unix timestamp').fill('abc');
+    await expect(status(page)).toContainText('Not a valid number');
   });
 
   test('color converter', async ({ page }) => {
@@ -121,20 +127,23 @@ test.describe('developer tools', () => {
     await page.goto('/tools/developer/jwt-decoder');
     const b64 = (o: object) => Buffer.from(JSON.stringify(o)).toString('base64url');
     const token = `${b64({ alg: 'HS256', typ: 'JWT' })}.${b64({ sub: '42', name: 'مستخدم', exp: 1700000000 })}.sig`;
-    await page.getByLabel('Paste a JWT').fill(token);
+    await box(page, 'Paste a JWT').fill(token);
     await expect(main(page)).toContainText('"alg": "HS256"');
     await expect(main(page)).toContainText('"name": "مستخدم"');
     await expect(main(page)).toContainText('Tue, 14 Nov 2023 22:13:20 GMT');
-    await page.getByLabel('Paste a JWT').fill('garbage');
-    await expect(page.getByRole('alert')).toBeVisible();
+    await expect(status(page)).toContainText('expired');
+    await box(page, 'Paste a JWT').fill('garbage');
+    await expect(status(page)).toContainText('three dot-separated parts');
   });
 
   test('regex tester', async ({ page }) => {
     await page.goto('/tools/developer/regex-tester');
     await expect(main(page)).toContainText('2 matches');
-    await page.getByLabel('Pattern').fill('(\\w+)@(\\w+)');
+    await box(page, 'Pattern').fill('(\\w+)@(\\w+)');
     await expect(main(page)).toContainText('Capture groups');
-    await page.getByLabel('Pattern').fill('([a-');
+    await page.getByRole('switch', { name: /Global/ }).click();
+    await expect(main(page)).toContainText('1 match');
+    await box(page, 'Pattern').fill('([a-');
     await expect(page.getByRole('alert')).toBeVisible();
   });
 });
@@ -209,9 +218,9 @@ test.describe('utilities', () => {
 
   test('password generator follows the settings', async ({ page }) => {
     await page.goto('/tools/utilities/password');
-    const pw = page.locator('main p.font-mono');
-    await page.locator('main input[type=range]').fill('12');
-    await page.getByLabel('Symbols (!@#…)').uncheck();
+    const pw = page.getByTestId('password');
+    await page.locator('#pw-length').fill('12');
+    await page.getByRole('switch', { name: /Symbols/ }).click();
     for (let i = 0; i < 20; i++) {
       await page.getByRole('button', { name: 'Generate new password' }).click();
       const value = (await pw.innerText()).trim();
@@ -221,6 +230,11 @@ test.describe('utilities', () => {
       expect(value).toMatch(/[0-9]/);
       expect(value).not.toMatch(/[^A-Za-z0-9]/);
     }
+    await page.getByRole('switch', { name: /look-alikes/ }).click();
+    for (let i = 0; i < 10; i++) {
+      await page.getByRole('button', { name: 'Generate new password' }).click();
+      expect((await pw.innerText()).trim()).not.toMatch(/[Il1O0o]/);
+    }
   });
 
   test('random numbers: range, uniqueness, errors', async ({ page }) => {
@@ -229,14 +243,17 @@ test.describe('utilities', () => {
     await min.fill('1');
     await max.fill('20');
     await count.fill('20');
-    await page.getByLabel('Allow duplicate values').uncheck();
-    await page.getByRole('button', { name: 'Generate' }).click();
-    const nums = (await main(page).locator('span.font-mono, div > span').allInnerTexts()).map(Number).filter((n) => !Number.isNaN(n));
-    const generated = nums.slice(-20);
+    await page.getByRole('switch', { name: 'Allow duplicate values' }).click();
+    await page.getByRole('button', { name: 'Generate', exact: true }).click();
+    const generated = (await page.getByTestId('numbers').locator('span').allInnerTexts()).map(Number);
+    expect(generated).toHaveLength(20);
     expect(new Set(generated).size).toBe(20);
     for (const n of generated) expect(n >= 1 && n <= 20).toBe(true);
+    await page.getByRole('switch', { name: /Sort/ }).click();
+    const sorted = (await page.getByTestId('numbers').locator('span').allInnerTexts()).map(Number);
+    expect(sorted).toEqual([...generated].sort((a, b) => a - b));
     await count.fill('21');
-    await page.getByRole('button', { name: 'Generate' }).click();
+    await page.getByRole('button', { name: 'Generate', exact: true }).click();
     await expect(page.getByRole('alert')).toContainText('too small');
   });
 

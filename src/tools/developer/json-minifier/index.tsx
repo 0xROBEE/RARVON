@@ -1,53 +1,39 @@
-import { useState } from 'react';
-import Button from '../../../components/Button';
-import ErrorMessage from '../../../components/ErrorMessage';
-import { CopyButton } from '../../../components/tool';
+import { useMemo, useState } from 'react';
+import { CodeEditor, CodeView, DevWorkspace, StatusBar } from '../../../components/tool/CodePanes';
+import { jsonError } from '../../../lib/jsonError';
 import { tr } from '../../../lib/i18n';
 
 export default function JsonMinifier() {
   const [input, setInput] = useState('');
-  const [output, setOutput] = useState('');
-  const [error, setError] = useState<string | null>(null);
 
-  function minify() {
+  const result = useMemo(() => {
+    if (!input.trim()) return null;
     try {
-      const parsed = JSON.parse(input);
-      setOutput(JSON.stringify(parsed));
-      setError(null);
+      return { output: JSON.stringify(JSON.parse(input)) };
     } catch (e) {
-      setOutput('');
-      setError(e instanceof Error ? `Couldn't parse JSON: ${e.message}` : 'Invalid JSON.');
+      return { error: jsonError(e, input) };
     }
-  }
+  }, [input]);
+
+  const output = result?.output ?? '';
+  const bytes = (s: string) => new TextEncoder().encode(s).length;
+  const saved = output ? Math.max(0, Math.round((1 - bytes(output) / bytes(input)) * 100)) : 0;
 
   return (
-    <div className="space-y-4">
-      <div>
-        <label htmlFor="json-min-input" className="mb-1.5 block text-xs font-medium text-ink-2">{tr("Paste JSON")}</label>
-        <textarea
-          id="json-min-input"
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          rows={10}
-          spellCheck={false}
-          className="w-full rounded-md border border-line bg-paper px-3 py-2 font-mono text-xs leading-relaxed focus:border-workshop"
+    <DevWorkspace
+      status={
+        <StatusBar
+          state={!result ? 'idle' : 'error' in result ? 'error' : 'ok'}
+          message={!result ? tr('Waiting for JSON') : 'error' in result ? result.error : tr('Valid JSON')}
+          items={output ? [
+            tr('{a} → {b} bytes', { a: bytes(input).toLocaleString(), b: bytes(output).toLocaleString() }),
+            tr('{n}% smaller', { n: saved }),
+          ] : []}
         />
-      </div>
-      <Button onClick={minify} disabled={!input.trim()}>{tr("Minify")}</Button>
-      {error && <ErrorMessage>{error}</ErrorMessage>}
-      {output && (
-        <div>
-          <div className="mb-1.5 flex items-center justify-between">
-            <span className="text-xs font-medium text-ink-2">
-              {tr('Result — {n} characters', { n: output.length.toLocaleString() })}
-            </span>
-            <CopyButton text={output} label={tr("Copy")} />
-          </div>
-          <pre className="max-h-64 overflow-auto whitespace-pre-wrap break-all rounded-md border border-line bg-paper-dim px-3 py-2 font-mono text-xs leading-relaxed">
-            {output}
-          </pre>
-        </div>
-      )}
-    </div>
+      }
+    >
+      <CodeEditor file="input.json" label={tr('Paste JSON')} value={input} onChange={setInput} placeholder={tr('{"example": true, "values": [1, 2, 3]}')} open=".json,.txt,application/json" />
+      <CodeView file="minified.json" label={tr('Minified JSON')} text={output} highlight="json" wrap download="minified.json" />
+    </DevWorkspace>
   );
 }

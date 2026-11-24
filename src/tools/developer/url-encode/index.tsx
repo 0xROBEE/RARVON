@@ -1,54 +1,47 @@
-import { useState } from 'react';
-import Button from '../../../components/Button';
-import ErrorMessage from '../../../components/ErrorMessage';
-import { CopyButton } from '../../../components/tool';
+import { useMemo, useState } from 'react';
+import { ToggleChip } from '../../../components/tool/TextPanes';
+import { CodeEditor, CodeView, DevWorkspace, ModeTabs, StatusBar } from '../../../components/tool/CodePanes';
 import { tr } from '../../../lib/i18n';
 
+type Mode = 'encode' | 'decode';
+
 export default function UrlEncodeTool() {
+  const [mode, setMode] = useState<Mode>('encode');
   const [input, setInput] = useState('');
-  const [output, setOutput] = useState('');
-  const [error, setError] = useState<string | null>(null);
+  // Whole URL: keep : / ? & = # as they are, so the link still works.
+  const [wholeUrl, setWholeUrl] = useState(false);
 
-  function encode() {
-    setOutput(encodeURIComponent(input));
-    setError(null);
-  }
-  function decode() {
+  const result = useMemo(() => {
+    if (!input) return null;
     try {
-      setOutput(decodeURIComponent(input));
-      setError(null);
+      if (mode === 'encode') return { output: wholeUrl ? encodeURI(input) : encodeURIComponent(input) };
+      return { output: wholeUrl ? decodeURI(input) : decodeURIComponent(input) };
     } catch {
-      setOutput('');
-      setError(tr("That doesn't look like validly percent-encoded text."));
+      return { error: tr("That doesn't look like validly percent-encoded text.") };
     }
-  }
+  }, [mode, input, wholeUrl]);
 
+  const output = result?.output ?? '';
   return (
-    <div className="space-y-4">
-      <textarea
+    <DevWorkspace
+      status={
+        <StatusBar
+          state={!result ? 'idle' : 'error' in result ? 'error' : 'ok'}
+          message={!result ? (mode === 'encode' ? tr('Type text or a link to encode') : tr('Paste encoded text to decode')) : 'error' in result ? result.error : mode === 'encode' ? tr('Encoded') : tr('Decoded')}
+          items={output ? [tr('{n} characters', { n: output.length.toLocaleString() })] : []}
+          right={<ToggleChip on={wholeUrl} onChange={setWholeUrl}>{tr('Whole URL (keep : / ? & =)')}</ToggleChip>}
+        />
+      }
+    >
+      <CodeEditor
+        tabs={<ModeTabs<Mode> label={tr('What to do')} value={mode} onChange={setMode} options={[{ value: 'encode', label: tr('Encode') }, { value: 'decode', label: tr('Decode') }]} />}
+        label={mode === 'encode' ? tr('Text to encode') : tr('Text to decode')}
         value={input}
-        onChange={(e) => setInput(e.target.value)}
-        rows={5}
-        spellCheck={false}
-        placeholder={tr("https://example.com/search?q=hello world")}
-        className="w-full rounded-md border border-line bg-paper px-3 py-2 font-mono text-xs leading-relaxed focus:border-workshop"
+        onChange={setInput}
+        wrap
+        placeholder={tr('https://example.com/search?q=hello world')}
       />
-      <div className="flex gap-2">
-        <Button onClick={encode} disabled={!input}>{tr("Encode")}</Button>
-        <Button variant="secondary" onClick={decode} disabled={!input}>{tr("Decode")}</Button>
-      </div>
-      {error && <ErrorMessage>{error}</ErrorMessage>}
-      {output && (
-        <div>
-          <div className="mb-1.5 flex items-center justify-between">
-            <span className="text-xs font-medium text-ink-2">{tr("Result")}</span>
-            <CopyButton text={output} label={tr("Copy")} />
-          </div>
-          <pre className="max-h-64 overflow-auto whitespace-pre-wrap break-all rounded-md border border-line bg-paper-dim px-3 py-2 font-mono text-xs leading-relaxed">
-            {output}
-          </pre>
-        </div>
-      )}
-    </div>
+      <CodeView file={mode === 'encode' ? 'encoded.txt' : 'decoded.txt'} label={tr('Result')} text={output} wrap />
+    </DevWorkspace>
   );
 }

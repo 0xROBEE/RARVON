@@ -1,19 +1,14 @@
-import { useMemo, useState } from 'react';
-import ErrorMessage from '../../../components/ErrorMessage';
+import { useEffect, useMemo, useState } from 'react';
 import { CopyButton } from '../../../components/tool';
+import { CodeEditor, DevWorkspace, JsonCode, Pane, StatusBar } from '../../../components/tool/CodePanes';
 import { tr } from '../../../lib/i18n';
 
 function base64UrlDecode(segment: string): string {
   const padded = segment.replace(/-/g, '+').replace(/_/g, '/').padEnd(segment.length + ((4 - (segment.length % 4)) % 4), '=');
-  return decodeURIComponent(
-    atob(padded)
-      .split('')
-      .map((c) => '%' + c.charCodeAt(0).toString(16).padStart(2, '0'))
-      .join(''),
-  );
+  return new TextDecoder().decode(Uint8Array.from(atob(padded), (c) => c.charCodeAt(0)));
 }
 
-function tryPrettyJson(raw: string): string {
+function pretty(raw: string): string {
   try {
     return JSON.stringify(JSON.parse(raw), null, 2);
   } catch {
@@ -21,88 +16,82 @@ function tryPrettyJson(raw: string): string {
   }
 }
 
-function formatUnixClaim(value: unknown): string | null {
-  if (typeof value !== 'number') return null;
-  const d = new Date(value * 1000);
-  if (Number.isNaN(d.getTime())) return null;
-  return d.toUTCString();
+const TIME_CLAIMS = { iat: 'Issued', nbf: 'Valid from', exp: 'Expires' } as const;
+
+/** One decoded part of the token, with its colour and a Copy button. */
+function Part({ name, color, json }: { name: string; color: string; json: string }) {
+  return (
+    <div className="border-b border-line last:border-b-0">
+      <div className="flex items-center justify-between px-3 pt-2">
+        <span className="font-mono text-[11px] font-semibold tracking-wider" style={{ color }}>{name}</span>
+        <CopyButton text={json} label="Copy" />
+      </div>
+      <pre dir="ltr" className="overflow-x-auto px-3 pb-2.5 pt-1 font-mono text-xs leading-relaxed"><JsonCode text={json} /></pre>
+    </div>
+  );
 }
 
 export default function JwtDecoder() {
   const [token, setToken] = useState('');
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    const t = window.setInterval(() => setNow(Date.now()), 1000);
+    return () => window.clearInterval(t);
+  }, []);
 
   const decoded = useMemo(() => {
-    const trimmed = token.trim();
-    if (!trimmed) return null;
-    const parts = trimmed.split('.');
-    if (parts.length < 2) return { error: 'A JWT has three dot-separated parts (header.payload.signature). This doesn\u2019t look like one.' };
+    const parts = token.trim().split('.');
+    if (!token.trim()) return null;
+    if (parts.length < 2) return { error: tr('A JWT has three dot-separated parts (header.payload.signature). This doesn’t look like one.') };
     try {
-      const header = tryPrettyJson(base64UrlDecode(parts[0]));
-      const payload = tryPrettyJson(base64UrlDecode(parts[1]));
-      let payloadObj: Record<string, unknown> = {};
-      try {
-        payloadObj = JSON.parse(base64UrlDecode(parts[1]));
-      } catch {
-        /* not an object payload; skip claim summary */
-      }
-      return { header, payload, signaturePresent: Boolean(parts[2]), payloadObj };
+      const payloadRaw = base64UrlDecode(parts[1]);
+      let claims: Record<string, unknown> = {};
+      try { claims = JSON.parse(payloadRaw); } catch { /* not an object payload */ }
+      return { header: pretty(base64UrlDecode(parts[0])), payload: pretty(payloadRaw), signature: parts[2] ?? '', claims };
     } catch {
-      return { error: 'Could not decode this token. Make sure it\u2019s a valid Base64URL-encoded JWT.' };
+      return { error: tr('Could not decode this token. Make sure it’s a valid Base64URL-encoded JWT.') };
     }
   }, [token]);
 
-  const claimHints = decoded && !('error' in decoded) ? decoded.payloadObj : {};
-  const timeClaims = (['iat', 'exp', 'nbf'] as const)
-    .map((k) => ({ key: k, value: formatUnixClaim(claimHints?.[k]) }))
-    .filter((c) => c.value);
+  const ok = decoded && !('error' in decoded) ? decoded : null;
+  const exp = typeof ok?.claims.exp === 'number' ? ok.claims.exp * 1000 : null;
+  const expired = exp !== null && exp < now;
 
   return (
-    <div className="space-y-4">
-      <div>
-        <label htmlFor="jwt-input" className="mb-1.5 block text-xs font-medium text-ink-2">{tr("Paste a JWT")}</label>
-        <textarea
-          id="jwt-input"
-          value={token}
-          onChange={(e) => setToken(e.target.value)}
-          rows={4}
-          spellCheck={false}
-          placeholder={tr("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9....")}
-          className="w-full rounded-md border border-line bg-paper px-3 py-2 font-mono text-xs leading-relaxed focus:border-workshop"
+    <DevWorkspace
+      status={
+        <StatusBar
+          state={!decoded ? 'idle' : 'error' in decoded ? 'error' : expired ? 'error' : 'ok'}
+          message={!decoded ? tr('Paste a token') : 'error' in decoded ? decoded.error : expired ? tr('Decoded · this token has expired') : tr('Decoded')}
+          items={ok ? [ok.signature ? tr('Signature present, not verified here') : tr('No signature segment was found.')] : []}
         />
-      </div>
-
-      {decoded && 'error' in decoded && <ErrorMessage>{decoded.error}</ErrorMessage>}
-
-      {decoded && !('error' in decoded) && (
-        <div className="space-y-4">
-          {timeClaims.length > 0 && (
-            <div className="rounded-md border border-line bg-paper-dim p-3 text-xs">
-              {timeClaims.map((c) => (
-                <p key={c.key}>
-                  <span className="font-mono text-ink-3">{c.key}</span> → {c.value}
-                </p>
-              ))}
-            </div>
-          )}
-          <div>
-            <div className="mb-1.5 flex items-center justify-between">
-              <span className="text-xs font-medium text-ink-2">{tr("Header")}</span>
-              <CopyButton text={decoded.header} label={tr("Copy")} />
-            </div>
-            <pre className="overflow-auto rounded-md border border-line bg-paper-dim px-3 py-2 font-mono text-xs leading-relaxed">{decoded.header}</pre>
+      }
+    >
+      <CodeEditor file="token.jwt" label={tr('Paste a JWT')} value={token} onChange={setToken} wrap placeholder={tr('eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9....')} />
+      <Pane file="decoded.json" label={tr('Decoded token')}>
+        {ok ? (
+          <div className="fade-in">
+            <Part name={tr('HEADER')} color="var(--color-cat-pdf)" json={ok.header} />
+            <Part name={tr('PAYLOAD')} color="var(--color-cat-video)" json={ok.payload} />
+            {(Object.keys(TIME_CLAIMS) as (keyof typeof TIME_CLAIMS)[]).some((k) => typeof ok.claims[k] === 'number') && (
+              <div className="grid gap-1 border-t border-line bg-elevated px-3 py-2 text-[11px]">
+                {(Object.keys(TIME_CLAIMS) as (keyof typeof TIME_CLAIMS)[]).map((k) => {
+                  const v = ok.claims[k];
+                  if (typeof v !== 'number') return null;
+                  const d = new Date(v * 1000);
+                  return (
+                    <p key={k} className={k === 'exp' && expired ? 'text-warn' : 'text-ink-2'}>
+                      <span className="font-mono text-ink-3">{k}</span> · {tr(TIME_CLAIMS[k])}: <span dir="ltr">{d.toUTCString()}</span>
+                    </p>
+                  );
+                })}
+              </div>
+            )}
           </div>
-          <div>
-            <div className="mb-1.5 flex items-center justify-between">
-              <span className="text-xs font-medium text-ink-2">{tr("Payload")}</span>
-              <CopyButton text={decoded.payload} label={tr("Copy")} />
-            </div>
-            <pre className="overflow-auto rounded-md border border-line bg-paper-dim px-3 py-2 font-mono text-xs leading-relaxed">{decoded.payload}</pre>
-          </div>
-          <p className="text-xs text-ink-3">
-            {decoded.signaturePresent ? tr("A signature segment is present but not verified here.") : tr("No signature segment was found.")}
-          </p>
-        </div>
-      )}
-    </div>
+        ) : (
+          <p className="grid min-h-[14rem] place-items-center px-6 text-center text-xs text-ink-3">{tr('The header and payload appear here.')}</p>
+        )}
+      </Pane>
+    </DevWorkspace>
   );
 }

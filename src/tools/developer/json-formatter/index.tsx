@@ -1,86 +1,45 @@
-import { useState } from 'react';
-import Button from '../../../components/Button';
-import ErrorMessage from '../../../components/ErrorMessage';
+import { useMemo, useState } from 'react';
+import { CodeEditor, CodeView, DevWorkspace, StatusBar, StatusSelect, sizeFacts } from '../../../components/tool/CodePanes';
+import { jsonError } from '../../../lib/jsonError';
 import { tr } from '../../../lib/i18n';
+
+type Indent = 2 | 4 | 0;
 
 export default function JsonFormatter() {
   const [input, setInput] = useState('');
-  const [output, setOutput] = useState('');
-  const [indent, setIndent] = useState(2);
-  const [error, setError] = useState<string | null>(null);
+  const [indent, setIndent] = useState<Indent>(2);
 
-  function format() {
+  const result = useMemo(() => {
+    if (!input.trim()) return null;
     try {
-      const parsed = JSON.parse(input);
-      setOutput(JSON.stringify(parsed, null, indent === 0 ? '\t' : indent));
-      setError(null);
+      return { output: JSON.stringify(JSON.parse(input), null, indent === 0 ? '\t' : indent) };
     } catch (e) {
-      setOutput('');
-      setError(describeJsonError(e, input));
+      return { error: jsonError(e, input) };
     }
-  }
+  }, [input, indent]);
 
-  function copy() {
-    navigator.clipboard.writeText(output);
-  }
+  const output = result?.output ?? '';
 
   return (
-    <div className="space-y-4">
-      <div>
-        <label htmlFor="json-input" className="mb-1.5 block text-xs font-medium text-ink-2">{tr("Paste JSON")}</label>
-        <textarea
-          id="json-input"
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          rows={10}
-          spellCheck={false}
-          placeholder={tr("{\"example\": true, \"values\": [1, 2, 3]}")}
-          className="w-full rounded-md border border-line bg-paper px-3 py-2 font-mono text-xs leading-relaxed focus:border-workshop"
+    <DevWorkspace
+      status={
+        <StatusBar
+          state={!result ? 'idle' : 'error' in result ? 'error' : 'ok'}
+          message={!result ? tr('Waiting for JSON') : 'error' in result ? result.error : tr('Valid JSON')}
+          items={output ? sizeFacts(output) : []}
+          right={
+            <StatusSelect<Indent>
+              label={tr('Indent')}
+              value={indent}
+              onChange={setIndent}
+              options={[{ value: 2, label: tr('2 spaces') }, { value: 4, label: tr('4 spaces') }, { value: 0, label: tr('Tab') }]}
+            />
+          }
         />
-      </div>
-
-      <div className="flex flex-wrap items-center gap-3">
-        <label className="flex items-center gap-2 text-xs text-ink-2">
-          {tr("Indent")}
-          <select
-            value={indent}
-            onChange={(e) => setIndent(Number(e.target.value))}
-            className="rounded-md border border-line bg-paper px-2 py-1.5 text-xs"
-          >
-            <option value={2}>{tr("2 spaces")}</option>
-            <option value={4}>{tr("4 spaces")}</option>
-            <option value={0}>{tr("Tab")}</option>
-          </select>
-        </label>
-        <Button onClick={format} disabled={!input.trim()}>{tr("Format")}</Button>
-      </div>
-
-      {error && <ErrorMessage>{error}</ErrorMessage>}
-
-      {output && (
-        <div>
-          <div className="mb-1.5 flex items-center justify-between">
-            <span className="text-xs font-medium text-ink-2">{tr("Result")}</span>
-            <button onClick={copy} className="text-xs font-medium text-workshop hover:underline">{tr("Copy")}</button>
-          </div>
-          <pre className="max-h-96 overflow-auto rounded-md border border-line bg-paper-dim px-3 py-2 font-mono text-xs leading-relaxed">
-            {output}
-          </pre>
-        </div>
-      )}
-    </div>
+      }
+    >
+      <CodeEditor file="input.json" label={tr('Paste JSON')} value={input} onChange={setInput} placeholder={tr('{"example": true, "values": [1, 2, 3]}')} open=".json,.txt,application/json" />
+      <CodeView file="formatted.json" label={tr('Formatted JSON')} text={output} highlight="json" download="formatted.json" />
+    </DevWorkspace>
   );
-}
-
-function describeJsonError(e: unknown, input: string): string {
-  const msg = e instanceof Error ? e.message : 'Invalid JSON.';
-  const match = msg.match(/position (\d+)/);
-  if (match) {
-    const pos = Number(match[1]);
-    const before = input.slice(0, pos);
-    const line = before.split('\n').length;
-    const col = pos - before.lastIndexOf('\n');
-    return `Couldn't parse JSON: ${msg} (line ${line}, column ${col})`;
-  }
-  return `Couldn't parse JSON: ${msg}`;
 }
