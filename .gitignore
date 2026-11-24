@@ -10,3 +10,9 @@ ai-models
 
 # Demo download links for previewing the app button (npx vite --mode appdemo)
 .env.appdemo
+
+# Claude Code settings for this computer (kept local)
+.claude/
+
+# Your own settings (download links, support links)
+.env

@@ -34,7 +34,7 @@ export const projectRepo: string = (import.meta.env.VITE_PROJECT_REPO_URL ?? '')
 /** Who makes Rarvon, shown on the About page. */
 export const maker = {
   name: 'ROBEE',
-  url: 'https://github.com/ROBEE404',
+  url: 'https://github.com/0xROBEE',
 };
 
 /**

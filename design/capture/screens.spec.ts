@@ -233,7 +233,7 @@ test('text and developer tools', async ({ page }) => {
 
 test('utilities', async ({ page }) => {
   await page.goto(SITE + '/tools/utilities/qr');
-  await page.getByLabel('Text or URL').fill('https://github.com/ROBEE404');
+  await page.getByLabel('Text or URL').fill('https://github.com/0xROBEE');
   await shot(page, 'qr', { flow: 'utilities', title: 'QR Code Generator' });
   await page.goto(SITE + '/tools/utilities/password');
   await shot(page, 'password', { flow: 'utilities', title: 'Password Generator' });

@@ -1,5 +1,5 @@
 Rarvon for desktop (beta)
-Copyright (c) 2026 ROBEE (https://github.com/ROBEE404). All rights reserved.
+Copyright (c) 2026 ROBEE (https://github.com/0xROBEE). All rights reserved.
 
 Rarvon is free to use. It is not open source.
 

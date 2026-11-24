@@ -124,4 +124,4 @@ to mention Rarvon — in an article, a review, or a list of tools — you're wel
 
 Third-party components keep their own licenses, listed in [THIRD_PARTY_LICENSES.md](THIRD_PARTY_LICENSES.md).
 
-<p align="center"><br>Made with care by <a href="https://github.com/ROBEE404">ROBEE</a>.</p>
+<p align="center"><br>Made with care by <a href="https://github.com/0xROBEE">ROBEE</a>.</p>

@@ -3,7 +3,7 @@
   "private": true,
   "version": "0.0.0",
   "license": "UNLICENSED",
-  "author": "ROBEE (https://github.com/ROBEE404)",
+  "author": "ROBEE (https://github.com/0xROBEE)",
   "type": "module",
   "scripts": {
     "dev": "vite",

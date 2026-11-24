@@ -136,11 +136,11 @@ for (const e of all.filter((x) => !x.dir)) {
 const control = `Package: rarvon
 Version: ${version}
 Architecture: amd64
-Maintainer: ROBEE <https://github.com/ROBEE404>
+Maintainer: ROBEE <https://github.com/0xROBEE>
 Installed-Size: ${Math.ceil(installedBytes / 1024)}
 Section: utils
 Priority: optional
-Homepage: https://github.com/ROBEE404/RARVON
+Homepage: https://github.com/0xROBEE/RARVON
 Suggests: chromium | google-chrome-stable | microsoft-edge-stable
 Description: Free tools for your files, on your own computer
  Rarvon for desktop (beta): PDFs, images, video, audio and text, with no
@@ -181,7 +181,7 @@ const rpmMeta = [
   'release = "1"',
   'license = "LicenseRef-Rarvon"',
   'summary = "Free tools for your files, on your own computer"',
-  'url = "https://github.com/ROBEE404/RARVON"',
+  'url = "https://github.com/0xROBEE/RARVON"',
   'auto-req = "no"',
   `post_install_script = ${toml(refresh)}`,
   // The .rpm lists files, not folders: on a full removal ($1 = 0), take the empty folders too.
