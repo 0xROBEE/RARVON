@@ -1,6 +1,6 @@
 # Rarvon for desktop (beta)
 
-`bench-engine/` is the **Rarvon Engine**, a small Rust program (about 0.5 MB) with
+`rarvon-engine/` is the **Rarvon Engine**, a small Rust program (about 0.5 MB) with
 no window of its own. It:
 
 1. serves Rarvon's own pages from this computer, with no internet needed;
@@ -16,18 +16,18 @@ npm run build
 ```
 
 ```bash
-cd desktop/bench-engine && cargo run --release
+cd desktop/rarvon-engine && cargo run --release
 ```
 
 It finds the pages in a `web` folder next to the program, or `BENCH_WEB_DIR`,
 or the site's `dist` folder while developing. It finds FFmpeg in an `ffmpeg` folder next to the program (or
-in `bench-engine/ffmpeg/` while developing). Without FFmpeg, every tool runs the browser way.
+in `rarvon-engine/ffmpeg/` while developing). Without FFmpeg, every tool runs the browser way.
 
 ## FFmpeg
 
 FFmpeg isn't stored in this repository. Rarvon uses the **LGPL v3** Windows build from
 [FFmpeg-Builds](https://github.com/FFmpeg-Builds/FFmpeg-Builds/releases) (`ffmpeg-n9.0-latest-win64-lgpl-9.0.zip`).
-Only `bin/ffmpeg.exe` and `LICENSE.txt` go in `bench-engine/ffmpeg/`. That build has no GPL parts (no x264
+Only `bin/ffmpeg.exe` and `LICENSE.txt` go in `rarvon-engine/ffmpeg/`. That build has no GPL parts (no x264
 or x265). It makes H.264 with the graphics card (NVIDIA, AMD or Intel), Windows' own encoder, or OpenH264.
 Rarvon keeps FFmpeg as a separate program, which the LGPL allows for closed-source software. The installer
 must include FFmpeg's license and say where its source code is available.
@@ -41,7 +41,7 @@ npm run build:desktop
 This builds the site and the engine, gathers them in `desktop/stage` (`Rarvon.exe`, `web/`, `ffmpeg/`,
 `LICENSE.txt`), and makes `desktop/out/Rarvon-setup-<version>.exe` with
 [Inno Setup 6](https://jrsoftware.org/isinfo.php). Inno Setup is a free build tool and isn't shipped
-inside Rarvon. The version comes from `bench-engine/Cargo.toml`. The installer:
+inside Rarvon. The version comes from `rarvon-engine/Cargo.toml`. The installer:
 
 - installs for the current user only (`%LOCALAPPDATA%\Programs\Rarvon`), so no administrator prompt;
 - adds a Start menu shortcut, an optional desktop shortcut, and "Rarvon (beta)" in Settings → Apps;
@@ -58,7 +58,7 @@ npm run build:linux
 ```
 
 This works on Windows too. It builds the engine for Linux as one static program (Rust's
-`x86_64-unknown-linux-musl` target, linked with Rust's own `rust-lld`; see `bench-engine/.cargo/config.toml`),
+`x86_64-unknown-linux-musl` target, linked with Rust's own `rust-lld`; see `rarvon-engine/.cargo/config.toml`),
 so it runs on any 64-bit Linux without extra libraries, and makes three files in `desktop/out/`:
 
 | File | For |
@@ -73,7 +73,7 @@ for them are in `desktop/linux/`. It needs, once:
 - `rustup target add x86_64-unknown-linux-musl`
 - `cargo install cargo-generate-rpm` (a free build tool for the .rpm; not shipped)
 - FFmpeg for Linux: `ffmpeg-n9.0-latest-linux64-lgpl-9.0.tar.xz` from the same FFmpeg-Builds page. Only
-  `bin/ffmpeg` and `LICENSE.txt` go in `bench-engine/ffmpeg-linux/`.
+  `bin/ffmpeg` and `LICENSE.txt` go in `rarvon-engine/ffmpeg-linux/`.
 
 On Linux, Rarvon opens in an app window of Chromium, Chrome, Edge, Brave or Vivaldi, or, with none of
 those (for example only Firefox), in a tab of the default browser.

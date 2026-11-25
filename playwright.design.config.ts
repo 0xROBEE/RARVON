@@ -4,7 +4,7 @@ import { join } from 'node:path';
 // Photographs Rarvon's screens for the design map: `npm run design:capture`.
 // Three servers: the built website, the website with a pretend app download
 // link (to show the download buttons), and Rarvon for desktop's engine.
-const engine = join('desktop', 'bench-engine', 'target', 'release', process.platform === 'win32' ? 'bench-engine.exe' : 'bench-engine');
+const engine = join('desktop', 'rarvon-engine', 'target', 'release', process.platform === 'win32' ? 'rarvon-engine.exe' : 'rarvon-engine');
 
 export default defineConfig<{ theme: 'light' | 'dark' }>({
   testDir: 'design/capture',

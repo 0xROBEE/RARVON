@@ -90,7 +90,7 @@ impl Native {
 
         let temp = std::env::temp_dir();
         clean_old_folders(&temp);
-        let dir = temp.join(format!("bench-engine-{}", crate::secret_key()[..16].to_string()));
+        let dir = temp.join(format!("rarvon-engine-{}", crate::secret_key()[..16].to_string()));
         fs::create_dir_all(&dir).ok()?;
         Some(Native {
             ffmpeg,
@@ -601,7 +601,9 @@ fn clean_old_folders(temp: &Path) {
     for entry in entries.flatten() {
         let name = entry.file_name();
         let old = entry.metadata().and_then(|m| m.modified()).ok().and_then(|t| SystemTime::now().duration_since(t).ok()).is_some_and(|age| age > day);
-        if name.to_string_lossy().starts_with("bench-engine-") && old {
+        // "bench-engine-" folders are from versions before the rename.
+        let ours = ["rarvon-engine-", "bench-engine-"].iter().any(|p| name.to_string_lossy().starts_with(p));
+        if ours && old {
             let _ = fs::remove_dir_all(entry.path());
         }
     }

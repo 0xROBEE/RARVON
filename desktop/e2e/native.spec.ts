@@ -9,7 +9,7 @@ import { test, expect, upload, download, openTool } from '../../e2e/helpers';
  * with video and audio done by FFmpeg. Run with `npm run test:desktop`.
  */
 
-const FFMPEG = join(process.cwd(), 'desktop', 'bench-engine', 'ffmpeg', process.platform === 'win32' ? 'ffmpeg.exe' : 'ffmpeg');
+const FFMPEG = join(process.cwd(), 'desktop', 'rarvon-engine', 'ffmpeg', process.platform === 'win32' ? 'ffmpeg.exe' : 'ffmpeg');
 const dir = mkdtempSync(join(tmpdir(), 'bench-desktop-test-'));
 
 /** Makes a test clip with FFmpeg itself (formats the browser engine can't open). */

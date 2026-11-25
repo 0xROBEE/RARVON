@@ -1,10 +1,10 @@
 // Windows resources for Rarvon.exe: the icon Explorer and the taskbar show,
-// and the details in the file's Properties.
-1 ICON "bench.ico"
+// and the details in the file's Properties. build.rs fills in the RARVON_ names.
+1 ICON "RARVON_ICON"
 
 1 VERSIONINFO
-FILEVERSION 0,1,0,0
-PRODUCTVERSION 0,1,0,0
+FILEVERSION RARVON_VERSION_NUMBERS
+PRODUCTVERSION RARVON_VERSION_NUMBERS
 BEGIN
   BLOCK "StringFileInfo"
   BEGIN
@@ -12,9 +12,9 @@ BEGIN
     BEGIN
       VALUE "CompanyName", "ROBEE"
       VALUE "FileDescription", "Rarvon"
-      VALUE "FileVersion", "0.1.0"
+      VALUE "FileVersion", "RARVON_VERSION"
       VALUE "ProductName", "Rarvon for desktop (beta)"
-      VALUE "ProductVersion", "0.1.0"
+      VALUE "ProductVersion", "RARVON_VERSION"
       VALUE "LegalCopyright", "Copyright ROBEE. All rights reserved."
       VALUE "OriginalFilename", "Rarvon.exe"
     END

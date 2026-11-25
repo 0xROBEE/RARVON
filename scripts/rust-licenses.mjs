@@ -6,7 +6,7 @@ import { execFileSync } from 'node:child_process';
 import { readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 
-const manifest = join(process.cwd(), 'desktop', 'bench-engine', 'Cargo.toml');
+const manifest = join(process.cwd(), 'desktop', 'rarvon-engine', 'Cargo.toml');
 const out = process.argv[2] ?? join(process.cwd(), 'desktop', 'stage', 'licenses', 'rust-crates.txt');
 const ti = process.argv.indexOf('--target');
 const target = ti > 0 ? process.argv[ti + 1] : '';
@@ -17,7 +17,7 @@ const shipped = new Set(
   cargo(['tree', '-e', 'normal', '--prefix', 'none', ...(target ? ['--target', target] : [])])
     .split('\n')
     .map((l) => l.trim().split(' ').slice(0, 2).join(' '))
-    .filter((l) => l && !l.startsWith('bench-engine')),
+    .filter((l) => l && !l.startsWith('rarvon-engine')),
 );
 const meta = JSON.parse(cargo(['metadata', '--format-version', '1']));
 const parts = [

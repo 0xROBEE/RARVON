@@ -4,7 +4,7 @@ import { join } from 'node:path';
 // Rarvon for desktop: the built site served by the real Rarvon Engine (without
 // opening a window), so the tools run their video and audio jobs in FFmpeg.
 // `npm run test:desktop` builds both first.
-const exe = join('desktop', 'bench-engine', 'target', 'release', process.platform === 'win32' ? 'bench-engine.exe' : 'bench-engine');
+const exe = join('desktop', 'rarvon-engine', 'target', 'release', process.platform === 'win32' ? 'rarvon-engine.exe' : 'rarvon-engine');
 
 export default defineConfig({
   testDir: 'desktop/e2e',

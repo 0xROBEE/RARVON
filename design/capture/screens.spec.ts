@@ -324,7 +324,7 @@ async function aviClip() {
   const { execFileSync } = await import('node:child_process');
   const { readFileSync } = await import('node:fs');
   const path = join(OUT, '..', 'holiday.avi');
-  const ff = join(process.cwd(), 'desktop', 'bench-engine', 'ffmpeg', 'ffmpeg.exe');
+  const ff = join(process.cwd(), 'desktop', 'rarvon-engine', 'ffmpeg', 'ffmpeg.exe');
   execFileSync(ff, ['-hide_banner', '-loglevel', 'error', '-y', '-f', 'lavfi', '-i', 'testsrc2=s=1280x720:r=25:d=8', '-f', 'lavfi', '-i', 'sine=d=8', '-shortest', '-c:v', 'mpeg4', '-q:v', '3', '-c:a', 'libmp3lame', path]);
   return readFileSync(path);
 }

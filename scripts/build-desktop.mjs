@@ -2,13 +2,13 @@
 //   1. the website (dist) and the Rarvon Engine (release),
 //   2. desktop/stage: Rarvon.exe + web/ + ffmpeg/ + notices,
 //   3. desktop/out/Rarvon-setup-<version>.exe with Inno Setup.
-// FFmpeg must already be in desktop/bench-engine/ffmpeg (see desktop/README.md).
+// FFmpeg must already be in desktop/rarvon-engine/ffmpeg (see desktop/README.md).
 import { execFileSync } from 'node:child_process';
 import { cpSync, existsSync, mkdirSync, readFileSync, rmSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 
 const root = process.cwd();
-const engine = join(root, 'desktop', 'bench-engine');
+const engine = join(root, 'desktop', 'rarvon-engine');
 const stage = join(root, 'desktop', 'stage');
 const run = (cmd, args, opts = {}) => execFileSync(cmd, args, { stdio: 'inherit', shell: process.platform === 'win32', ...opts });
 
@@ -23,7 +23,7 @@ run('cargo', ['build', '--release', '--manifest-path', join(engine, 'Cargo.toml'
 
 rmSync(stage, { recursive: true, force: true });
 mkdirSync(join(stage, 'ffmpeg'), { recursive: true });
-cpSync(join(engine, 'target', 'release', 'bench-engine.exe'), join(stage, 'Rarvon.exe'));
+cpSync(join(engine, 'target', 'release', 'rarvon-engine.exe'), join(stage, 'Rarvon.exe'));
 cpSync(join(root, 'dist'), join(stage, 'web'), {
   recursive: true,
   // The app serves the pages itself: no offline cache or web-host settings needed.
@@ -36,6 +36,6 @@ cpSync(join(root, 'desktop', 'installer', 'license.txt'), join(stage, 'LICENSE.t
 mkdirSync(join(stage, 'licenses'), { recursive: true });
 run('node', [join(root, 'scripts', 'rust-licenses.mjs'), join(stage, 'licenses', 'rust-crates.txt')], { shell: false });
 
-run(iscc, ['/Qp', `/DAppVersion=${version}`, join(root, 'desktop', 'installer', 'bench.iss')], { shell: false });
+run(iscc, ['/Qp', `/DAppVersion=${version}`, join(root, 'desktop', 'installer', 'rarvon.iss')], { shell: false });
 const out = join(root, 'desktop', 'out', `Rarvon-setup-${version}.exe`);
 console.log(`\n${out}\n${(statSync(out).size / 1024 / 1024).toFixed(1)} MB`);

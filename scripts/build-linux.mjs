@@ -4,7 +4,7 @@
 //   3. desktop/out: rarvon_<v>_amd64.deb (Debian, Ubuntu, Mint…),
 //      rarvon-<v>-1.x86_64.rpm (Fedora, openSUSE…) and rarvon-<v>-linux-x86_64.tar.gz (any Linux).
 // Needs: rustup target x86_64-unknown-linux-musl, cargo install cargo-generate-rpm,
-// and FFmpeg for Linux in desktop/bench-engine/ffmpeg-linux (see desktop/README.md).
+// and FFmpeg for Linux in desktop/rarvon-engine/ffmpeg-linux (see desktop/README.md).
 import { execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { closeSync, cpSync, existsSync, mkdirSync, openSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync, writeSync } from 'node:fs';
@@ -12,7 +12,7 @@ import { join, relative } from 'node:path';
 import { gzipSync } from 'node:zlib';
 
 const root = process.cwd();
-const engine = join(root, 'desktop', 'bench-engine');
+const engine = join(root, 'desktop', 'rarvon-engine');
 const linux = join(root, 'desktop', 'linux');
 const stage = join(root, 'desktop', 'stage-linux');
 const out = join(root, 'desktop', 'out');
@@ -34,7 +34,7 @@ const files = join(stage, 'root');
 const opt = join(files, 'opt', 'rarvon');
 mkdirSync(join(opt, 'ffmpeg'), { recursive: true });
 mkdirSync(join(opt, 'licenses'), { recursive: true });
-cpSync(join(engine, 'target', target, 'release', 'bench-engine'), join(opt, 'rarvon'));
+cpSync(join(engine, 'target', target, 'release', 'rarvon-engine'), join(opt, 'rarvon'));
 cpSync(join(root, 'dist'), join(opt, 'web'), {
   recursive: true,
   // The app serves the pages itself: no offline cache or web-host settings needed.
