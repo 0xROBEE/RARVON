@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { UPDATE_CHECK_EVERY, isNewerVersion, newestRelease, shouldCheckForUpdate } from '../../src/lib/appPrefs';
+import { UPDATE_CHECK_EVERY, isNewerVersion, newestRelease, releaseHighlights, shouldCheckForUpdate } from '../../src/lib/appPrefs';
 
 describe('update check version comparison', () => {
   it('compares versions part by part, not as text', () => {
@@ -41,3 +41,18 @@ describe('update check timing and picking the newest release', () => {
   });
 });
 
+
+describe('what’s new lines from release notes', () => {
+  it('keeps the first section’s points, short and without formatting', () => {
+    const body = '# Rarvon 2.1.0\n\n## What’s new\n\n- **A new update notice.** It sits above the header.\n- `Later` hides it: for an hour\n- See [the notes](https://example.com) for more\n- A fourth point\n\n## Fixed\n\n- Not this one';
+    expect(releaseHighlights(body)).toEqual(['A new update notice', 'Later hides it', 'See the notes for more']);
+    expect(releaseHighlights(body, 5)).toHaveLength(4);
+  });
+  it('shortens long lines and copes with no notes', () => {
+    const [line] = releaseHighlights(`- ${'word '.repeat(30)}`);
+    expect(line.length).toBeLessThanOrEqual(70);
+    expect(line.endsWith('…')).toBe(true);
+    expect(releaseHighlights(undefined)).toEqual([]);
+    expect(releaseHighlights('Just a paragraph.')).toEqual([]);
+  });
+});

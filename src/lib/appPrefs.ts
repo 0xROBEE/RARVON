@@ -16,8 +16,12 @@ export interface AppPrefs {
   lastUpdateCheck?: number;
   latestVersion?: string;
   latestUrl?: string;
-  /** A version whose notice the user closed, so it isn't shown again. */
+  /** A version whose notice the user closed, so it isn't shown again (older versions of Rarvon). */
   dismissedVersion?: string;
+  /** No update reminders until this time (ms since 1970): "Later" and "Silence for…". */
+  snoozeUntil?: number;
+  /** The first lines of the newest release's notes, for "what's new" in the card. */
+  latestNotes?: string[];
 }
 
 const DEFAULTS: AppPrefs = { favorites: [], updateCheck: true };
@@ -152,7 +156,7 @@ export function shouldCheckForUpdate(p: Pick<AppPrefs, 'updateCheck' | 'lastUpda
   return p.updateCheck && (!p.lastUpdateCheck || now - p.lastUpdateCheck >= UPDATE_CHECK_EVERY);
 }
 
-export interface Release { tag_name?: string; html_url?: string; draft?: boolean; prerelease?: boolean }
+export interface Release { tag_name?: string; html_url?: string; draft?: boolean; prerelease?: boolean; body?: string }
 
 /** The published, non-test release with the highest version number, whatever order the list is in. */
 export function newestRelease(releases: Release[]): Release | undefined {
@@ -160,3 +164,29 @@ export function newestRelease(releases: Release[]): Release | undefined {
     .filter((r) => !r.draft && !r.prerelease && r.tag_name)
     .reduce<Release | undefined>((best, r) => (!best || isNewerVersion(r.tag_name!, best.tag_name!) ? r : best), undefined);
 }
+
+/**
+ * A few short "what's new" lines from a release's notes (the Markdown on
+ * GitHub): the bullet points under the first heading, without formatting.
+ */
+export function releaseHighlights(body: string | undefined, max = 3): string[] {
+  if (!body) return [];
+  const lines: string[] = [];
+  for (const raw of body.split(/\r?\n/)) {
+    const line = raw.trim();
+    if (lines.length && line.startsWith('#')) break; // only the first section of points
+    const m = /^[-*]\s+(.*)$/.exec(line);
+    if (!m) continue;
+    let text = m[1].replace(/\*\*(.+?)\*\*/g, '$1').replace(/`([^`]+)`/g, '$1').replace(/\[([^\]]+)\]\([^)]*\)/g, '$1').trim();
+    // Keep the first sentence (or the part before a colon), so each line stays short.
+    text = text.split(/(?<=[.!?])\s|:\s/)[0].replace(/[.:]$/, '');
+    if (text.length > 70) text = text.slice(0, 67).trimEnd() + '…';
+    if (text) lines.push(text);
+    if (lines.length >= max) break;
+  }
+  return lines;
+}
+
+/** Snooze lengths offered by "Later" and the ⋯ menu. */
+export const SNOOZE = { hour: 60 * 60 * 1000, day: 24 * 60 * 60 * 1000, week: 7 * 24 * 60 * 60 * 1000 } as const;
+

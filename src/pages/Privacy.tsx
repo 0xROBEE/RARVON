@@ -5,6 +5,7 @@ import { maker } from '../lib/supportConfig';
 import { getLang, tr } from '../lib/i18n';
 import { isBenchApp } from '../engine/info';
 import { updateAppPrefs, useAppPrefs } from '../lib/appPrefs';
+import { checkForUpdate, showTestNotice } from '../components/UpdateNotice';
 
 /** When this policy last changed. Update it with every change to the text. */
 const UPDATED = new Date(2026, 10, 25);
@@ -156,6 +157,7 @@ export default function Privacy() {
             <Li lead={tr('Your choice:')}>{tr('the check is on unless you turn it off. The website never checks.')}</Li>
           </Ul>
           <UpdateSwitch />
+          <UpdateTools />
         </>
       ),
     },
@@ -285,6 +287,25 @@ function UpdateSwitch() {
         data-testid="update-switch"
       />
     </label>
+  );
+}
+
+/** "Check now" and "Show a test notice", next to the switch (Rarvon app only). */
+function UpdateTools() {
+  const [checking, setChecking] = useState(false);
+  if (!isBenchApp()) return null;
+  return (
+    <div className="mt-2 flex flex-wrap gap-2">
+      <button
+        type="button"
+        onClick={async () => { setChecking(true); await checkForUpdate(true); setChecking(false); }}
+        className="upd-btn"
+        data-testid="update-check-now"
+      >
+        {checking ? tr('Checking…') : tr('Check now')}
+      </button>
+      <button type="button" onClick={showTestNotice} className="upd-btn" data-testid="update-test-notice">{tr('Show a test notice')}</button>
+    </div>
   );
 }
 

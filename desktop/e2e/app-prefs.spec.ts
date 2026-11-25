@@ -19,7 +19,7 @@ async function setPrefs(page: Page, prefs: object) {
 async function fakeNewRelease(page: Page) {
   await page.route('https://api.github.com/**', (route) =>
     // Like the real GitHub API, it allows any website to read the answer.
-    route.fulfill({ headers: { 'Access-Control-Allow-Origin': '*' }, json: [{ tag_name: 'v9.9.9', html_url: 'https://github.com/0xROBEE/RARVON/releases/tag/v9.9.9', draft: false }] }),
+    route.fulfill({ headers: { 'Access-Control-Allow-Origin': '*' }, json: [{ tag_name: 'v9.9.9', html_url: 'https://github.com/0xROBEE/RARVON/releases/tag/v9.9.9', draft: false, body: '## What’s new\n\n- **Faster PDF tools.** They open in half the time.\n- A new `Split` button.\n\n## Fixed\n\n- Something else.' }] }),
   );
 }
 
@@ -63,27 +63,48 @@ test.describe('Rarvon for desktop: favourites and updates', () => {
     await expect(fresh.getByTestId('favorite-tools')).toContainText('Press ★ on any tool');
   });
 
-  test('a newer release shows a notice that can be hidden or switched off', async ({ page }) => {
+  test('a newer release shows a bar on home and a card elsewhere, which can be snoozed or switched off', async ({ page }) => {
     await fakeNewRelease(page);
     await page.goto('/');
     await setPrefs(page, { favorites: [], updateCheck: true });
     await page.reload();
-    const notice = page.getByTestId('update-notice');
-    await expect(notice).toContainText('Rarvon 9.9.9 is available.');
-    await expect(notice.getByRole('link', { name: 'Download the update' })).toHaveAttribute('href', 'https://github.com/0xROBEE/RARVON/releases/tag/v9.9.9');
-    await notice.getByRole('button', { name: 'Hide this notice' }).click();
-    await expect(notice).toHaveCount(0);
-    // A hidden version stays hidden.
+    const bar = page.getByTestId('update-notice');
+    await expect(bar).toContainText('Rarvon 9.9.9 is ready');
+    await expect(bar.getByRole('link', { name: 'Update now' })).toHaveAttribute('href', 'https://github.com/0xROBEE/RARVON/releases/tag/v9.9.9');
+    await expect(page.getByTestId('update-card')).toHaveCount(0);
+
+    // Other pages show the card, with the release's first points as "what's new".
+    await page.goto('/privacy#updates');
+    const card = page.getByTestId('update-card');
+    await expect(card).toContainText('Rarvon 9.9.9 is here');
+    await expect(card).toContainText('Faster PDF tools');
+    await expect(card).toContainText('A new Split button');
+    await expect(card).not.toContainText('Something else');
+
+    // Later hides it for an hour, even after reopening.
+    await card.getByRole('button', { name: 'Later' }).click();
+    await expect(card).toHaveCount(0);
     await page.waitForTimeout(500);
     await page.reload();
+    await expect(page.getByTestId('update-card')).toHaveCount(0);
+    expect((await (await page.request.get('/__bench/prefs', { headers: { 'X-Rarvon-Key': await appKey(page) } })).json()).snoozeUntil).toBeGreaterThan(Date.now() + 50 * 60 * 1000);
+
+    // The ⋯ menu silences it for a week.
+    await setPrefs(page, { favorites: [], updateCheck: true });
+    await page.goto('/');
+    await page.getByTestId('update-notice').getByTestId('update-more').click();
+    await page.getByRole('menuitem', { name: 'Silence for 1 week' }).click();
     await expect(page.getByTestId('update-notice')).toHaveCount(0);
+    await page.waitForTimeout(500);
+    const saved = await (await page.request.get('/__bench/prefs', { headers: { 'X-Rarvon-Key': await appKey(page) } })).json();
+    expect(saved.snoozeUntil).toBeGreaterThan(Date.now() + 6 * 24 * 60 * 60 * 1000);
 
     // Turned off on the Privacy page: no notice, and no more requests to GitHub.
     await setPrefs(page, { favorites: [], updateCheck: true });
     await page.goto('/privacy#updates');
-    await expect(page.getByTestId('update-notice')).toBeVisible();
+    await expect(page.getByTestId('update-card')).toBeVisible();
     await page.getByTestId('update-switch').uncheck();
-    await expect(page.getByTestId('update-notice')).toHaveCount(0);
+    await expect(page.getByTestId('update-card')).toHaveCount(0);
     let asked = 0;
     await page.unrouteAll();
     await page.route('https://api.github.com/**', (route) => { asked++; return route.fulfill({ headers: { 'Access-Control-Allow-Origin': '*' }, json: [] }); });
@@ -111,7 +132,22 @@ test.describe('Rarvon for desktop: favourites and updates', () => {
     await setPrefs(page, { favorites: [], updateCheck: true, lastUpdateCheck: Date.now() - 4 * 60 * 60 * 1000, latestVersion: '0.3.0' });
     await page.reload();
     const notice = page.getByTestId('update-notice');
-    await expect(notice).toContainText('Rarvon 9.9.9 is available.');
-    await expect(notice.getByRole('link', { name: 'Download the update' })).toHaveAttribute('href', 'https://github.com/0xROBEE/RARVON/releases/tag/v9.9.9');
+    await expect(notice).toContainText('Rarvon 9.9.9 is ready');
+    await expect(notice.getByRole('link', { name: 'Update now' })).toHaveAttribute('href', 'https://github.com/0xROBEE/RARVON/releases/tag/v9.9.9');
+  });
+
+  test('the Privacy page can show a test notice', async ({ page }) => {
+    await page.goto('/');
+    await setPrefs(page, { favorites: [], updateCheck: false });
+    await page.goto('/privacy#updates');
+    await page.getByTestId('update-test-notice').click();
+    const card = page.getByTestId('update-card');
+    await expect(card).toContainText('This is a test notice');
+    await card.getByRole('button', { name: 'Later' }).click();
+    await expect(card).toHaveCount(0);
+    // A test never snoozes real notices.
+    await page.waitForTimeout(400);
+    const saved = await (await page.request.get('/__bench/prefs', { headers: { 'X-Rarvon-Key': await appKey(page) } })).json();
+    expect(saved.snoozeUntil).toBeUndefined();
   });
 });
