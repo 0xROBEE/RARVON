@@ -3,9 +3,11 @@ import type { ReactNode } from 'react';
 import { usePageMeta } from '../lib/usePageMeta';
 import { maker } from '../lib/supportConfig';
 import { getLang, tr } from '../lib/i18n';
+import { isBenchApp } from '../engine/info';
+import { updateAppPrefs, useAppPrefs } from '../lib/appPrefs';
 
 /** When this policy last changed. Update it with every change to the text. */
-const UPDATED = new Date(2026, 10, 17);
+const UPDATED = new Date(2026, 10, 25);
 
 function P({ children }: { children: ReactNode }) {
   return <p className="mt-3 text-sm leading-relaxed text-ink-2 sm:text-[15px]">{children}</p>;
@@ -37,6 +39,7 @@ const KEPT: [string, string, string][] = [
   ['Recently used tools', 'To show them first on the home page', 'Clear this site’s data in your browser settings'],
   ['Image to Text settings and Video Editor shortcuts', 'So you don’t set them up again', 'Clear this site’s data in your browser settings'],
   ['Video Editor projects, including copies of the videos you add', 'So your project is saved and can be recovered after a crash', 'Delete the project in the Video Editor, or clear this site’s data'],
+  ['Favourite tools (Rarvon app only)', 'To show them on the home page', 'Remove the star, or delete prefs.json in Rarvon’s data folder'],
   ['AI models and offline files', 'So the Background Remover and the whole site work without downloading again, even offline', 'Clear this site’s data in your browser settings'],
 ];
 
@@ -137,6 +140,22 @@ export default function Privacy() {
         <>
           <P>{tr('Rarvon’s pages have to be served from somewhere, like every website. The company that hosts Rarvon can see the ordinary information every web server sees when a page is loaded: your IP address, your browser type, the page you asked for and the time. Hosting companies usually keep these logs for a short time to keep their service running and safe.')}</P>
           <P>{tr('These logs never contain your files, because your files never reach the server. I don’t use these logs to track or identify anyone. I’ll name the hosting company here once Rarvon is online.')}</P>
+        </>
+      ),
+    },
+    {
+      id: 'updates',
+      title: tr('The Rarvon app: favourites and update check'),
+      body: (
+        <>
+          <P>{tr('The Rarvon app keeps your favourite tools in a small file on your computer (prefs.json in Rarvon’s own data folder), so they stay after updates. Nothing in it is ever sent anywhere.')}</P>
+          <P>{tr('When it opens, and every few hours while it stays open, the app asks GitHub, where Rarvon’s releases are published, which version is the newest. If it is newer than yours, a small notice appears at the top with a link to download it. Nothing is downloaded or installed by itself.')}</P>
+          <Ul>
+            <Li lead={tr('What is sent:')}>{tr('only an ordinary request for GitHub’s public list of Rarvon releases. No ID, no files, nothing about how you use Rarvon.')}</Li>
+            <Li lead={tr('What GitHub sees:')}>{tr('what any website sees when you open a page, like your IP address and the time.')}</Li>
+            <Li lead={tr('Your choice:')}>{tr('the check is on unless you turn it off. The website never checks.')}</Li>
+          </Ul>
+          <UpdateSwitch />
         </>
       ),
     },
@@ -247,6 +266,25 @@ export default function Privacy() {
         </article>
       </div>
     </div>
+  );
+}
+
+/** The update check's on/off switch, shown only inside the Rarvon app. */
+function UpdateSwitch() {
+  const { updateCheck } = useAppPrefs();
+  if (!isBenchApp()) return null;
+  return (
+    <label className="mt-4 flex cursor-pointer items-center justify-between gap-4 rounded-xl border border-line bg-elevated px-4 py-3">
+      <span className="text-sm font-medium">{tr('Check for updates automatically')}</span>
+      <input
+        type="checkbox"
+        role="switch"
+        checked={updateCheck}
+        onChange={(e) => updateAppPrefs({ updateCheck: e.target.checked })}
+        className="h-5 w-9 cursor-pointer accent-[var(--color-workshop)]"
+        data-testid="update-switch"
+      />
+    </label>
   );
 }
 

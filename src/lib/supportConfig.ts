@@ -14,7 +14,7 @@
 // Buy Me a Coffee, GitHub Sponsors, Patreon, PayPal...) — any URL works.
 export const supportLinks = {
   /** Your Ko-fi page, e.g. https://ko-fi.com/yourname (VITE_SUPPORT_KOFI_URL). */
-  kofi: import.meta.env.VITE_SUPPORT_KOFI_URL ?? '',
+  kofi: import.meta.env.VITE_SUPPORT_KOFI_URL || 'https://ko-fi.com/oxrobee',
   donation: import.meta.env.VITE_SUPPORT_DONATION_URL ?? '',
   sponsorship: import.meta.env.VITE_SUPPORT_SPONSORSHIP_URL ?? '',
   other: import.meta.env.VITE_SUPPORT_OTHER_URL ?? '',
@@ -26,10 +26,10 @@ export function hasAnySupportLink(): boolean {
 
 /**
  * The project's public code repository (VITE_PROJECT_REPO_URL), e.g.
- * https://github.com/you/bench. When set, the Support page offers
+ * https://github.com/you/bench. The Support page offers
  * "Report a bug or ask for a tool" and "Star it on GitHub".
  */
-export const projectRepo: string = (import.meta.env.VITE_PROJECT_REPO_URL ?? '').replace(/\/+$/, '');
+export const projectRepo: string = (import.meta.env.VITE_PROJECT_REPO_URL || 'https://github.com/0xROBEE/RARVON').replace(/\/+$/, '');
 
 /** Who makes Rarvon, shown on the About page. */
 export const maker = {
@@ -42,4 +42,4 @@ export const maker = {
  * e.g. bench.feedback@example.com. It is shown publicly, so use an address
  * made for Rarvon. When empty, the feedback pop-up offers GitHub only.
  */
-export const feedbackEmail: string = (import.meta.env.VITE_FEEDBACK_EMAIL ?? '').trim();
+export const feedbackEmail: string = (import.meta.env.VITE_FEEDBACK_EMAIL || '0xrobee@gmail.com').trim();

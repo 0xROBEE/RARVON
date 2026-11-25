@@ -353,8 +353,8 @@ export const tools: ToolMeta[] = [
   },
   {
     slug: 'uuid', category: 'developer', name: 'UUID Generator',
-    shortDescription: 'Generate random UUID v4 values.',
-    description: 'UUID Generator creates one or many RFC-4122 version 4 UUIDs using the browser\u2019s cryptographically secure random number generator.',
+    shortDescription: 'Generate random v4 or time-ordered v7 UUIDs.',
+    description: 'UUID Generator creates one or many UUIDs, random (version 4) or time-ordered (version 7), using the browser\u2019s cryptographically secure random number generator.',
     status: 'available', keywords: ['guid generator'],
     actions: ['generate'],
   },

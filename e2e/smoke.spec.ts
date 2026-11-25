@@ -14,9 +14,9 @@ test.describe('every page renders without errors', () => {
     await page.getByTestId('support-button').click();
     await expect(page).toHaveURL(/\/support$/);
     await expect(page.getByRole('heading', { level: 1 })).toContainText('If it helped you, you can help it');
-    // Without a configured Ko-fi link there is no dead button, only a calm note.
-    await expect(page.getByTestId('kofi-button')).toHaveCount(0);
-    await expect(page.getByText('The donation link is coming soon.')).toBeVisible();
+    // The Ko-fi page is linked, and the "coming soon" note is gone.
+    await expect(page.getByTestId('kofi-button')).toHaveAttribute('href', 'https://ko-fi.com/oxrobee');
+    await expect(page.getByText('The donation link is coming soon.')).toHaveCount(0);
     await expect(page.getByRole('button', { name: 'Share Rarvon with a friend' })).toBeVisible();
   });
 
@@ -58,9 +58,9 @@ test.describe('every page renders without errors', () => {
     const dialog = page.locator('dialog[open]');
     await expect(dialog.getByRole('heading', { name: 'Report a bug' })).toBeVisible();
     await expect(dialog).toContainText('Image Converter');
-    // No email is configured in tests, so GitHub is the way offered.
-    await expect(dialog.getByTestId('feedback-github')).toBeVisible();
-    await expect(dialog.getByTestId('feedback-email')).toHaveCount(0);
+    // Both ways are offered: a new GitHub issue and an email, each already filled in.
+    await expect(dialog.getByTestId('feedback-github')).toHaveAttribute('href', /^https:\/\/github\.com\/0xROBEE\/RARVON\/issues\/new\?title=/);
+    await expect(dialog.getByTestId('feedback-email')).toHaveAttribute('href', /^mailto:0xrobee@gmail\.com\?subject=/);
     await page.keyboard.press('Escape');
     await expect(page.locator('dialog[open]')).toHaveCount(0);
 

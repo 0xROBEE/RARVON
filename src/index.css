@@ -82,6 +82,9 @@
   --color-cat-developer: #1d4ed8;
   --color-cat-text: #a16207;
   --color-cat-utilities: #15803d;
+  --color-act-convert: #5b56e8;
+  --color-act-compress: #0e7490;
+  --color-star: #b07d00;
 }
 :root[data-theme='dark'] {
   --color-cat-pdf: #fb923c;
@@ -91,6 +94,9 @@
   --color-cat-developer: #60a5fa;
   --color-cat-text: #facc15;
   --color-cat-utilities: #4ade80;
+  --color-act-convert: #8f89ff;
+  --color-act-compress: #22d3ee;
+  --color-star: #ffc83d;
 }
 
 html {
@@ -279,6 +285,77 @@ body {
 .tile-pop { animation: tile-pop 380ms cubic-bezier(0.34, 1.56, 0.64, 1) both; }
 @keyframes tile-pop { from { opacity: 0; transform: scale(0.6) rotate(-6deg); } }
 @media (prefers-reduced-motion: reduce) { .tile-pop { animation: none; } }
+/* Home page cards: tilt toward the mouse, colour sweeps across, a bar draws on
+   top and the icon spins; tool names pop out as a coloured pill. --c is the
+   group's colour (set by HoverCard). */
+.hover-card { position: relative; overflow: hidden; transition: transform 180ms ease-out, border-color 300ms, box-shadow 350ms; }
+.hover-card > :not(.hover-card-sweep):not(.hover-card-bar) { position: relative; }
+.hover-card-sweep { position: absolute; inset: 0; background: color-mix(in srgb, var(--c) 10%, transparent); transform: scaleX(0); transform-origin: left; transition: transform 500ms cubic-bezier(0.22, 1, 0.36, 1); pointer-events: none; }
+.hover-card-bar { position: absolute; inset: 0 0 auto 0; height: 3px; background: var(--c); transform: scaleX(0); transform-origin: left; transition: transform 500ms cubic-bezier(0.22, 1, 0.36, 1) 60ms; pointer-events: none; }
+:root[dir="rtl"] .hover-card-sweep, :root[dir="rtl"] .hover-card-bar { transform-origin: right; }
+.hover-card:hover, .hover-card:focus-within { border-color: var(--c); box-shadow: 0 16px 28px -18px var(--c); }
+.hover-card:hover .hover-card-sweep, .hover-card:hover .hover-card-bar,
+.hover-card:focus-within .hover-card-sweep, .hover-card:focus-within .hover-card-bar { transform: scaleX(1); }
+.hover-card-icon { display: inline-grid; transition: transform 650ms cubic-bezier(0.22, 1, 0.36, 1); }
+.hover-card-icon > * { transition: background-color 300ms, color 300ms; }
+.hover-card:hover .hover-card-icon { transform: rotate(360deg) scale(1.1); }
+.hover-card:hover .hover-card-icon > * { background: var(--c) !important; color: var(--color-paper) !important; }
+.hover-card .hover-card-count { transition: color 300ms; }
+.hover-card:hover .hover-card-count { color: var(--c); }
+.hover-card:hover .hover-card-item { color: var(--color-ink); }
+.hover-card-item { transition: background-color 220ms, color 200ms, transform 300ms cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 250ms, border-radius 250ms; }
+.hover-card-item:hover, .hover-card-item:focus-visible {
+  background: var(--c); color: var(--color-paper) !important; border-radius: 999px;
+  transform: scale(1.04); box-shadow: 0 8px 18px -8px var(--c);
+}
+.hover-card-item:hover > *, .hover-card-item:focus-visible > * { color: inherit; }
+.hover-card-label { display: inline-block; transform-origin: left center; transition: transform 300ms cubic-bezier(0.34, 1.56, 0.64, 1); }
+:root[dir="rtl"] .hover-card-label { transform-origin: right center; }
+.hover-card-item:hover .hover-card-label, .hover-card-item:focus-visible .hover-card-label { font-weight: 600; transform: scale(1.07); animation: hover-card-pop 450ms cubic-bezier(0.34, 1.56, 0.64, 1); }
+@keyframes hover-card-pop { 30% { transform: scale(1.18); } }
+/* These move only while your own mouse moves over a card, so they keep their
+   speed with "reduce motion" (the global rule above makes other motion instant). */
+@media (prefers-reduced-motion: reduce) {
+  .hover-card { transition-duration: 180ms, 300ms, 350ms !important; }
+  .hover-card-sweep, .hover-card-bar { transition-duration: 500ms !important; }
+  .hover-card-icon { transition-duration: 650ms !important; }
+  .hover-card-icon > *, .hover-card .hover-card-count { transition-duration: 300ms !important; }
+  .hover-card-item { transition-duration: 220ms, 200ms, 300ms, 250ms, 250ms !important; }
+  .hover-card-label { transition-duration: 300ms !important; animation-duration: 450ms !important; }
+}
+
+
+/* Favourite tools (Rarvon app): the star pops and throws sparks when added. */
+.fav-star-pop { animation: fav-pop 500ms cubic-bezier(0.34, 1.56, 0.64, 1); }
+@keyframes fav-pop { 0% { transform: scale(0.4) rotate(-30deg); } 60% { transform: scale(1.35) rotate(10deg); } }
+.fav-sparks { position: absolute; inset: 0; pointer-events: none; }
+.fav-sparks i { position: absolute; left: 50%; top: 50%; width: 3px; height: 3px; margin: -1.5px; border-radius: 50%; background: var(--color-star); }
+.fav-sparks i::after { content: ''; position: absolute; inset: 0; border-radius: 50%; background: inherit; animation: fav-spark 550ms ease-out forwards; }
+@keyframes fav-spark { from { transform: translateY(0); opacity: 1; } to { transform: translateY(-14px); opacity: 0; } }
+.fav-chip { transition: transform 300ms cubic-bezier(0.34, 1.56, 0.64, 1), border-color 200ms, box-shadow 250ms; }
+.fav-chip:hover { transform: translateY(-2px); border-color: var(--color-star); box-shadow: 0 6px 16px -10px var(--color-star); }
+.fav-chip:hover .fav-chip-star { animation: fav-twinkle 700ms ease-in-out; }
+@keyframes fav-twinkle { 40% { transform: rotate(72deg) scale(1.25); } }
+
+/* All tools page: groups rise into view, folded tools pop in, and the wave
+   between groups draws itself in and then drifts gently. */
+.reveal { opacity: 0; transform: translateY(16px); transition: opacity 500ms ease-out, transform 650ms cubic-bezier(0.22, 1, 0.36, 1); }
+.reveal.is-in { opacity: 1; transform: none; }
+.card-pop { animation: card-pop 420ms cubic-bezier(0.34, 1.56, 0.64, 1) both; }
+@keyframes card-pop { from { opacity: 0; transform: translateY(-10px) scale(0.95); } }
+.wave-divider path { stroke-dasharray: 1; stroke-dashoffset: 1; opacity: 0.75; transition: stroke-dashoffset 1400ms cubic-bezier(0.22, 1, 0.36, 1); }
+.wave-divider.is-in path { stroke-dashoffset: 0; }
+.wave-divider.is-in .wave-drift { animation: wave-drift 14s linear 1400ms infinite; }
+/* The ship's funnel smoke drifts back and fades. */
+.ship-smoke { animation: ship-smoke 2.4s ease-out infinite; transform-box: fill-box; }
+@keyframes ship-smoke { to { transform: translate(-12px, -12px) scale(1.6); opacity: 0; } }
+/* One full wave (80 units), so the loop is seamless. */
+@keyframes wave-drift { to { transform: translateX(-80px); } }
+@media (prefers-reduced-motion: reduce) {
+  .reveal { opacity: 1; transform: none; transition: none; }
+  .card-pop, .wave-divider.is-in .wave-drift, .ship-smoke { animation: none; }
+  .wave-divider path { stroke-dashoffset: 0; transition: none; }
+}
 @keyframes fade-in { from { opacity: 0; } }
 .stat-pop { animation: ring-num 300ms cubic-bezier(0.34, 1.56, 0.64, 1); }
 @media (prefers-reduced-motion: reduce) { .fade-in, .stat-pop { animation: none; } }

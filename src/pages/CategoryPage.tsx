@@ -1,4 +1,5 @@
 import { useParams, Navigate, Link } from 'react-router-dom';
+import BackButton from '../components/BackButton';
 import { getCategory, toolsForCategory } from '../lib/toolRegistry';
 import ToolCard from '../components/ToolCard';
 import { CategoryIcon } from '../lib/categoryIcons';
@@ -20,7 +21,8 @@ export default function CategoryPage() {
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6">
-      <nav aria-label={tr("Breadcrumb")} className="mb-4 text-xs text-ink-3">
+      <nav aria-label={tr("Breadcrumb")} className="mb-4 flex flex-wrap items-center gap-1 text-xs text-ink-3">
+        <span className="me-2"><BackButton fallback="/tools" /></span>
         <Link to="/" className="hover:text-ink">{tr('Home')}</Link> <span aria-hidden="true">/</span>{' '}
         <Link to="/tools" className="hover:text-ink">{tr('All tools')}</Link> <span aria-hidden="true">/</span> <span className="text-ink">{tr(meta.name)}</span>
       </nav>

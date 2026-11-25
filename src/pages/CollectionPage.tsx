@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import BackButton from '../components/BackButton';
 import type { Collection } from '../lib/collections';
 import { resolveCollection, collectionSize } from '../lib/collections';
 import { CategoryIcon } from '../lib/categoryIcons';
@@ -12,7 +13,8 @@ export default function CollectionPage({ collection }: { collection: Collection 
   const groups = resolveCollection(collection);
   return (
     <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6">
-      <nav aria-label={tr("Breadcrumb")} className="mb-4 text-xs text-ink-3">
+      <nav aria-label={tr("Breadcrumb")} className="mb-4 flex flex-wrap items-center gap-1 text-xs text-ink-3">
+        <span className="me-2"><BackButton fallback="/" /></span>
         <Link to="/" className="hover:text-ink">{tr('Home')}</Link> <span aria-hidden="true">/</span> <span className="text-ink">{tr(collection.title)}</span>
       </nav>
       <div className="flex items-center gap-3">

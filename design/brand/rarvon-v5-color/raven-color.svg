@@ -1,0 +1,143 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="60 20 780 590">
+  <defs>
+    <linearGradient id="body" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#4A3F78"/>
+      <stop offset="0.55" stop-color="#2E2650"/>
+      <stop offset="1" stop-color="#1C1733"/>
+    </linearGradient>
+    <linearGradient id="wing" x1="1" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#B6A6FF"/>
+      <stop offset="0.45" stop-color="#9B85FF"/>
+      <stop offset="1" stop-color="#5E49C9"/>
+    </linearGradient>
+    <linearGradient id="amber" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#FFC46B"/>
+      <stop offset="0.6" stop-color="#F2A33A"/>
+      <stop offset="1" stop-color="#D9781F"/>
+    </linearGradient>
+    <linearGradient id="wood" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#A8743F"/>
+      <stop offset="1" stop-color="#5E3B1E"/>
+    </linearGradient>
+    <linearGradient id="chest" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#6E5FB0" stop-opacity="0.9"/>
+      <stop offset="1" stop-color="#6E5FB0" stop-opacity="0"/>
+    </linearGradient>
+    <radialGradient id="iris" cx="0.4" cy="0.45" r="0.6">
+      <stop offset="0" stop-color="#FFE9A8"/><stop offset="0.6" stop-color="#FFC24D"/><stop offset="1" stop-color="#E08A1E"/>
+    </radialGradient>
+    <clipPath id="eyeclip"><path d="M568 94 L640 120 Q630 140 606 139 Q580 134 568 94 Z"/></clipPath>
+  </defs>
+
+  <!-- legs (behind body) -->
+  <g fill="none" stroke="#120E22" stroke-linecap="round">
+    <path d="M496 395 L552 523" stroke-width="26"/>
+    <path d="M566 392 L662 517" stroke-width="26"/>
+  </g>
+  <g fill="none" stroke="url(#amber)" stroke-linecap="round">
+    <path d="M496 395 L552 523" stroke-width="15"/>
+    <path d="M566 392 L662 517" stroke-width="15"/>
+  </g>
+  <g stroke="#B5601A" stroke-width="3" stroke-linecap="round">
+    <path d="M525.8 450.6 L516.6 454.6"/>
+    <path d="M535.3 472.4 L526.1 476.4"/>
+    <path d="M544.8 494.1 L535.7 498.1"/>
+    <path d="M613.2 445.2 L605.2 451.3"/>
+    <path d="M629.5 466.5 L621.6 472.5"/>
+    <path d="M645.8 487.7 L637.9 493.8"/>
+  </g>
+
+  <!-- body, head and tail -->
+  <path fill="url(#body)" stroke="#120E22" stroke-width="10" stroke-linejoin="round" d="
+    M398 136 C430 126 462 124 492 122
+    C505 72 560 42 612 48 C640 52 656 66 668 80
+    L640 152
+    C690 172 712 232 694 290 C676 346 616 380 545 388
+    C500 392 462 398 430 410
+    C330 450 200 520 92 576
+    L250 452 L148 470 L282 384 L186 362
+    C270 296 380 210 455 152 Z"/>
+
+  <!-- chest sheen -->
+  <path fill="url(#chest)" d="M640 160 C686 180 700 236 684 288 C668 334 620 362 566 372 C620 330 652 260 640 160 Z"/>
+
+  <!-- thigh feathers -->
+  <path fill="#2A2348" stroke="#120E22" stroke-width="7" stroke-linejoin="round" d="M470 388 C478 412 490 428 504 432 L500 446 L520 436 L524 452 L540 438 L548 452 L562 432 C574 418 576 402 570 386 Z"/>
+
+  <!-- folded wing: covers the back, primary feathers fan out toward the tail -->
+  <path fill="url(#wing)" stroke="#120E22" stroke-width="8" stroke-linejoin="round" d="
+    M470 176 C550 158 622 216 604 298 C590 360 524 392 446 404
+    C390 412 320 424 248 442
+    L292 414 L208 422 L272 392 L192 390 L262 364 L206 352
+    C300 290 400 222 470 176 Z"/>
+  <!-- feather rows -->
+  <g fill="none" stroke="#5A46C4" stroke-width="5" stroke-linecap="round" opacity="0.9">
+    <path d="M592 268 C562 330 470 372 330 400"/>
+    <path d="M540 236 C500 296 420 340 296 376"/>
+    <path d="M486 212 C440 262 366 308 270 350"/>
+  </g>
+  <!-- shoulder coverts (scalloped edge) -->
+  <path fill="none" stroke="#5A46C4" stroke-width="5" stroke-linecap="round" opacity="0.9"
+    d="M500 196 Q512 214 530 206 Q540 226 560 218 Q566 240 586 236"/>
+  <!-- wing highlight -->
+  <path fill="#FFFFFF" opacity="0.35" d="M486 186 C540 172 584 200 592 238 C566 212 530 200 494 202 Z"/>
+
+  <!-- branch -->
+  <path fill="none" stroke="#120E22" stroke-width="14" stroke-linecap="round" d="M716 522 Q744 496 768 470"/>
+  <path fill="none" stroke="#8A5A2B" stroke-width="7" stroke-linecap="round" d="M716 522 Q744 496 768 470"/>
+  <path fill="url(#wing)" stroke="#120E22" stroke-width="6" stroke-linejoin="round"
+    d="M766 472 C772 436 800 414 830 410 C826 444 800 468 766 472 Z"/>
+  <path fill="none" stroke="#5A46C4" stroke-width="3" stroke-linecap="round" d="M772 466 Q796 440 822 418"/>
+  <path fill="url(#amber)" stroke="#120E22" stroke-width="6" stroke-linejoin="round"
+    d="M744 496 C722 480 716 456 724 436 C744 450 752 474 744 496 Z"/>
+  <path fill="url(#wood)" stroke="#120E22" stroke-width="8" stroke-linejoin="round"
+    d="M410 528 L790 514 Q806 514 806 530 Q806 546 790 546 L410 562 Q394 562 394 545 Q394 528 410 528 Z"/>
+  <g fill="none" stroke="#4A2E16" stroke-width="3" stroke-linecap="round" opacity="0.8">
+    <path d="M430 548 L500 545"/><path d="M620 536 L700 533"/><path d="M740 541 L776 539"/>
+  </g>
+  <ellipse cx="398" cy="545" rx="5" ry="13" fill="#C99258" stroke="#120E22" stroke-width="4"/>
+
+  <!-- toes gripping the branch -->
+  <g fill="none" stroke="#120E22" stroke-linecap="round">
+    <path d="M552 523 C570 517 586 525 584 543" stroke-width="19"/>
+    <path d="M552 523 C560 521 572 529 570 547" stroke-width="19"/>
+    <path d="M552 523 C538 519 526 525 526 539" stroke-width="19"/>
+    <path d="M662 517 C680 511 696 519 694 537" stroke-width="19"/>
+    <path d="M662 517 C670 515 682 523 680 541" stroke-width="19"/>
+    <path d="M662 517 C648 513 636 519 636 533" stroke-width="19"/>
+  </g>
+  <g fill="none" stroke="url(#amber)" stroke-linecap="round">
+    <path d="M552 523 C570 517 586 525 584 543" stroke-width="10"/>
+    <path d="M552 523 C560 521 572 529 570 547" stroke-width="10"/>
+    <path d="M552 523 C538 519 526 525 526 539" stroke-width="10"/>
+    <path d="M662 517 C680 511 696 519 694 537" stroke-width="10"/>
+    <path d="M662 517 C670 515 682 523 680 541" stroke-width="10"/>
+    <path d="M662 517 C648 513 636 519 636 533" stroke-width="10"/>
+  </g>
+  <g fill="none" stroke="#120E22" stroke-width="6" stroke-linecap="round">
+    <path d="M584 543 Q586 553 576 557"/>
+    <path d="M570 547 Q572 557 562 561"/>
+    <path d="M526 539 Q524 549 534 553"/>
+    <path d="M694 537 Q696 547 686 551"/>
+    <path d="M680 541 Q682 551 672 555"/>
+    <path d="M636 533 Q634 543 644 547"/>
+  </g>
+
+  <!-- beak -->
+  <path fill="url(#amber)" stroke="#120E22" stroke-width="8" stroke-linejoin="round" d="
+    M664 78 C716 82 768 100 798 138 C804 148 802 160 794 168
+    C776 148 734 138 694 146 C672 150 654 154 640 152 Z"/>
+  <path fill="none" stroke="#B5601A" stroke-width="5" stroke-linecap="round" d="M648 126 C700 116 748 124 782 146"/>
+  <path fill="#FFFFFF" opacity="0.45" d="M676 88 C716 92 752 104 774 124 C744 110 712 102 676 100 Z"/>
+
+  <!-- head highlight -->
+  <path fill="#FFFFFF" opacity="0.18" d="M520 78 C548 56 592 50 624 60 C590 62 556 72 530 92 Z"/>
+
+  <!-- eye: almond, top edge cut flat by the brow -->
+  <path d="M568 94 L640 120 Q630 140 606 139 Q580 134 568 94 Z" fill="url(#iris)"/>
+  <g clip-path="url(#eyeclip)"><circle cx="616" cy="124" r="11" fill="#120E22"/></g>
+  <circle cx="611" cy="119" r="3.8" fill="#FFFFFF"/>
+  <path d="M568 94 L640 120 Q630 140 606 139 Q580 134 568 94 Z" fill="none" stroke="#120E22" stroke-width="5" stroke-linejoin="round"/>
+  <!-- angry brow -->
+  <path fill="url(#amber)" stroke="#120E22" stroke-width="5" stroke-linejoin="round" d="M544 70 Q602 82 656 114 L646 128 L566 95 Q552 86 544 70 Z"/>
+</svg>

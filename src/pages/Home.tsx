@@ -7,7 +7,9 @@ import type { ToolMeta } from '../lib/toolRegistry';
 import { useToolSearch } from '../lib/searchContext';
 import { usePageMeta } from '../lib/usePageMeta';
 import { useWorkspace } from '../lib/workspaceContext';
-import { CategoryIcon } from '../lib/categoryIcons';
+import { CategoryIcon, categoryColor } from '../lib/categoryIcons';
+import HoverCard from '../components/HoverCard';
+import { toggleFavorite, useAppPrefs } from '../lib/appPrefs';
 import { KIND_LABEL, kindOfFile, toolsForKind } from '../lib/fileKinds';
 import type { FileKind } from '../lib/fileKinds';
 import { getRecentTools } from '../lib/recentTools';
@@ -19,7 +21,7 @@ import type { Collection } from '../lib/collections';
 import { ActionIcon } from '../lib/actionIcons';
 import { appAvailable } from '../lib/appRelease';
 import { tr } from '../lib/i18n';
-import { showsBrowserWarning } from '../engine/info';
+import { isBenchApp, showsBrowserWarning } from '../engine/info';
 
 const toolCount = tools.filter((t) => t.status !== 'coming-soon').length;
 const MAX_SUGGESTIONS = 6;
@@ -191,6 +193,8 @@ export default function Home() {
         </div>
       </section>
 
+      <FavoriteTools />
+
       {recent.length > 0 && (
         <section className="mx-auto max-w-6xl px-4 pt-10 sm:px-6" aria-labelledby="recent-heading">
           <h2 id="recent-heading" className="font-display text-base font-semibold">{tr('Recently used')}</h2>
@@ -219,17 +223,17 @@ export default function Home() {
             const shown = top.length ? top : list.slice(0, 4);
             const more = list.length - shown.length;
             return (
-              <div key={c.slug} className="flex flex-col rounded-xl border border-line bg-elevated p-4">
-                <Link to={`/tools/${c.slug}`} className="flex items-center gap-2 font-display text-sm font-semibold hover:text-workshop">
-                  <CategoryIcon category={c.slug} size={30} />
+              <HoverCard key={c.slug} color={categoryColor(c.slug)}>
+                <Link to={`/tools/${c.slug}`} className="flex items-center gap-2 font-display text-sm font-semibold">
+                  <span className="hover-card-icon"><CategoryIcon category={c.slug} size={30} /></span>
                   {tr(c.name)}
-                  <span className="ms-auto font-mono text-xs font-normal text-ink-3">{list.length}</span>
+                  <span className="hover-card-count ms-auto font-mono text-xs font-normal text-ink-3">{list.length}</span>
                 </Link>
                 <ul className="mt-3 grid gap-0.5">
                   {shown.map((t) => (
                     <li key={t.slug}>
-                      <Link to={`/tools/${t.category}/${t.slug}`} className="flex items-center justify-between gap-2 rounded-md px-2 py-1.5 text-sm text-ink-2 hover:bg-paper-dim hover:text-ink">
-                        <span className="truncate">{tr(t.name)}</span>
+                      <Link to={`/tools/${t.category}/${t.slug}`} className="hover-card-item flex items-center justify-between gap-2 rounded-md px-2 py-1.5 text-sm text-ink-2">
+                        <span className="hover-card-label truncate">{tr(t.name)}</span>
                         {t.status === 'experimental' && showsBrowserWarning(t.category, t.slug) && <span className="shrink-0 font-mono text-[10px] uppercase tracking-wide text-warn">{tr('Beta')}</span>}
                       </Link>
                     </li>
@@ -240,7 +244,7 @@ export default function Home() {
                     {tr(more === 1 ? '+{n} more {name} tool' : '+{n} more {name} tools', { n: more, name: tr(c.name) })}
                   </Link>
                 )}
-              </div>
+              </HoverCard>
             );
           })}
           <CollectionCard collection={COLLECTIONS.convert} />
@@ -314,6 +318,45 @@ export default function Home() {
   );
 }
 
+/** "Favourite tools": the tools you starred (Rarvon app only), above "Recently used". */
+function FavoriteTools() {
+  const { favorites } = useAppPrefs();
+  if (!isBenchApp()) return null;
+  const list = favorites
+    .map((k) => getTool(k.split('/')[0], k.split('/')[1]))
+    .filter((t): t is ToolMeta => Boolean(t) && t!.status !== 'coming-soon');
+  return (
+    <section className="mx-auto max-w-6xl px-4 pt-10 sm:px-6" aria-labelledby="favorites-heading" data-testid="favorite-tools">
+      <h2 id="favorites-heading" className="flex items-center gap-2 font-display text-base font-semibold">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="var(--color-star)" aria-hidden="true"><path d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z" /></svg>
+        {tr('Favourite tools')}
+      </h2>
+      {list.length ? (
+        <div className="mt-3 flex flex-wrap gap-2">
+          {list.map((t, i) => (
+            <span key={t.category + t.slug} className="tile-pop group relative" style={{ animationDelay: `${i * 50}ms` }}>
+              <Link to={`/tools/${t.category}/${t.slug}`} className="fav-chip flex items-center gap-2 rounded-full border border-line py-1 pe-8 ps-1 text-sm font-medium">
+                <CategoryIcon category={t.category} size={24} />
+                {tr(t.name)}
+              </Link>
+              <button
+                type="button"
+                onClick={() => toggleFavorite(`${t.category}/${t.slug}`)}
+                aria-label={tr('Remove {name} from favourites', { name: tr(t.name) })}
+                className="absolute end-1.5 top-1/2 grid h-6 w-6 -translate-y-1/2 place-items-center rounded-full text-[color:var(--color-star)] hover:bg-paper-dim"
+              >
+                <svg className="fav-chip-star" width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z" /></svg>
+              </button>
+            </span>
+          ))}
+        </div>
+      ) : (
+        <p className="mt-2 text-sm text-ink-3">{tr('Press ★ on any tool to keep it here.')}</p>
+      )}
+    </section>
+  );
+}
+
 function Tip({ icon, title, children }: { icon: string; title: string; children: ReactNode }) {
   return (
     <div className="flex flex-col rounded-xl border border-line p-4">
@@ -336,19 +379,21 @@ function CollectionCard({ collection }: { collection: Collection }) {
   const shown = top.length ? top : all.slice(0, 4);
   const more = collectionSize(collection) - shown.length;
   return (
-    <div className="flex flex-col rounded-xl border border-line bg-elevated p-4" data-testid={`home-${collection.slug}`}>
-      <Link to={`/${collection.slug}`} className="flex items-center gap-2 font-display text-sm font-semibold hover:text-workshop">
-        <span className="grid h-[30px] w-[30px] place-items-center rounded-lg bg-workshop-dim text-workshop">
-          <ActionIcon action={collection.slug} className="h-[18px] w-[18px]" />
+    <HoverCard color={`var(--color-act-${collection.slug})`} testId={`home-${collection.slug}`}>
+      <Link to={`/${collection.slug}`} className="flex items-center gap-2 font-display text-sm font-semibold">
+        <span className="hover-card-icon">
+          <span className="grid h-[30px] w-[30px] place-items-center rounded-lg" style={{ background: `color-mix(in srgb, var(--color-act-${collection.slug}) 13%, var(--color-paper))`, color: `var(--color-act-${collection.slug})` }}>
+            <ActionIcon action={collection.slug} className="h-[18px] w-[18px]" />
+          </span>
         </span>
         {tr('All {name} tools', { name: tr(collection.title) })}
-        <span className="ms-auto font-mono text-xs font-normal text-ink-3">{collectionSize(collection)}</span>
+        <span className="hover-card-count ms-auto font-mono text-xs font-normal text-ink-3">{collectionSize(collection)}</span>
       </Link>
       <ul className="mt-3 grid gap-0.5">
         {shown.map((t) => (
           <li key={t.category + t.slug}>
-            <Link to={`/tools/${t.category}/${t.slug}`} className="flex items-center justify-between gap-2 rounded-md px-2 py-1.5 text-sm text-ink-2 hover:bg-paper-dim hover:text-ink">
-              <span className="truncate">{tr(t.name)}</span>
+            <Link to={`/tools/${t.category}/${t.slug}`} className="hover-card-item flex items-center justify-between gap-2 rounded-md px-2 py-1.5 text-sm text-ink-2">
+              <span className="hover-card-label truncate">{tr(t.name)}</span>
               {t.status === 'experimental' && showsBrowserWarning(t.category, t.slug) && <span className="shrink-0 font-mono text-[10px] uppercase tracking-wide text-warn">{tr('Beta')}</span>}
             </Link>
           </li>
@@ -357,6 +402,6 @@ function CollectionCard({ collection }: { collection: Collection }) {
       <Link to={`/${collection.slug}`} className="mt-2 px-2 text-sm font-medium text-workshop hover:underline">
         {more > 0 ? tr('+{n} more {name} tools', { n: more, name: tr(collection.title) }) : tr('Open {name}', { name: tr(collection.title) })}
       </Link>
-    </div>
+    </HoverCard>
   );
 }

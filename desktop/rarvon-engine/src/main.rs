@@ -255,6 +255,52 @@ fn handle_native(mut request: Request, path: &str, url: &str, native: &Arc<Nativ
     }
 }
 
+/// Where the app keeps its settings: Rarvon's own data folder for this user
+/// (`%LOCALAPPDATA%\Rarvon` on Windows, `~/.local/share/rarvon` on Linux).
+/// Nothing in it ever leaves the computer. `BENCH_DATA_DIR` overrides it for tests.
+fn data_dir() -> Option<PathBuf> {
+    if let Ok(dir) = std::env::var("BENCH_DATA_DIR") {
+        return Some(PathBuf::from(dir));
+    }
+    if cfg!(windows) {
+        return std::env::var("LOCALAPPDATA").ok().map(|d| PathBuf::from(d).join("Rarvon"));
+    }
+    std::env::var("XDG_DATA_HOME")
+        .ok()
+        .map(PathBuf::from)
+        .or_else(|| std::env::var("HOME").ok().map(|h| PathBuf::from(h).join(".local").join("share")))
+        .map(|d| d.join("rarvon"))
+}
+
+/// GET returns the saved settings (or `{}`); PUT replaces them with a JSON object of up to 64 KB.
+fn handle_prefs(mut request: Request) {
+    let Some(dir) = data_dir() else {
+        return reply(request, 500, "No data folder");
+    };
+    let file = dir.join("prefs.json");
+    match request.method() {
+        Method::Get => {
+            let body = fs::read_to_string(&file)
+                .ok()
+                .filter(|t| serde_json::from_str::<serde_json::Map<String, serde_json::Value>>(t).is_ok())
+                .unwrap_or_else(|| "{}".to_string());
+            let _ = request.respond(Response::from_string(body).with_header(header("Content-Type", "application/json")).with_header(header("Cache-Control", "no-store")));
+        }
+        Method::Put => {
+            let result = read_json::<serde_json::Map<String, serde_json::Value>>(&mut request).and_then(|prefs| {
+                fs::create_dir_all(&dir).map_err(|e| e.to_string())?;
+                // Write a new file and swap it in, so a crash never leaves half a file.
+                let tmp = dir.join("prefs.json.tmp");
+                fs::write(&tmp, serde_json::to_vec_pretty(&prefs).map_err(|e| e.to_string())?).map_err(|e| e.to_string())?;
+                fs::rename(&tmp, &file).map_err(|e| e.to_string())?;
+                Ok(serde_json::json!({ "saved": true }))
+            });
+            reply_json(request, result)
+        }
+        _ => reply(request, 405, "Method not allowed"),
+    }
+}
+
 fn handle(request: Request, shared: &Shared) {
     let (web, host, token, last_contact) = (&shared.web, &shared.host, &shared.token, &shared.contact);
     // Only requests addressed exactly to this computer and port.
@@ -283,6 +329,15 @@ fn handle(request: Request, shared: &Shared) {
         }
         drop(contact);
         return reply(request, 204, "");
+    }
+
+    // The app's own settings (favourite tools, the update check), kept in a small file.
+    if path == "/__bench/prefs" {
+        let key_ok = request.headers().iter().any(|h| h.field.equiv("X-Rarvon-Key") && h.value.as_str() == token);
+        if !key_ok {
+            return reply(request, 403, "Forbidden");
+        }
+        return handle_prefs(request);
     }
 
     if path.starts_with("/__bench/") {

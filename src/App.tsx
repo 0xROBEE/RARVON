@@ -5,11 +5,6 @@ import Home from './pages/Home';
 import CategoryPage from './pages/CategoryPage';
 import AllToolsPage from './pages/AllToolsPage';
 import ToolPage from './pages/ToolPage';
-import Privacy from './pages/Privacy';
-import About from './pages/About';
-import Support from './pages/Support';
-import Credits from './pages/Credits';
-import AppDownload from './pages/AppDownload';
 import ActionPage from './pages/ActionPage';
 import NotFound from './pages/NotFound';
 import { SearchProvider } from './lib/searchContext';
@@ -17,6 +12,14 @@ import { ThemeProvider } from './lib/themeContext';
 import { WorkspaceProvider } from './lib/workspaceContext';
 import { useI18n } from './lib/i18n';
 import { tr } from './lib/i18n';
+
+// Pages most visits never open load only when someone goes to them, so they
+// don't count toward the first download.
+const Privacy = lazy(() => import('./pages/Privacy'));
+const About = lazy(() => import('./pages/About'));
+const Support = lazy(() => import('./pages/Support'));
+const Credits = lazy(() => import('./pages/Credits'));
+const AppDownload = lazy(() => import('./pages/AppDownload'));
 
 // The Video Editor workspace is a full-screen page without the site header and footer.
 const VideoEditorWorkspace = lazy(() => import('./tools/video/editor/Workspace'));
@@ -42,6 +45,7 @@ export default function App() {
                 path="*"
                 element={
                   <Layout>
+                    <Suspense fallback={<div className="min-h-[60vh]" />}>
                     <Routes>
                       <Route path="/" element={<Home />} />
                       <Route path="/privacy" element={<Privacy />} />
@@ -55,6 +59,7 @@ export default function App() {
                       <Route path="/:action" element={<ActionPage />} />
                       <Route path="*" element={<NotFound />} />
                     </Routes>
+                    </Suspense>
                   </Layout>
                 }
               />

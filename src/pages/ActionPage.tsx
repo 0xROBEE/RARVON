@@ -1,4 +1,5 @@
 import { useParams, Link } from 'react-router-dom';
+import BackButton from '../components/BackButton';
 import { tools, actionMeta } from '../lib/toolRegistry';
 import ToolCard from '../components/ToolCard';
 import { ActionIcon } from '../lib/actionIcons';
@@ -31,7 +32,8 @@ export default function ActionPage() {
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6">
-      <nav aria-label={tr("Breadcrumb")} className="mb-4 text-xs text-ink-3">
+      <nav aria-label={tr("Breadcrumb")} className="mb-4 flex flex-wrap items-center gap-1 text-xs text-ink-3">
+        <span className="me-2"><BackButton fallback="/" /></span>
         <Link to="/" className="hover:text-ink">{tr('Home')}</Link> <span aria-hidden="true">/</span> <span className="text-ink">{tr(meta.label)}</span>
       </nav>
 

@@ -10,7 +10,7 @@ test.describe('English / Arabic interface', () => {
     await page.getByTestId('language-toggle').click();
     await expect(page.locator('html')).toHaveAttribute('lang', 'ar');
     await expect(page.locator('html')).toHaveAttribute('dir', 'rtl');
-    await expect(page.locator('h1')).toHaveText('أفلت ملفًا. واختر ما تريد فعله.');
+    await expect(page.locator('h1')).toHaveText('اسحب ملفًا إلى هنا، ثم اختر ما تريد فعله.');
     await expect(page.getByRole('link', { name: 'كل الأدوات', exact: false }).first()).toBeVisible();
 
     // Remembered across pages and reloads.
