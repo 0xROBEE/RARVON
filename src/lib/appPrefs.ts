@@ -151,9 +151,23 @@ export function isNewerVersion(candidate: string, current: string): boolean {
 /** How often the app asks GitHub: when it opens (if the last check is older than this), and this often while open. */
 export const UPDATE_CHECK_EVERY = 3 * 60 * 60 * 1000;
 
-/** Whether it's time to ask GitHub again. */
-export function shouldCheckForUpdate(p: Pick<AppPrefs, 'updateCheck' | 'lastUpdateCheck'>, now: number): boolean {
-  return p.updateCheck && (!p.lastUpdateCheck || now - p.lastUpdateCheck >= UPDATE_CHECK_EVERY);
+/**
+ * When the saved answer says "you're up to date", it is only trusted this
+ * long: opening the app after that asks GitHub again, so a version published
+ * since then is found straight away instead of hours later.
+ */
+export const RECHECK_WHEN_UP_TO_DATE = 10 * 60 * 1000;
+
+/** Whether it's time to ask GitHub again. `current` is this app's version. */
+export function shouldCheckForUpdate(
+  p: Pick<AppPrefs, 'updateCheck' | 'lastUpdateCheck' | 'latestVersion'>,
+  now: number,
+  current?: string,
+): boolean {
+  if (!p.updateCheck) return false;
+  if (!p.lastUpdateCheck) return true;
+  const upToDate = !!current && (!p.latestVersion || !isNewerVersion(p.latestVersion, current));
+  return now - p.lastUpdateCheck >= (upToDate ? RECHECK_WHEN_UP_TO_DATE : UPDATE_CHECK_EVERY);
 }
 
 export interface Release { tag_name?: string; html_url?: string; draft?: boolean; prerelease?: boolean; body?: string }

@@ -22,7 +22,7 @@ const RELEASES_PAGE = 'https://github.com/0xROBEE/RARVON/releases';
  */
 export async function checkForUpdate(force = false) {
   const prefs = await loadAppPrefs();
-  if (!prefs.updateCheck || (!force && !shouldCheckForUpdate(prefs, Date.now()))) return;
+  if (!prefs.updateCheck || (!force && !shouldCheckForUpdate(prefs, Date.now(), window.__BENCH_APP__?.version))) return;
   try {
     const res = await fetch(RELEASES_API, { headers: { Accept: 'application/vnd.github+json' }, credentials: 'omit', referrerPolicy: 'no-referrer' });
     if (!res.ok) return;
@@ -182,8 +182,10 @@ function NoticeCard({ notice }: { notice: Notice }) {
     const el = card.current;
     if (!el || e.pointerType !== 'mouse' || leaving) return;
     const r = el.getBoundingClientRect();
-    const x = (e.clientX - r.left) / r.width - 0.5;
-    const y = (e.clientY - r.top) / r.height - 0.5;
+    // Limited to the card's own edges: over the ⋯ menu (above the card) it leans no further back.
+    const clamp = (n: number) => Math.max(-0.5, Math.min(0.5, n));
+    const x = clamp((e.clientX - r.left) / r.width - 0.5);
+    const y = clamp((e.clientY - r.top) / r.height - 0.5);
     el.style.transform = `perspective(700px) rotateX(${(-y * 8).toFixed(1)}deg) rotateY(${(x * 10).toFixed(1)}deg) translateY(-3px)`;
   }
   return (

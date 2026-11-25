@@ -3,6 +3,8 @@
 fn main() {
     println!("cargo:rerun-if-changed=rarvon.rc");
     println!("cargo:rerun-if-changed=rarvon.ico");
+    // The version lives in Cargo.toml: stamp it again whenever that changes.
+    println!("cargo:rerun-if-changed=Cargo.toml");
     if std::env::var("CARGO_CFG_TARGET_OS").as_deref() != Ok("windows") {
         return;
     }
